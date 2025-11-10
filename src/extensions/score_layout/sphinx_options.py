@@ -57,4 +57,11 @@ needs_layouts: dict[str, SingleLayout] = {
     },
 }
 
-needs_global_options = {"layout": {"default": "score"}}
+needs_global_options = {
+    "layout": {"default": "score"},
+    "style": {
+        "predicates": [
+            ("safety != 'QM'", "red_border")
+        ]
+    }
+}

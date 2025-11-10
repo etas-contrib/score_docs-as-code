@@ -92,6 +92,7 @@ def default_options():
         "tags",
         "arch",
         "parts",
+        "style"
     }
 
 
