@@ -84,3 +84,8 @@ html[data-theme="light"] #logo_center_drk {
     display:none;
 
  }
+
+.need[data-safety="ASIL_B"] {
+    border: 3px solid red !important;
+    border-radius: 5px;
+}

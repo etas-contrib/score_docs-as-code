@@ -102,6 +102,12 @@ needs_extra_options = [
     "reviewers",
     "approvers",
 ]
+
+# Style für ASIL_B definieren
+needs_node_style = {
+    'ASIL_B': 'fill:#ffeeee,stroke:#ff0000,stroke-width:3px'
+}
+
 header_service_use_github_data = {use_github_data}
 """
 
