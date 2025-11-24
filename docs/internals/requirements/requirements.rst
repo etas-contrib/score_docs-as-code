@@ -875,11 +875,15 @@ Testing
     gd_req__saf_attr_requirements,
     gd_req__saf_attr_requirements_check,
     gd_req__saf_attr_aou,
+    gd_req__saf_linkage_safety,
   :parent_covered: YES
 
   Docs-As-Code shall enforce valid needs (`status` == `valid`) of type
   :need:`tool_req__docs_saf_types` to have at least one `mitigated_by` link to a
   requirement on the corresponding level.
+
+  At least one of the linked requirements must have
+  the same ASIL level or a higher one.
 
   It can be ``comp_req`` or ``aou_req``.
 

@@ -4,10 +4,12 @@
 Process Requirements Overview
 ===============================
 
-Unsatisfied Tool Requirements
-#############################
+Unsatisfied Process Requirements
+################################
 
-The following table lists tool requirements from our process which are not (yet) satisfied.
+The following table lists tool requirements from our process
+which are not (yet) satisfied,
+i.e. covered by tool requirements.
 
 .. needtable::
    :types: gd_req
@@ -43,6 +45,9 @@ The following table lists tool requirements from our process which are not (yet)
 
 Requirements not fully implemented
 ##################################
+
+Just because a process requirement is covered by tool requirements
+does not mean it is implemented.
 
 .. needtable::
    :types: gd_req
