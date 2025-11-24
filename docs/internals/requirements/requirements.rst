@@ -832,7 +832,7 @@ Testing
 
 .. tool_req:: Safety Analysis Need Types
   :id: tool_req__docs_saf_types
-  :implemented: NO
+  :implemented: YES
   :tags: Safety Analysis
   :satisfies:
     gd_req__saf_structure,
@@ -841,10 +841,29 @@ Testing
 
    Docs-As-Code shall support the following need types:
 
-  * Feature FMEA (Failure Modes and Effect Analysis) -> feat_saf_fmea
-  * Component FMEA (Failure Modes and Effect Analysis) -> comp_saf_fmea
-  * Feature DFA (Dependend Failure Analysis) -> feat_saf_dfa
-  * Component DFA (Dependent Failure Analysis) -> comp_saf_dfa
+  * Feature FMEA (Failure Modes and Effect Analysis) -> ``feat_saf_fmea``
+  * Component FMEA (Failure Modes and Effect Analysis) -> ``comp_saf_fmea``
+  * Feature DFA (Dependend Failure Analysis) -> ``feat_saf_dfa``
+  * Component DFA (Dependent Failure Analysis) -> ``comp_saf_dfa``
+
+.. tool_req:: Safety Analysis Mandatory Attributes
+  :id: tool_req__docs_saf_attrs_mandatory
+  :implemented: YES
+  :tags: Safety Analysis
+  :satisfies:
+    gd_req__saf_attr_mandatory,
+  :parent_covered: YES
+
+  All safety analysis elements in :need:`tool_req__docs_saf_types`
+  shall have the following mandatory attributes:
+
+  * DFA-only attribute: ``failure_id``
+  * FMEA-only attribute: ``fault_id``
+  * attribute: ``failure_effect``
+  * attribute: ``status``
+  * attribute: ``sufficient``
+  * attribute: ``title`` (all Needs elements have a title)
+  * attribute: ``id`` (all Needs elements have an id)
 
 
 .. tool_req:: Safety Analysis Mitigation Attribute
