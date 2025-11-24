@@ -855,11 +855,14 @@ Testing
     gd_req__saf_attr_mitigated_by,
     gd_req__saf_attr_requirements,
     gd_req__saf_attr_requirements_check,
+    gd_req__saf_attr_aou,
   :parent_covered: YES
 
   Docs-As-Code shall enforce valid needs (`status` == `valid`) of type
   :need:`tool_req__docs_saf_types` to have at least one `mitigated_by` link to a
   requirement on the corresponding level.
+
+  It can be ``comp_req`` or ``aou_req``.
 
 
 .. tool_req:: Safety Analysis Mitigation Issue Attribute
