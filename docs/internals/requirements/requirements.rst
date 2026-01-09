@@ -882,9 +882,9 @@ Testing
 
    Docs-as-Code shall ensure that test cases link to requirements on the correct level:
 
-    - If Partially/FullyVerifies are set in Feature Integration Test these shall link to Feature Requirements
-    - If Partially/FullyVerifies are set in Component Integration Test these shall link to Component Requirements
-    - If Partially/FullyVerifies are set in Unit Test these shall link to Component Requirements
+   - If Partially/FullyVerifies are set in Feature Integration Test these shall link to Feature Requirements
+   - If Partially/FullyVerifies are set in Component Integration Test these shall link to Component Requirements
+   - If Partially/FullyVerifies are set in Unit Test these shall link to Component Requirements
 
 
 🧪 Tool Verification Reports
@@ -994,7 +994,7 @@ Testing
     gd_req__saf_attr_uid,
   :parent_covered: YES
 
-   Docs-As-Code shall support the following need types:
+  Docs-As-Code shall support the following need types:
 
   * Feature FMEA (Failure Modes and Effect Analysis) -> ``feat_saf_fmea``
   * Component FMEA (Failure Modes and Effect Analysis) -> ``comp_saf_fmea``
