@@ -152,12 +152,6 @@ class PlantUmlRenderer:
 
     def render(self, diagram: ClassDiagram) -> str:
         """Render a ClassDiagram as PlantUML text."""
-        classes = sorted(diagram.classes.values(), key=lambda c: c.name)
-        relations = sorted(
-            diagram.relations,
-            key=lambda r: (r.src, r.dst, r.kind.value, r.label or ""),
-        )
-
         alias = self._AliasMap()
 
         lines: list[str] = [
@@ -165,7 +159,7 @@ class PlantUmlRenderer:
             # "skinparam linetype ortho",
         ]
 
-        for c in classes:
+        for c in diagram.classes.values():
             cid = alias[c.name]
             display = self._quote(c.name)
 
@@ -182,7 +176,7 @@ class PlantUmlRenderer:
                     lines.append(f"  {m.visibility.value} {m.name}")
             lines.append("}")
 
-        for r in relations:
+        for r in diagram.relations:
             src = alias[r.src]
             dst = alias[r.dst]
             arrow = self._ARROWS[r.kind]
