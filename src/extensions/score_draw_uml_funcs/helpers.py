@@ -131,10 +131,7 @@ def get_module(component: str, all_needs: dict[str, dict[str, str]]) -> str:
         parents = need.get("includes_back", [])
         if isinstance(parents, str):
             parents = [parents]
-        module = [
-            pid for pid in parents
-            if all_needs.get(pid, {}).get("type") == "mod"
-        ]
+        module = [pid for pid in parents if all_needs.get(pid, {}).get("type") == "mod"]
 
         if module:
             return module[0]
