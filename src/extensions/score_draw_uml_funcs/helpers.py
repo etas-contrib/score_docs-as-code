@@ -133,7 +133,7 @@ def get_module(component: str, all_needs: dict[str, dict[str, str]]) -> str:
             parents = [parents]
         module = [
             pid for pid in parents
-            if "mod" in all_needs.get(pid, {}).get("type", "")
+            if all_needs.get(pid, {}).get("type") == "mod"
         ]
 
         if module:
