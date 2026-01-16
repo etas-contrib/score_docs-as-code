@@ -11,38 +11,42 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# Multiple approaches are available to build the same documentation output:
-#
-# 1. **Esbonio via IDE support (`ide_support` target)**:
-#    - Listed first as it offers the least flexibility in implementation.
-#    - Designed for live previews and quick iterations when editing documentation.
-#    - Integrates with IDEs like VS Code but requires the Esbonio extension.
-#    - Requires a virtual environment with consistent dependencies (see 2).
-#
-# 2. **Directly running Sphinx in the virtual environment**:
-#    - As mentioned above, a virtual environment is required for running esbonio.
-#    - Therefore, the same environment can be used to run Sphinx directly.
-#    - Option 1: Run Sphinx manually via `.venv_docs/bin/python -m sphinx docs _build --jobs auto`.
-#    - Option 2: Use the `incremental` target, which simplifies this process.
-#    - Usable in CI pipelines to validate the virtual environment used by Esbonio.
-#    - Ideal for quickly generating documentation during development.
-#
-# 3. **Bazel-based build (`docs` target)**:
-#    - Runs the documentation build in a Bazel sandbox, ensuring clean, isolated builds.
-#    - Less convenient for frequent local edits but ensures build reproducibility.
-#
-# **Consistency**:
-# When modifying Sphinx extensions or configuration, ensure all three methods
-# (Esbonio, incremental, and Bazel) work as expected to avoid discrepancies.
-#
-# For user-facing documentation, refer to `/README.md`.
+"""Bazel rules for building S-CORE documentation using Sphinx.
 
-load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_library")
-load("@pip_process//:requirements.bzl", "all_requirements", "requirement")
+This module provides the docs() macro that creates all documentation-related targets,
+including Sphinx builds, live preview, and IDE support for the Eclipse S-CORE docs-as-code system.
+
+Multiple approaches are available to build the same documentation output:
+
+1. **Esbonio via IDE support (`ide_support` target)**:
+   - Listed first as it offers the least flexibility in implementation.
+   - Designed for live previews and quick iterations when editing documentation.
+   - Integrates with IDEs like VS Code but requires the Esbonio extension.
+   - Requires a virtual environment with consistent dependencies (see 2).
+
+2. **Directly running Sphinx in the virtual environment**:
+   - As mentioned above, a virtual environment is required for running esbonio.
+   - Therefore, the same environment can be used to run Sphinx directly.
+   - Option 1: Run Sphinx manually via `.venv_docs/bin/python -m sphinx docs _build --jobs auto`.
+   - Option 2: Use the `incremental` target, which simplifies this process.
+   - Usable in CI pipelines to validate the virtual environment used by Esbonio.
+   - Ideal for quickly generating documentation during development.
+
+3. **Bazel-based build (`docs` target)**:
+   - Runs the documentation build in a Bazel sandbox, ensuring clean, isolated builds.
+   - Less convenient for frequent local edits but ensures build reproducibility.
+
+**Consistency**:
+When modifying Sphinx extensions or configuration, ensure all three methods
+(Esbonio, incremental, and Bazel) work as expected to avoid discrepancies.
+
+For user-facing documentation, refer to `/README.md`.
+"""
+
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("@pip_process//:requirements.bzl", "all_requirements")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
-load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@score_tooling//:defs.bzl", "score_virtualenv")
 
 def _rewrite_needs_json_to_docs_sources(labels):
@@ -57,9 +61,14 @@ def _rewrite_needs_json_to_docs_sources(labels):
     return out
 
 def docs(source_dir = "docs", data = [], deps = []):
-    """
-    Creates all targets related to documentation.
+    """Creates all targets related to documentation.
+
     By using this function, you'll get any and all updates for documentation targets in one place.
+
+    Args:
+      source_dir: The directory containing documentation sources. Defaults to "docs".
+      data: Additional data files to include in the documentation build.
+      deps: Additional dependencies for the documentation build.
     """
 
     call_path = native.package_name()
