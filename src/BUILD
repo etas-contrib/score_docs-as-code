@@ -11,13 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
-load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_library")
-load("@pip_process//:requirements.bzl", "all_requirements", "requirement")
-load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
-load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary")
-load("@score_tooling//:defs.bzl", "dash_license_checker", "score_virtualenv")
+load("@score_tooling//:defs.bzl", "dash_license_checker")
 
 # These are only exported because they're passed as files to the //docs.bzl
 # macros, and thus must be visible to other packages. They should only be

@@ -11,13 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 load("@aspect_rules_py//py:defs.bzl", "py_library")
-load("@pip_process//:requirements.bzl", "all_requirements")
 
 py_library(
     name = "score_sphinx_bundle",
     srcs = ["__init__.py"],
     visibility = ["//visibility:public"],
-    deps = all_requirements + [
+    deps = [
         "@score_docs_as_code//src/extensions:score_plantuml",
         "@score_docs_as_code//src/extensions/score_draw_uml_funcs",
         "@score_docs_as_code//src/extensions/score_header_service",
