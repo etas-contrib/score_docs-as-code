@@ -44,7 +44,6 @@ For user-facing documentation, refer to `/README.md`.
 """
 
 load("@aspect_rules_py//py:defs.bzl", "py_binary")
-load("@pip_process//:requirements.bzl", "all_requirements")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
 load("@score_tooling//:defs.bzl", "score_virtualenv")
@@ -76,7 +75,7 @@ def docs(source_dir = "docs", data = [], deps = []):
     if call_path != "":
         fail("docs() must be called from the root package. Current package: " + call_path)
 
-    deps = deps + all_requirements + [
+    deps = deps + [
         "@score_docs_as_code//src:plantuml_for_python",
         "@score_docs_as_code//src/extensions/score_sphinx_bundle:score_sphinx_bundle",
     ]
