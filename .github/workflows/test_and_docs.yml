@@ -59,7 +59,7 @@ jobs:
   smoke:
     needs: [docs-build]
     if: ${{ always() && needs.docs-build.result == 'success' }}
-    uses: eclipse-score/reference_integration/.github/workflows/module-smoke-test.yml@main
+    uses: eclipse-score/reference_integration/.github/workflows/reusable_smoke-test.yml@main
     with:
       repo_runner_labels: ubuntu-latest
       module_name: score_docs_as_code
