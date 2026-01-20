@@ -20,8 +20,8 @@ permissions:
   id-token: write
 
 on:
-  pull_request_target:
-    types: [opened, reopened, synchronize] # Allows forks to trigger the docs build
+  pull_request:
+    types: [opened, reopened, synchronize]
   push:
     branches:
       - main
@@ -57,6 +57,8 @@ jobs:
       retention-days: 3
       tests-report-artifact: tests-report
   smoke:
+    needs: [docs-build]
+    if: ${{ always() && needs.docs-build.result == 'success' }}
     uses: eclipse-score/reference_integration/.github/workflows/module-smoke-test.yml@main
     with:
       repo_runner_labels: ubuntu-latest
