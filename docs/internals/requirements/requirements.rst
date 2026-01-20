@@ -689,7 +689,7 @@ Architecture Attributes
   :parent_covered: NO: we only enable linking, we do not link
   :satisfies:
     gd_req__req_attr_impl,
-    gd_req__impl_design_code_link,
+    gd_req__impl_diagram_check_includes,
 
   Docs-as-Code shall allow source code to link to needs.
 
@@ -725,7 +725,7 @@ Architecture Attributes
    :tags: Detailed Design & Code
    :implemented: YES
    :parent_covered: YES
-   :satisfies: gd_req__impl_dynamic_diagram
+   :satisfies:
 
    Provide needs type ``dd_dyn`` for dynamic diagrams showing unit interactions as UML.
 
