@@ -57,8 +57,7 @@ jobs:
   #     retention-days: 3
   #     tests-report-artifact: tests-report
   smoke:
-    needs: [docs-build]
-    if: ${{ always() && needs.docs-build.result == 'success' }}
+    #needs: [docs-build]
     uses: eclipse-score/reference_integration/.github/workflows/reusable_smoke-test.yml@main
     with:
       repo_runner_labels: ubuntu-latest
