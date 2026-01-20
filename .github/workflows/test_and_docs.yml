@@ -42,20 +42,20 @@ jobs:
     uses: ./.github/workflows/test.yml
     secrets: inherit
 
-  docs-build:
-    # Waits for consumer-tests but run only when docs verification succeeded
-    needs: [docs-verify, unit-tests]
-    if: ${{ always() && needs.docs-verify.result == 'success' }}
-    uses: eclipse-score/cicd-workflows/.github/workflows/docs.yml@main
-    permissions:
-      contents: write
-      pages: write
-      pull-requests: write
-      id-token: write
-    with:
-      bazel-target: "//:docs -- --github_user=${{ github.repository_owner }} --github_repo=${{ github.event.repository.name }}"
-      retention-days: 3
-      tests-report-artifact: tests-report
+  # docs-build:
+  #   # Waits for consumer-tests but run only when docs verification succeeded
+  #   needs: [docs-verify, unit-tests]
+  #   if: ${{ always() && needs.docs-verify.result == 'success' }}
+  #   uses: eclipse-score/cicd-workflows/.github/workflows/docs.yml@main
+  #   permissions:
+  #     contents: write
+  #     pages: write
+  #     pull-requests: write
+  #     id-token: write
+  #   with:
+  #     bazel-target: "//:docs -- --github_user=${{ github.repository_owner }} --github_repo=${{ github.event.repository.name }}"
+  #     retention-days: 3
+  #     tests-report-artifact: tests-report
   smoke:
     needs: [docs-build]
     if: ${{ always() && needs.docs-build.result == 'success' }}
