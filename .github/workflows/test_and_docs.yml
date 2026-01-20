@@ -56,3 +56,9 @@ jobs:
       bazel-target: "//:docs -- --github_user=${{ github.repository_owner }} --github_repo=${{ github.event.repository.name }}"
       retention-days: 3
       tests-report-artifact: tests-report
+  smoke:
+    uses: eclipse-score/reference_integration/.github/workflows/module-smoke-test.yml@main
+    with:
+      repo_runner_labels: ubuntu-latest
+      module_name: score_docs_as_code
+      target_branch: main
