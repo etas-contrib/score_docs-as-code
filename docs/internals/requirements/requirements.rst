@@ -221,18 +221,18 @@ This section provides an overview of current process requirements and their clar
   * all architecture elements defined in :need:`tool_req__docs_arch_types`.
   * all safety analysis elements defined in :need:`tool_req__docs_saf_types`.
 
-  .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-    .. needuml::
+  .. needuml::
 
-      {{draw_metamodel(
-        [
-          "stkh_req", "feat_req", "comp_req", "aou_req",
-          "feat_arc_sta", "feat", "logic_arc_int", "logic_arc_int_op", "comp_arc_sta", "comp", "real_arc_int", "real_arc_int_op",
-          "feat_saf_fmea", "comp_saf_fmea", "feat_saf_dfa", "comp_saf_dfa",
-        ],
-        attributes=["status"],
-      )}}
+    {{draw_metamodel(
+      [
+        "stkh_req", "feat_req", "comp_req", "aou_req",
+        "feat_arc_sta", "feat", "logic_arc_int", "logic_arc_int_op", "comp_arc_sta", "comp", "real_arc_int", "real_arc_int_op",
+        "feat_saf_fmea", "comp_saf_fmea", "feat_saf_dfa", "comp_saf_dfa",
+      ],
+      attributes=["status"],
+    )}}
 
 
 
@@ -284,11 +284,11 @@ Versioning
   * Tool Verification Report (doc_tool)
   * Change Request is also a generic document
 
-  .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-    .. needuml::
+  .. needuml::
 
-      {{draw_metamodel(types=["document", "doc_tool"])}}
+    {{draw_metamodel(types=["document", "doc_tool"])}}
 
 .. tool_req:: Mandatory attributes of Generic Documents
   :id: tool_req__docs_doc_generic_mandatory
@@ -306,11 +306,11 @@ Versioning
   * safety
   * realizes
 
-  .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-    .. needuml::
+  .. needuml::
 
-      {{draw_metamodel("document", attributes=["status", "security", "safety", "realizes"])}}
+    {{draw_metamodel("document", attributes=["status", "security", "safety", "realizes"])}}
 
 .. tool_req:: Mandatory Document attributes
   :id: tool_req__docs_doc_attr
@@ -332,11 +332,11 @@ Versioning
   * approver
   * reviewer
 
-  .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-    .. needuml::
+  .. needuml::
 
-      {{draw_metamodel(["document", "doc_tool"], attributes=["title", "author", "approver", "reviewer"])}}
+    {{draw_metamodel(["document", "doc_tool"], attributes=["title", "author", "approver", "reviewer"])}}
 
 .. tool_req:: Document author is autofilled
   :id: tool_req__docs_doc_attr_author_autofill
@@ -418,15 +418,15 @@ Mapping
   * Process requirement (gd_req)
   * Tool requirement (tool_req)
 
-  .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-    .. needuml::
+  .. needuml::
 
-      {{draw_metamodel(
-        [
-          "stkh_req", "feat_req", "comp_req", "aou_req", "gd_req", "tool_req",
-        ],
-      )}}
+    {{draw_metamodel(
+      [
+        "stkh_req", "feat_req", "comp_req", "aou_req", "gd_req", "tool_req",
+      ],
+    )}}
 
 -------------------------
 🏷️ Attributes
@@ -441,11 +441,11 @@ Mapping
 
   Docs-as-Code shall enforce that each stakeholder requirement (stkh_req) contains a ``rationale`` attribute.
 
-  .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-    .. needuml::
+  .. needuml::
 
-      {{draw_metamodel(["stkh_req"], attributes=["rationale"])}}
+    {{draw_metamodel(["stkh_req"], attributes=["rationale"])}}
 
 
 .. tool_req:: Enforces requirement type classification
@@ -554,16 +554,16 @@ Mapping
   .. note::
       Certain tool requirements do not have a matching process requirement.
 
-  .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-    .. needuml::
+  .. needuml::
 
-      {{draw_metamodel(
-        [
-          "stkh_req", "feat_req", "comp_req", "gd_req", "tool_req", "workflow"
-        ],
-        links="satisfies",
-      )}}
+    {{draw_metamodel(
+      [
+        "stkh_req", "feat_req", "comp_req", "gd_req", "tool_req", "workflow"
+      ],
+      links="satisfies",
+    )}}
 
 
 .. tool_req:: Safety: enforce safe linking
@@ -603,15 +603,15 @@ Mapping
   * Interface (real_arc_int)
   * Interface Operation (real_arc_int_op)
 
-  .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-    .. needuml::
+  .. needuml::
 
-      {{draw_metamodel(
-        [
-          "feat_arc_sta", "feat", "logic_arc_int", "logic_arc_int_op", "comp_arc_sta", "comp", "real_arc_int", "real_arc_int_op",
-        ],
-      )}}
+    {{draw_metamodel(
+      [
+        "feat_arc_sta", "feat", "logic_arc_int", "logic_arc_int_op", "comp_arc_sta", "comp", "real_arc_int", "real_arc_int_op",
+      ],
+    )}}
 
 --------------------------
 Architecture Attributes
@@ -635,22 +635,22 @@ Architecture Attributes
    * Status
    * ID (implicitly enforced by sphinx-needs)
 
-   .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-      .. needuml::
+  .. needuml::
 
-         {{draw_metamodel(
-           [
-             "feat_arc_sta", "feat", "logic_arc_int", "logic_arc_int_op", "comp_arc_sta", "comp", "real_arc_int", "real_arc_int_op",
-           ],
-           attributes=[
-             "fulfils",
-             "safety",
-             "security",
-             "status",
-             "id",
-           ],
-         )}}
+      {{draw_metamodel(
+        [
+          "feat_arc_sta", "feat", "logic_arc_int", "logic_arc_int_op", "comp_arc_sta", "comp", "real_arc_int", "real_arc_int_op",
+        ],
+        attributes=[
+          "fulfils",
+          "safety",
+          "security",
+          "status",
+          "id",
+        ],
+      )}}
 
 
 ------------------------
@@ -686,24 +686,24 @@ Architecture Attributes
      real_arc_int                          comp_req
      ====================================  ==========================================
 
-  .. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
+.. admonition:: How is it currently implemented in the current docs-as-code metamodel.yml?
 
-    .. needuml::
+  .. needuml::
 
-      {{draw_metamodel(
-        [
-          "feat_req",
-          "comp_req",
-          "feat_arc_sta",
-          "feat_arc_dyn",
-          "logic_arc_int"
-          "comp_arc_sta",
-          "comp_arc_dyn",
-          "real_arc_int"
-        ],
-        links=["fulfils"],
-        attributes=False
-      )}}
+    {{draw_metamodel(
+      [
+        "feat_req",
+        "comp_req",
+        "feat_arc_sta",
+        "feat_arc_dyn",
+        "logic_arc_int"
+        "comp_arc_sta",
+        "comp_arc_dyn",
+        "real_arc_int"
+      ],
+      links=["fulfils"],
+      attributes=False
+    )}}
 
 .. tool_req:: Ensure safety architecture elements link a safety requirement
   :id: tool_req__docs_arch_link_safety_to_req
