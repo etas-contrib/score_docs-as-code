@@ -13,7 +13,7 @@
 
 load("@aspect_rules_py//py:defs.bzl", "py_library")
 load("@score_tooling//:defs.bzl", "cli_helper", "copyright_checker")
-load("//:docs.bzl", "docs")
+load("//:docs.bzl", "docs", "sourcelinks_json")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -26,6 +26,23 @@ copyright_checker(
     ],
     config = "@score_tooling//cr_checker/resources:config",
     template = "@score_tooling//cr_checker/resources:templates",
+    visibility = ["//visibility:public"],
+)
+
+sourcelinks_json(
+    name = "sourcelinks_json",
+    srcs = [
+        "//src:all_sources",
+        "//src/extensions/score_draw_uml_funcs:all_sources",
+        "//src/extensions/score_header_service:all_sources",
+        "//src/extensions/score_layout:all_sources",
+        "//src/extensions/score_metamodel:all_sources",
+        "//src/extensions/score_source_code_linker:all_sources",
+        "//src/extensions/score_sphinx_bundle:all_sources",
+        "//src/extensions/score_sync_toml:all_sources",
+        "//src/helper_lib:all_sources",
+        "//src/find_runfiles:all_sources",
+    ],
     visibility = ["//visibility:public"],
 )
 

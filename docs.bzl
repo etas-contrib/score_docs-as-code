@@ -193,3 +193,29 @@ def docs(source_dir = "docs", data = [], deps = []):
         tools = data,
         visibility = ["//visibility:public"],
     )
+
+def sourcelinks_json(name, srcs, visibility = None):
+    """
+    Creates a target that generates a JSON file with source code links.
+
+    See https://eclipse-score.github.io/docs-as-code/main/how-to/source_to_doc_links.html
+
+    Args:
+        name: Name of the target
+        srcs: Source files to scan for traceability tags
+        visibility: Visibility of the target
+    """
+    output_file = name + ".json"
+
+    native.genrule(
+        name = name,
+        srcs = srcs,
+        outs = [output_file],
+        cmd = """
+        $(location //scripts:generate_sourcelinks) \
+            --output $@ \
+            $(SRCS)
+        """,
+        tools = ["//scripts:generate_sourcelinks"],
+        visibility = visibility,
+    )
