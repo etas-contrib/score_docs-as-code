@@ -51,6 +51,7 @@ docs(
         "@score_process//:needs_json",
     ],
     source_dir = "docs",
+    sourcelinks = [":sourcelinks_json"],
 )
 
 cli_helper(

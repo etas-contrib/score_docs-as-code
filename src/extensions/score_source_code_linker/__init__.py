@@ -20,6 +20,7 @@ source code links from a JSON file and add them to the needs.
 # req-Id: tool_req__docs_dd_link_source_code_link
 # This whole directory implements the above mentioned tool requirements
 
+import os
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
@@ -174,6 +175,10 @@ def setup_source_code_linker(app: Sphinx, ws_root: Path):
     scl_cache_json = get_cache_filename(
         app.outdir, "score_source_code_linker_cache.json"
     )
+
+    score_sourcelinks_json = os.environ.get("SCORE_SOURCELINKS")
+    if score_sourcelinks_json:
+        print(f"TODO: Use {score_sourcelinks_json} for source code linker")
 
     if (
         not scl_cache_json.exists()
