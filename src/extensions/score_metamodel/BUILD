@@ -30,7 +30,7 @@ filegroup(
 filegroup(
     name = "tests",
     srcs = glob(
-        ["tests/**/*"],
+        ["tests/*.py"],
     ),
 )
 
@@ -55,13 +55,13 @@ py_library(
 score_py_pytest(
     name = "score_metamodel_tests",
     size = "small",
-    srcs = [":tests"],
+    srcs = glob(["tests/*.py"]),
     # All requirements already in the library so no need to have it double
     data = glob(
         [
             "tests/**/*.rst",
             "tests/**/*.yaml",
-        ],
+        ] + ["tests/rst/conf.py"],
     ),
     deps = [":score_metamodel"],
 )

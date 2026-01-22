@@ -42,15 +42,19 @@ filegroup(
 
 py_library(
     name = "score_source_code_linker",
-    srcs = [":all_sources"],
+    srcs = [":sources"],
     imports = ["."],
     visibility = ["//visibility:public"],
-    deps = ["@score_docs_as_code//src/helper_lib"],
+    deps = ["//src/helper_lib"],
 )
 
 py_library(
     name = "source_code_linker_helpers",
-    srcs = [":all_sources"],
+    srcs = [
+        "needlinks.py",
+        "testlink.py",
+        "xml_parser.py",
+    ],
     imports = ["."],
     visibility = ["//visibility:public"],
 )
@@ -65,10 +69,10 @@ score_py_pytest(
         "-s",
         "-vv",
     ],
-    data = glob(["**/*.json"]),
+    data = glob(["tests/*.json"]),
     imports = ["."],
     deps = [
         ":score_source_code_linker",
-        "@score_docs_as_code//src/extensions/score_metamodel",
+        "//src/extensions/score_metamodel",
     ],
 )
