@@ -18,14 +18,19 @@ load("@score_tooling//:defs.bzl", "score_py_pytest")
 filegroup(
     name = "sources",
     srcs = glob(
-        ["*.py", "*.yaml", "*.json", "checks/*.py"]
+        [
+            "*.py",
+            "*.yaml",
+            "*.json",
+            "checks/*.py",
+        ],
     ),
 )
 
 filegroup(
     name = "tests",
     srcs = glob(
-        ["tests/**/*"]
+        ["tests/**/*"],
     ),
 )
 

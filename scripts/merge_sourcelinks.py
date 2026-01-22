@@ -47,7 +47,7 @@ def main():
     merged = []
     for json_file in args.files:
         if json_file.exists():
-            with open(json_file, "r") as f:
+            with open(json_file) as f:
                 data = json.load(f)
                 if isinstance(data, list):
                     merged.extend(data)

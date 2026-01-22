@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2026 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -17,19 +17,26 @@ load("@score_tooling//:defs.bzl", "score_py_pytest")
 filegroup(
     name = "sources",
     srcs = glob(
-        ["*.py"]
+        ["*.py"],
     ),
 )
+
 filegroup(
     name = "tests",
     srcs = glob(
-        ["tests/*.py", "tests/*.json"]
+        [
+            "tests/*.py",
+            "tests/*.json",
+        ],
     ),
 )
 
 filegroup(
     name = "all_sources",
-    srcs = [":sources", ":tests"],
+    srcs = [
+        ":sources",
+        ":tests",
+    ],
     visibility = ["//visibility:public"],
 )
 

@@ -88,7 +88,7 @@ def docs(source_dir = "docs", data = [], deps = [], sourcelinks = []):
       sourcelinks: Source code links configuration for traceability.
     """
 
-    _merge_sourcelinks(name="merged_sourcelinks", sourcelinks=sourcelinks)
+    _merge_sourcelinks(name = "merged_sourcelinks", sourcelinks = sourcelinks)
 
     call_path = native.package_name()
 

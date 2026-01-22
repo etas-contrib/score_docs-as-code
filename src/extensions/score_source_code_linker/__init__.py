@@ -132,7 +132,9 @@ def build_and_save_combined_file(outdir: Path):
     """
     source_code_links_json = os.environ.get("SCORE_SOURCELINKS")
     if not source_code_links_json:
-        source_code_links_json = get_cache_filename(outdir, "score_source_code_linker_cache.json")
+        source_code_links_json = get_cache_filename(
+            outdir, "score_source_code_linker_cache.json"
+        )
     else:
         source_code_links_json = Path(source_code_links_json)
 
@@ -185,7 +187,6 @@ def setup_source_code_linker(app: Sphinx, ws_root: Path):
     scl_cache_json = get_cache_filename(
         app.outdir, "score_source_code_linker_cache.json"
     )
-
 
     if (
         not scl_cache_json.exists()
