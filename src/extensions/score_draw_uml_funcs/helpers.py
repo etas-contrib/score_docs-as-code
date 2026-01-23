@@ -28,7 +28,7 @@ def gen_format(need: dict[str, str]) -> str:
 
     style = ""
 
-    if "comp_arc_sta" in need["type"] and need["safety"] == "ASIL_B":
+    if "comp" in need["type"] and need["safety"] == "ASIL_B":
         style = "<<asilb>>"
 
     if "real_arc_int" in need["type"]:
@@ -127,7 +127,14 @@ def get_module(component: str, all_needs: dict[str, dict[str, str]]) -> str:
     need = all_needs.get(component, {})
 
     if need:
-        module = need.get("includes_back", "")
+        # includes_back could deliver multiple needs; only return Modules
+        parents = need.get("includes_back", [])
+        module = [pid for pid in parents if all_needs.get(pid, {}).get("type") == "mod"]
+
+        if len(module) > 1:
+            logger.warning(
+                f"{component}: included in multiple modules: {module}. Returning first."
+            )
 
         if module:
             return module[0]

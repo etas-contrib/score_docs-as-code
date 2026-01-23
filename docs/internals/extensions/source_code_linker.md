@@ -64,7 +64,7 @@ These tags are extracted and matched to Sphinx needs via the `source_code_link` 
 
 ### ✅ TestLink: Test Result Integration
 
-TestLink scans test result XMLs from Bazel and converts each test case with metadata into Sphinx external needs, allowing links from tests to requirements.
+TestLink scans test result XMLs from Bazel (bazel-testlogs) or in the folder 'tests-report' and converts each test case with metadata into Sphinx external needs, allowing links from tests to requirements.
 This depends on the `attribute_plugin` in our tooling repository, find it [here](https://github.com/eclipse-score/tooling/tree/main/python_basics/score_pytest)
 #### Test Tagging Options
 
@@ -92,7 +92,7 @@ def test_feature():
 1. **XML Parsing** (`xml_parser.py`)
    - Scans `bazel-testlogs/` for `test.xml` files.
    - Parses test cases and extracts:
-     - Name
+     - Name & Classname
      - File path
      - Line
      - Result (e.g. passed, failed, skipped)
@@ -103,6 +103,8 @@ def test_feature():
    - Test cases with metadata are converted into:
      - `DataFromTestCase` (used for external needs)
      - `DataForTestLink` (used for linking tests to requirements)
+
+> If there is a Classname then it gets combined with the function name for the displayed link as follows: `Classname__Functionname`
 
 2. **Need Linking**
    - Generates external Sphinx needs from `DataFromTestCase`.

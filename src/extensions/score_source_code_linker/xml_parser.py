@@ -104,11 +104,17 @@ def read_test_xml_file(file: Path) -> tuple[list[DataOfTestCase], list[str]]:
     for testsuite in root.findall("testsuite"):
         for testcase in testsuite.findall("testcase"):
             case_properties = {}
-            testname = testcase.get("name")
-            assert testname is not None, (
-                f"Testcase: {testcase} does not have a 'name' attribute. "
-                "This is mandatory. This should not happen, something is wrong."
+            testcasename = testcase.get("name", "")
+            testclassname = testcase.get("classname", "")
+            assert testclassname or testcasename, (
+                f"Testcase: {testcase} does not have a 'name' or 'classname' attribute."
+                "One of which is mandatory. This should not happen, something is wrong."
             )
+            if testclassname:
+                testcn = testclassname.split(".")[-1]
+                testname = "__".join([testcn, testcasename])
+            else:
+                testname = testcasename
             test_file = testcase.get("file")
             line = testcase.get("line")
 
@@ -171,16 +177,28 @@ def find_xml_files(dir: Path) -> list[Path]:
     return xml_paths
 
 
+def find_test_folder(base_path: Path | None = None) -> Path | None:
+    ws_root = base_path if base_path is not None else find_ws_root()
+    assert ws_root is not None
+    if os.path.isdir(ws_root / "tests-report"):
+        return ws_root / "tests-report"
+    if os.path.isdir(ws_root / "bazel-testlogs"):
+        return ws_root / "bazel-testlogs"
+    logger.info("could not find tests-report or bazel-testlogs to parse testcases")
+    return None
+
+
 def run_xml_parser(app: Sphinx, env: BuildEnvironment):
     """
     This is the 'main' function for parsing test.xml's and
     building testcase needs.
     It gets called from the source_code_linker __init__
     """
-    ws_root = find_ws_root()
-    assert ws_root is not None
-    bazel_testlogs = ws_root / "bazel-testlogs"
-    xml_file_paths = find_xml_files(bazel_testlogs)
+    testlogs_dir = find_test_folder()
+    # early return
+    if testlogs_dir is None:
+        return
+    xml_file_paths = find_xml_files(testlogs_dir)
     test_case_needs = build_test_needs_from_files(app, env, xml_file_paths)
     # Saving the test case needs for cache
     store_data_of_test_case_json(
