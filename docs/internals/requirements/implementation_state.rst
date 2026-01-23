@@ -7,7 +7,7 @@ Overview
 --------
 
 .. needpie:: Requirements Status
-   :labels: not implemeted, implemented but not tested, implemented and tested
+   :labels: not implemented, implemented but not tested, implemented and tested
    :colors: red,yellow, green
 
    type == 'tool_req' and implemented == 'NO'
