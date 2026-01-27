@@ -9,7 +9,7 @@ When running ``bazel run :docs``, the documentation build system orchestrates mu
 
 1. Gather inputs (Bazel may do this parallelized):
 
-   * Extract source code links from C++/Rust/Python code via ``sourcelinks_json`` rule.
+   * Extract source code links from files via ``sourcelinks_json`` rule.
 
      * Optionally, merge source links using the ``merge_sourcelinks`` rule.
 
