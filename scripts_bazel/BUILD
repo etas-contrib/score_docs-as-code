@@ -14,6 +14,12 @@
 load("@aspect_rules_py//py:defs.bzl", "py_binary")
 load("@pip_process//:requirements.bzl", "all_requirements")
 
+filegroup(
+    name = "sources",
+    srcs = glob(["**/*.py"]),
+    visibility = ["//visibility:public"],
+)
+
 py_binary(
     name = "generate_sourcelinks",
     srcs = ["generate_sourcelinks_cli.py"],

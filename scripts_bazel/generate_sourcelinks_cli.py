@@ -55,11 +55,11 @@ def main():
     all_need_references = []
     for file_path in args.files:
         abs_file_path = file_path.resolve()
-        if abs_file_path.exists():
-            references = _extract_references_from_file(
-                abs_file_path.parent, Path(abs_file_path.name)
-            )
-            all_need_references.extend(references)
+        assert abs_file_path.exists(), abs_file_path
+        references = _extract_references_from_file(
+            abs_file_path.parent, Path(abs_file_path.name)
+        )
+        all_need_references.extend(references)
 
     store_source_code_links_json(args.output, all_need_references)
     logger.info(

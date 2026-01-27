@@ -31,18 +31,7 @@ copyright_checker(
 
 sourcelinks_json(
     name = "sourcelinks_json",
-    srcs = [
-        "//src:all_sources",
-        "//src/extensions/score_draw_uml_funcs:all_sources",
-        "//src/extensions/score_header_service:all_sources",
-        "//src/extensions/score_layout:all_sources",
-        "//src/extensions/score_metamodel:all_sources",
-        "//src/extensions/score_source_code_linker:all_sources",
-        "//src/extensions/score_sphinx_bundle:all_sources",
-        "//src/extensions/score_sync_toml:all_sources",
-        "//src/find_runfiles:all_sources",
-        "//src/helper_lib:all_sources",
-    ],
+    srcs = ["//src:all_sources", "//scripts_bazel:sources"],
     visibility = ["//visibility:public"],
 )
 

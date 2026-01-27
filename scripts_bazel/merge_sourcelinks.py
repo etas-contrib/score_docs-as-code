@@ -46,13 +46,11 @@ def main():
 
     merged = []
     for json_file in args.files:
-        if json_file.exists():
-            with open(json_file) as f:
-                data = json.load(f)
-                if isinstance(data, list):
-                    merged.extend(data)
+        with open(json_file) as f:
+            data = json.load(f)
+            assert isinstance(data, list), repr(data)
+            merged.extend(data)
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, "w") as f:
         json.dump(merged, f, indent=2, ensure_ascii=False)
 
