@@ -45,7 +45,7 @@ py_library(
     srcs = [":sources"],
     imports = ["."],
     visibility = ["//visibility:public"],
-    deps = ["//src/helper_lib"],
+    deps = ["@score_docs_as_code//src/helper_lib"],
 )
 
 py_library(

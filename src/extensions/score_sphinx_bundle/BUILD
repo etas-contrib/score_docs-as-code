@@ -15,7 +15,7 @@ load("@pip_process//:requirements.bzl", "all_requirements")
 
 filegroup(
     name = "all_sources",
-    srcs = glob(["*.py"]),
+    srcs = ["__init__.py"],
     visibility = ["//visibility:public"],
 )
 

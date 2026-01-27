@@ -132,6 +132,9 @@ def build_and_save_combined_file(outdir: Path):
     """
     source_code_links_json = os.environ.get("SCORE_SOURCELINKS")
     if not source_code_links_json:
+        # Fallback to the obsolete way of doing source code links,
+        # just in case someone is not using the docs(sourcelinks=...) attribute.
+        # TODO: Remove this once backwards compatibility is not needed anymore.
         source_code_links_json = get_cache_filename(
             outdir, "score_source_code_linker_cache.json"
         )

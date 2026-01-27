@@ -61,7 +61,7 @@ score_py_pytest(
         [
             "tests/**/*.rst",
             "tests/**/*.yaml",
-        ] + ["tests/rst/conf.py"],
-    ),
+        ],
+    ) + ["tests/rst/conf.py"],
     deps = [":score_metamodel"],
 )
