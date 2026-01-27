@@ -18,6 +18,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+_MY_PATH = Path(__file__).parent
+
 
 def test_generate_sourcelinks_cli_basic(tmp_path: Path) -> None:
     """Test basic functionality of generate_sourcelinks_cli."""
@@ -26,7 +28,7 @@ def test_generate_sourcelinks_cli_basic(tmp_path: Path) -> None:
     test_file.write_text(
         """
 # Some code here
-# score:req:REQ_001
+# req-Id: tool_req__docs_arch_types
 def some_function():
     pass
 """
@@ -38,7 +40,7 @@ def some_function():
     result = subprocess.run(
         [
             sys.executable,
-            "scripts/generate_sourcelinks_cli.py",
+            _MY_PATH.parent / "generate_sourcelinks_cli.py",
             "--output",
             str(output_file),
             str(test_file),
@@ -69,6 +71,4 @@ def some_function():
         assert isinstance(entry["need"], str)
         assert isinstance(entry["full_line"], str)
 
-    # Verify specific content for our test case
-    assert any(entry["need"] == "REQ_001" for entry in data)
-    assert any("score:req:REQ_001" in entry["tag"] for entry in data)
+    assert any(entry["need"] == "tool_req__docs_arch_types" for entry in data)

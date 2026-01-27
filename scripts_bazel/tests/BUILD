@@ -11,10 +11,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@aspect_rules_py//py:defs.bzl", "py_test")
 load("@pip_process//:requirements.bzl", "all_requirements")
+load("@score_tooling//:defs.bzl", "score_py_pytest")
 
-py_test(
+score_py_pytest(
     name = "generate_sourcelinks_cli_test",
     srcs = ["generate_sourcelinks_cli_test.py"],
     deps = [
@@ -23,7 +23,7 @@ py_test(
     ] + all_requirements,
 )
 
-py_test(
+score_py_pytest(
     name = "merge_sourcelinks_test",
     srcs = ["merge_sourcelinks_test.py"],
     deps = [

@@ -18,6 +18,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+_MY_PATH = Path(__file__).parent
+
 
 def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
     """Test basic merge functionality."""
@@ -29,9 +31,9 @@ def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
                 {
                     "file": "test1.py",
                     "line": 10,
-                    "tag": "# score:req:",
-                    "need": "REQ_001",
-                    "full_line": "# score:req:REQ_001",
+                    "tag": "# req-Id:",
+                    "need": "tool_req__docs_arch_types",
+                    "full_line": "# req-Id: tool_req__docs_arch_types",
                 }
             ]
         )
@@ -44,9 +46,9 @@ def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
                 {
                     "file": "test2.py",
                     "line": 20,
-                    "tag": "# score:req:",
-                    "need": "REQ_002",
-                    "full_line": "# score:req:REQ_002",
+                    "tag": "# req-Id:",
+                    "need": "gd_req__req_validity",
+                    "full_line": "# req-Id: gd_req__req_validity",
                 }
             ]
         )
@@ -57,7 +59,7 @@ def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "scripts/merge_sourcelinks.py",
+            _MY_PATH.parent / "merge_sourcelinks.py",
             "--output",
             str(output_file),
             str(file1),
@@ -89,8 +91,10 @@ def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
 
     # Verify specific entries
     assert any(
-        entry["need"] == "REQ_001" and entry["file"] == "test1.py" for entry in data
+        entry["need"] == "tool_req__docs_arch_types" and entry["file"] == "test1.py"
+        for entry in data
     )
     assert any(
-        entry["need"] == "REQ_002" and entry["file"] == "test2.py" for entry in data
+        entry["need"] == "gd_req__req_validity" and entry["file"] == "test2.py"
+        for entry in data
     )
