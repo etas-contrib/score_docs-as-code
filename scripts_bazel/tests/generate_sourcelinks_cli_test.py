@@ -43,7 +43,6 @@ def some_function():
             str(output_file),
             str(test_file),
         ],
-        cwd="/home/zwa2lr/git/score/docs-as-code",
     )
 
     assert result.returncode == 0
@@ -51,7 +50,7 @@ def some_function():
 
     # Check the output content
     with open(output_file) as f:
-        data = json.load(f)
+        data: list[dict[str, str | int]] = json.load(f)
     assert isinstance(data, list)
     assert len(data) > 0
 

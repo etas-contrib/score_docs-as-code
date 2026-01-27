@@ -63,15 +63,14 @@ def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
             str(file1),
             str(file2),
         ],
-        cwd="/home/zwa2lr/git/score/docs-as-code",
     )
 
     assert result.returncode == 0
     assert output_file.exists()
 
     with open(output_file) as f:
-        data = json.load(f)
-
+        data: list[dict[str, str | int]] = json.load(f)
+    assert isinstance(data, list)
     assert len(data) == 2
 
     # Verify schema of merged entries
