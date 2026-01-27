@@ -69,11 +69,11 @@ def _merge_sourcelinks(name, sourcelinks):
         srcs = sourcelinks,
         outs = [name + ".json"],
         cmd = """
-        $(location @score_docs_as_code//scripts:merge_sourcelinks) \
+        $(location @score_docs_as_code//scripts_bazel:merge_sourcelinks) \
             --output $@ \
             $(SRCS)
         """,
-        tools = ["@score_docs_as_code//scripts:merge_sourcelinks"],
+        tools = ["@score_docs_as_code//scripts_bazel:merge_sourcelinks"],
     )
 
 def docs(source_dir = "docs", data = [], deps = [], sourcelinks = []):
@@ -245,10 +245,10 @@ def sourcelinks_json(name, srcs, visibility = None):
         srcs = srcs,
         outs = [output_file],
         cmd = """
-        $(location @score_docs_as_code//scripts:generate_sourcelinks) \
+        $(location @score_docs_as_code//scripts_bazel:generate_sourcelinks) \
             --output $@ \
             $(SRCS)
         """,
-        tools = ["@score_docs_as_code//scripts:generate_sourcelinks"],
+        tools = ["@score_docs_as_code//scripts_bazel:generate_sourcelinks"],
         visibility = visibility,
     )

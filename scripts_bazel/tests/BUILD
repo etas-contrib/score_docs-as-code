@@ -18,7 +18,7 @@ py_test(
     name = "generate_sourcelinks_cli_test",
     srcs = ["generate_sourcelinks_cli_test.py"],
     deps = [
-        "//scripts:generate_sourcelinks",
+        "//scripts_bazel:generate_sourcelinks",
         "//src/extensions/score_source_code_linker",
     ] + all_requirements,
 )
@@ -27,6 +27,6 @@ py_test(
     name = "merge_sourcelinks_test",
     srcs = ["merge_sourcelinks_test.py"],
     deps = [
-        "//scripts:merge_sourcelinks",
+        "//scripts_bazel:merge_sourcelinks",
     ] + all_requirements,
 )
