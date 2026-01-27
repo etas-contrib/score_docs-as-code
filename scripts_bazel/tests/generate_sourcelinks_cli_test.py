@@ -16,9 +16,10 @@
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 
-def test_generate_sourcelinks_cli_basic(tmp_path):
+def test_generate_sourcelinks_cli_basic(tmp_path: Path) -> None:
     """Test basic functionality of generate_sourcelinks_cli."""
     # Create a test source file with a traceability tag
     test_file = tmp_path / "test_source.py"

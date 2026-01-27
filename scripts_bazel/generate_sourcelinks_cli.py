@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 from src.extensions.score_source_code_linker.generate_source_code_links_json import (
-    _extract_references_from_file,
+    _extract_references_from_file,  # pyright: ignore[reportPrivateUsage] TODO: move it out of the extension and into this script
 )
 from src.extensions.score_source_code_linker.needlinks import (
     store_source_code_links_json,

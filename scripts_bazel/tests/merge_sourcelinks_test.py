@@ -16,9 +16,10 @@
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 
-def test_merge_sourcelinks_basic(tmp_path):
+def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
     """Test basic merge functionality."""
     # Create test JSON files with correct schema
     file1 = tmp_path / "links1.json"
