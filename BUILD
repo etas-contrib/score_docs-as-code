@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@score_tooling//:defs.bzl", "cli_helper", "copyright_checker")
-load("//:docs.bzl", "docs", "sourcelinks_json")
+load("//:docs.bzl", "docs")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -28,21 +28,15 @@ copyright_checker(
     visibility = ["//visibility:public"],
 )
 
-sourcelinks_json(
-    name = "sourcelinks_json",
-    srcs = [
-        "//scripts_bazel:sources",
-        "//src:all_sources",
-    ],
-    visibility = ["//visibility:public"],
-)
-
 docs(
     data = [
         "@score_process//:needs_json",
     ],
+    scan_code = [
+        "//scripts_bazel:sources",
+        "//src:all_sources",
+    ],
     source_dir = "docs",
-    sourcelinks = [":sourcelinks_json"],
 )
 
 cli_helper(

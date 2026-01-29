@@ -27,15 +27,11 @@ Scanning Source Code for Links
 
 In you ``BUILD`` files, you specify which source files to scan
 with ``filegroup`` or ``glob`` or whatever Bazel mechanism you prefer.
-Then, you use the ``sourcelinks_json`` rule to scan those files.
-Finally, pass the scan results to the ``docs`` rule as ``sourcelinks`` attribute.
-
+Finally, pass the scan results to the ``docs`` rule as ``scan_code`` attribute.
 
 .. code-block:: starlark
-   :emphasize-lines: 1, 12, 26
+   :emphasize-lines: 15
    :linenos:
-
-   load("//:docs.bzl", "docs", "sourcelinks_json")
 
    filegroup(
       name = "some_sources",
@@ -46,21 +42,10 @@ Finally, pass the scan results to the ``docs`` rule as ``sourcelinks`` attribute
       ] + glob(["subdir/**/.py"]),
    )
 
-   sourcelinks_json(
-      name = "my_source_links",
-      srcs = [
-         ":some_sources",
-         "//src:all_sources",
-         # whatever
-      ],
-   )
-
    docs(
       data = [
              "@score_process//:needs_json",
          ],
          source_dir = "docs",
-         sourcelinks = [":my_source_links"],
+         scan_code = [":some_sources"],
    )
-
-Since the source links are Bazel targets, you can easily reference other modules as well.

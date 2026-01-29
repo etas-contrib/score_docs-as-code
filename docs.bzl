@@ -11,6 +11,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+"""
+Easy streamlined way for S-CORE docs-as-code.
+"""
+
 # Multiple approaches are available to build the same documentation output:
 #
 # 1. **Esbonio via IDE support (`ide_support` target)**:
@@ -37,12 +41,10 @@
 #
 # For user-facing documentation, refer to `/README.md`.
 
-load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_library")
-load("@pip_process//:requirements.bzl", "all_requirements", "requirement")
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("@pip_process//:requirements.bzl", "all_requirements")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
-load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@score_tooling//:defs.bzl", "score_virtualenv")
 
 def _rewrite_needs_json_to_docs_sources(labels):
@@ -52,6 +54,17 @@ def _rewrite_needs_json_to_docs_sources(labels):
         s = str(x)
         if s.endswith("//:needs_json"):
             out.append(s.replace("//:needs_json", "//:docs_sources"))
+        else:
+            out.append(s)
+    return out
+
+def _rewrite_needs_json_to_sourcelinks(labels):
+    """Replace '@repo//:needs_json' -> '@repo//:sourcelinks_json' for every item."""
+    out = []
+    for x in labels:
+        s = str(x)
+        if s.endswith("//:needs_json"):
+            out.append(s.replace("//:needs_json", "//:sourcelinks_json"))
         else:
             out.append(s)
     return out
@@ -76,7 +89,7 @@ def _merge_sourcelinks(name, sourcelinks):
         tools = ["@score_docs_as_code//scripts_bazel:merge_sourcelinks"],
     )
 
-def docs(source_dir = "docs", data = [], deps = [], sourcelinks = []):
+def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
     """Creates all targets related to documentation.
 
     By using this function, you'll get any and all updates for documentation targets in one place.
@@ -85,10 +98,8 @@ def docs(source_dir = "docs", data = [], deps = [], sourcelinks = []):
       source_dir: The source directory containing documentation files. Defaults to "docs".
       data: Additional data files to include in the documentation build.
       deps: Additional dependencies for the documentation build.
-      sourcelinks: Source code links configuration for traceability.
+      scan_code: List of code targets to scan for source code links.
     """
-
-    _merge_sourcelinks(name = "merged_sourcelinks", sourcelinks = sourcelinks)
 
     call_path = native.package_name()
 
@@ -128,19 +139,23 @@ def docs(source_dir = "docs", data = [], deps = [], sourcelinks = []):
         visibility = ["//visibility:public"],
     )
 
+    _sourcelinks_json(name = "sourcelinks_json", srcs = scan_code)
+
     data_with_docs_sources = _rewrite_needs_json_to_docs_sources(data)
+    additional_combo_sourcelinks = _rewrite_needs_json_to_sourcelinks(data)
+    _merge_sourcelinks(name = "merged_sourcelinks", sourcelinks = [":sourcelinks_json"] + additional_combo_sourcelinks)
 
     py_binary(
         name = "docs",
         tags = ["cli_help=Build documentation:\nbazel run //:docs"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = data + [":merged_sourcelinks"],
+        data = data + [":sourcelinks_json"],
         deps = deps,
         env = {
             "SOURCE_DIRECTORY": source_dir,
             "DATA": str(data),
             "ACTION": "incremental",
-            "SCORE_SOURCELINKS": "$(location :merged_sourcelinks)",
+            "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
         },
     )
 
@@ -162,13 +177,13 @@ def docs(source_dir = "docs", data = [], deps = [], sourcelinks = []):
         name = "docs_check",
         tags = ["cli_help=Verify documentation:\nbazel run //:docs_check"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = data + [":merged_sourcelinks"],
+        data = data + [":sourcelinks_json"],
         deps = deps,
         env = {
             "SOURCE_DIRECTORY": source_dir,
             "DATA": str(data),
             "ACTION": "check",
-            "SCORE_SOURCELINKS": "$(location :merged_sourcelinks)",
+            "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
         },
     )
 
@@ -176,13 +191,13 @@ def docs(source_dir = "docs", data = [], deps = [], sourcelinks = []):
         name = "live_preview",
         tags = ["cli_help=Live preview documentation in the browser:\nbazel run //:live_preview"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = data + [":merged_sourcelinks"],
+        data = data + [":sourcelinks_json"],
         deps = deps,
         env = {
             "SOURCE_DIRECTORY": source_dir,
             "DATA": str(data),
             "ACTION": "live_preview",
-            "SCORE_SOURCELINKS": "$(location :merged_sourcelinks)",
+            "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
         },
     )
 
@@ -227,7 +242,7 @@ def docs(source_dir = "docs", data = [], deps = [], sourcelinks = []):
         visibility = ["//visibility:public"],
     )
 
-def sourcelinks_json(name, srcs, visibility = None):
+def _sourcelinks_json(name, srcs):
     """
     Creates a target that generates a JSON file with source code links.
 
@@ -236,7 +251,6 @@ def sourcelinks_json(name, srcs, visibility = None):
     Args:
         name: Name of the target
         srcs: Source files to scan for traceability tags
-        visibility: Visibility of the target
     """
     output_file = name + ".json"
 
@@ -250,5 +264,5 @@ def sourcelinks_json(name, srcs, visibility = None):
             $(SRCS)
         """,
         tools = ["@score_docs_as_code//scripts_bazel:generate_sourcelinks"],
-        visibility = visibility,
+        visibility = ["//visibility:public"],
     )
