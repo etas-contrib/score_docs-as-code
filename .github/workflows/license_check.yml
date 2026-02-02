@@ -13,7 +13,9 @@
 
 name: License check preparation
 on:
-  pull_request_target:
+  # TEMP: run from PR, instead of from pull_request_target.
+  # No access to secrets this way!
+  pull_request:
     types: [opened, reopened, synchronize]
   merge_group:
     types: [checks_requested]
