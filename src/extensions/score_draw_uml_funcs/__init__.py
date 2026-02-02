@@ -52,7 +52,7 @@ CollectResult = tuple[
     str,  # link_text
     dict[str, str],  # proc_impl_interfaces
     dict[str, list[str]],  # proc_used_interfaces
-    dict[str, str],  # impl_comp
+    dict[str, list[str]],  # impl_comp - Changed to list[str] to support multiple components per interface
     list[str],  # proc_modules
 ]
 
@@ -109,12 +109,17 @@ def _process_interfaces(
             continue
 
         if relation == "implements":
-            proc_impl_dict = cast(dict[str, str], proc_dict)
+            # Changed to support multiple components implementing the same interface
+            proc_impl_dict = cast(dict[str, list[str]], proc_dict)
             if not proc_impl_dict.get(iface, []):
+                proc_impl_dict[iface] = []
+            
+            # Only add linkage if this component hasn't already been processed for this interface
+            if need["id"] not in proc_impl_dict[iface]:
                 linkage_text += (
                     f"{gen_link_text(need, '-u->', all_needs[iface], 'implements')} \n"
                 )
-                proc_impl_dict[iface] = need["id"]
+                proc_impl_dict[iface].append(need["id"])
         else:  # "uses"
             proc_used_dict = cast(dict[str, list[str]], proc_dict)
             if not proc_used_dict.get(iface, []):
@@ -128,10 +133,10 @@ def _process_interfaces(
 def draw_comp_incl_impl_int(
     need: dict[str, str],
     all_needs: dict[str, dict[str, str]],
-    proc_impl_interfaces: dict[str, str],
+    proc_impl_interfaces: dict[str, list[str]],
     proc_used_interfaces: dict[str, list[str]],
     white_box_view: bool = False,
-) -> tuple[str, str, dict[str, str], dict[str, list[str]]]:
+) -> tuple[str, str, dict[str, list[str]], dict[str, list[str]]]:
     """This function draws a component including any interfaces which are implemented
     by the component
 
@@ -148,7 +153,9 @@ def draw_comp_incl_impl_int(
 
     # Draw inner (sub)components recursively if requested
     if white_box_view:
-        for need_inc in need.get("consists_of", []):
+        # Process both includes and consists_of for sub-components
+        sub_components = need.get("includes", []) + need.get("consists_of", [])
+        for need_inc in sub_components:
             curr_need = all_needs.get(need_inc, {})
 
             # check for misspelled include
@@ -156,12 +163,16 @@ def draw_comp_incl_impl_int(
                 logger.info(f"{need}: include {need_inc} could not be found")
                 continue
 
-            if curr_need["type"] != "comp":
+            if curr_need["type"] not in ["comp", "comp_arc_sta"]:
                 continue
 
+            # Check if this sub-component is also a container
+            sub_is_container = bool(curr_need.get("consists_of"))
+            
             sub_structure, sub_linkage, proc_impl_interfaces, proc_used_interfaces = (
                 draw_comp_incl_impl_int(
-                    curr_need, all_needs, proc_impl_interfaces, proc_used_interfaces
+                    curr_need, all_needs, proc_impl_interfaces, proc_used_interfaces,
+                    white_box_view=sub_is_container  # Only enable white-box view if sub-component is also a container
                 )
             )
 
@@ -204,7 +215,9 @@ def draw_impl_interface(
     local_impl_interfaces: set[str],
 ) -> set[str]:
     # At First Logical Implemented Interfaces outside the Module
-    for need_inc in need.get("includes", []):
+    # Process both includes and consists_of to capture nested components
+    sub_components = need.get("includes", []) + need.get("consists_of", [])
+    for need_inc in sub_components:
         curr_need = all_needs.get(need_inc, {})
 
         # check for misspelled include
@@ -225,7 +238,7 @@ def draw_impl_interface(
 def _process_impl_interfaces(
     need: dict[str, str],
     all_needs: dict[str, dict[str, str]],
-    proc_impl_interfaces: dict[str, str],
+    proc_impl_interfaces: dict[str, list[str]],
     structure_text: str,
 ) -> str:
     """Handle implemented interfaces outside the boxes."""
@@ -239,13 +252,15 @@ def _process_impl_interfaces(
             continue
         if not proc_impl_interfaces.get(iface, []):
             structure_text += gen_interface_element(iface, all_needs, True)
+            # Mark interface as processed to avoid duplicate generation
+            proc_impl_interfaces[iface] = [need["id"]]
     return structure_text
 
 
 def _process_used_interfaces(
     need: dict[str, str],
     all_needs: dict[str, dict[str, str]],
-    proc_impl_interfaces: dict[str, str],
+    proc_impl_interfaces: dict[str, list[str]],
     proc_used_interfaces: dict[str, list[str]],
     local_impl_interfaces: list[str],
     structure_text: str,
@@ -253,7 +268,10 @@ def _process_used_interfaces(
 ) -> tuple[str, str]:
     """Handle all interfaces which are used by component."""
     for iface, comps in proc_used_interfaces.items():
-        if iface not in proc_impl_interfaces:
+        # Check if this interface has been processed at all (for structure generation)
+        interface_structure_exists = iface in proc_impl_interfaces and len(proc_impl_interfaces[iface]) > 0
+        
+        if not interface_structure_exists:
             # Add implementing components and modules
             impl_comp_str = get_impl_comp_from_logic_iface(iface, all_needs)
             impl_comp = all_needs.get(impl_comp_str[0], {}) if impl_comp_str else ""
@@ -266,6 +284,8 @@ def _process_used_interfaces(
                 structure_text += retval[3]  # module close
                 if iface not in local_impl_interfaces:
                     structure_text += gen_interface_element(iface, all_needs, True)
+                    # Mark interface as processed to avoid duplicate generation
+                    proc_impl_interfaces[iface] = [impl_comp_str[0]]
                 # Draw connection between implementing components and interface
                 linkage_text += f"{
                     gen_link_text(impl_comp, '-u->', all_needs[iface], 'implements')
@@ -274,6 +294,8 @@ def _process_used_interfaces(
                 # Add only interface if component not defined
                 print(f"{iface}: No implementing component defined")
                 structure_text += gen_interface_element(iface, all_needs, True)
+                # Mark interface as processed to avoid duplicate generation
+                proc_impl_interfaces[iface] = []
 
         # Interface can be used by multiple components
         for comp in comps:
@@ -287,9 +309,9 @@ def _process_used_interfaces(
 def draw_module(
     need: dict[str, str],
     all_needs: dict[str, dict[str, str]],
-    proc_impl_interfaces: dict[str, str],
+    proc_impl_interfaces: dict[str, list[str]],
     proc_used_interfaces: dict[str, list[str]],
-) -> tuple[str, str, dict[str, str], dict[str, list[str]]]:
+) -> tuple[str, str, dict[str, list[str]], dict[str, list[str]]]:
     """
     Drawing and parsing function of a component.
 
@@ -363,9 +385,15 @@ def draw_module(
             continue
         if curr_need["type"] not in ["comp", "mod"]:
             continue
+        
+        # Check if this component is a container (has consists_of)
+        # If so, draw it with white-box view to show nested sub-components
+        is_container = bool(curr_need.get("consists_of"))
+        
         sub_structure, sub_linkage, proc_impl_interfaces, proc_used_interfaces = (
             draw_comp_incl_impl_int(
-                curr_need, all_needs, proc_impl_interfaces, proc_used_interfaces
+                curr_need, all_needs, proc_impl_interfaces, proc_used_interfaces,
+                white_box_view=is_container
             )
         )
         structure_text += sub_structure
@@ -373,6 +401,9 @@ def draw_module(
 
     # close outer component
     structure_text += f"}} /' {need['title']} '/ \n\n"
+
+    # Note: Interface elements are already added in _process_impl_interfaces
+    # No need to add them again here to avoid duplicates
 
     # Add all interfaces which are used by component
     structure_text, linkage_text = _process_used_interfaces(
@@ -400,50 +431,191 @@ class draw_full_feature:
     def __repr__(self):
         return "draw_full_feature" + " in " + scripts_directory_hash()
 
+    def _collect_recursive_components(
+        self,
+        component_id: str,
+        all_needs: dict[str, dict[str, str]],
+        visited_components: set[str],
+    ) -> set[str]:
+        """Recursively collect all components that have relationships with the given component.
+        
+        This includes:
+        - Components that use interfaces implemented by this component
+        - Components that implement interfaces used by this component
+        - All sub-components (via includes/consists_of)
+        """
+        if component_id in visited_components or component_id not in all_needs:
+            return visited_components
+            
+        component = all_needs[component_id]
+        visited_components.add(component_id)
+        
+        # Get all interfaces implemented by this component
+        impl_interfaces = get_interface_from_component(component, "implements", all_needs)
+        
+        # Get all interfaces used by this component
+        used_interfaces = get_interface_from_component(component, "uses", all_needs)
+        
+        # For each implemented interface, find components that use it
+        for iface in impl_interfaces:
+            if iface in all_needs:
+                # Find all components that use this interface
+                for need_id, need in all_needs.items():
+                    if need.get("type") in ["comp", "comp_arc_sta"]:
+                        comp_used_ifaces = get_interface_from_component(need, "uses", all_needs)
+                        if iface in comp_used_ifaces and need_id not in visited_components:
+                            self._collect_recursive_components(need_id, all_needs, visited_components)
+        
+        # For each used interface, find the implementing component
+        for iface in used_interfaces:
+            if iface in all_needs:
+                impl_comps = get_impl_comp_from_logic_iface(iface, all_needs)
+                for impl_comp_id in impl_comps:
+                    if impl_comp_id not in visited_components:
+                        self._collect_recursive_components(impl_comp_id, all_needs, visited_components)
+        
+        # Also include all sub-components
+        for sub_comp_id in component.get("includes", []):
+            if sub_comp_id in all_needs and all_needs[sub_comp_id].get("type") in ["comp", "comp_arc_sta"]:
+                self._collect_recursive_components(sub_comp_id, all_needs, visited_components)
+        
+        for sub_comp_id in component.get("consists_of", []):
+            if sub_comp_id in all_needs and all_needs[sub_comp_id].get("type") in ["comp", "comp_arc_sta"]:
+                self._collect_recursive_components(sub_comp_id, all_needs, visited_components)
+        
+        return visited_components
+
     def _collect_interfaces_and_modules(
         self,
         need: dict[str, str],
         all_needs: dict[str, dict[str, str]],
         interfacelist: list[str],
-        impl_comp: dict[str, str],
+        impl_comp: dict[str, list[str]],
         proc_modules: list[str],
-        proc_impl_interfaces: dict[str, str],
+        proc_impl_interfaces: dict[str, list[str]],
         proc_used_interfaces: dict[str, list[str]],
         structure_text: str,
         link_text: str,
     ) -> CollectResult:
         """Process interfaces and load modules for implementation."""
-        for iface in interfacelist:
+        # Start with ONLY the primary components from the feature's consists_of directive
+        primary_components: set[str] = set(need.get("consists_of", []))
+        
+        # Primary interfaces are from the feature's includes directive
+        primary_interfaces: set[str] = set(interfacelist)
+        
+        # Track all interfaces for the diagram
+        all_related_interfaces: set[str] = set(interfacelist)
+        
+        # Components that directly implement primary interfaces (but aren't primary components)
+        # These should be shown but their chains should NOT be followed
+        # Only include them if they're from the local feature scope (not external baselibs)
+        primary_interface_implementers: set[str] = set()
+        for iface in primary_interfaces:
+            if iface in all_needs:
+                impl_comps = get_impl_comp_from_logic_iface(iface, all_needs)
+                for comp_id in impl_comps:
+                    if comp_id not in primary_components:
+                        # Don't add external baselibs components that happen to implement primary interfaces
+                        is_external_baselib = comp_id.startswith('comp__baselibs_') or comp_id.startswith('comp__os_')
+                        if not is_external_baselib:
+                            primary_interface_implementers.add(comp_id)
+        
+        # Collect interfaces used by ONLY primary components (these are secondary interfaces)
+        # DO NOT collect interfaces used by primary interface implementers
+        secondary_interfaces: set[str] = set()
+        for comp_id in primary_components:
+            if comp_id in all_needs:
+                comp = all_needs[comp_id]
+                used_ifaces = get_interface_from_component(comp, "uses", all_needs)
+                secondary_interfaces.update(used_ifaces)
+                all_related_interfaces.update(used_ifaces)
+        
+        # Now collect secondary components that are connected through secondary interface chains
+        # Start by finding components that implement the secondary interfaces
+        secondary_components: set[str] = set()
+        visited_interfaces: set[str] = set()
+        interfaces_to_process = list(secondary_interfaces)
+        
+        while interfaces_to_process:
+            iface = interfaces_to_process.pop(0)
+            if iface in visited_interfaces or iface not in all_needs:
+                continue
+            visited_interfaces.add(iface)
+            
+            # Find components that implement this secondary interface
+            impl_comps = get_impl_comp_from_logic_iface(iface, all_needs)
+            for comp_id in impl_comps:
+                if comp_id not in primary_components and comp_id in all_needs:
+                    secondary_components.add(comp_id)
+                    # Only follow the chain further if this component is from the logging feature scope
+                    # Stop the chain at external baselibs/framework components
+                    # Check if the component ID suggests it's from an external base library
+                    is_external_baselib = comp_id.startswith('comp__baselibs_') or comp_id.startswith('comp__os_')
+                    
+                    if not is_external_baselib:
+                        # Add interfaces used by this secondary component to continue the chain
+                        comp = all_needs[comp_id]
+                        used_ifaces = get_interface_from_component(comp, "uses", all_needs)
+                        for used_iface in used_ifaces:
+                            if used_iface not in visited_interfaces and used_iface not in primary_interfaces:
+                                interfaces_to_process.append(used_iface)
+                                all_related_interfaces.add(used_iface)
+        
+        # Combine all components to display
+        all_related_components = primary_components | secondary_components | primary_interface_implementers
+        
+        # Collect all modules that contain these components
+        modules_to_draw: set[str] = set()
+        for comp_id in all_related_components:
+            # Skip finding modules for external baselibs components
+            # We'll draw these components individually instead
+            is_external_baselib = comp_id.startswith('comp__baselibs_') or comp_id.startswith('comp__os_')
+            if not is_external_baselib:
+                module = get_module(comp_id, all_needs)
+                if module:
+                    modules_to_draw.add(module)
+        
+        # Collect all components that are included in modules we're about to draw
+        # BUT exclude primary components - those need to be in impl_comp even if in a module
+        components_in_modules_only: set[str] = set()
+        for module in modules_to_draw:
+            if module in all_needs:
+                module_includes = all_needs[module].get("includes", [])
+                for comp_id in module_includes:
+                    # Only add to exclusion list if NOT a primary component
+                    if comp_id not in primary_components:
+                        components_in_modules_only.add(comp_id)
+        
+        # Draw all collected modules
+        for module in modules_to_draw:
+            if module not in proc_modules:
+                tmp, link_text, proc_impl_interfaces, proc_used_interfaces = (
+                    draw_module(
+                        all_needs[module],
+                        all_needs,
+                        proc_impl_interfaces,
+                        proc_used_interfaces,
+                    )
+                )
+                structure_text += tmp
+                proc_modules.append(module)
+        
+        # Update impl_comp mapping for all related interfaces
+        # Exclude ONLY non-primary components that were drawn as part of a module
+        for iface in all_related_interfaces:
             if all_needs.get(iface):
-                if iface:
-                    comps = get_impl_comp_from_logic_iface(iface, all_needs)
-                    if comps:
-                        impl_comp[iface] = comps[0]
-
-                if imcomp := impl_comp.get(iface):
-                    module = get_module(imcomp, all_needs)
-                    # FIXME: sometimes module is empty, then the following code fails
-                    if not module:
-                        logger.info(
-                            f"FIXME: {need['id']}: "
-                            f"Module for interface {iface} -> {imcomp} is empty."
-                        )
-                        continue
-
-                    if module not in proc_modules:
-                        tmp, link_text, proc_impl_interfaces, proc_used_interfaces = (
-                            draw_module(
-                                all_needs[module],
-                                all_needs,
-                                proc_impl_interfaces,
-                                proc_used_interfaces,
-                            )
-                        )
-                        structure_text += tmp
-                        proc_modules.append(module)
+                comps = get_impl_comp_from_logic_iface(iface, all_needs)
+                if comps:
+                    # Filter to include: components in our set AND not in modules-only exclusion list
+                    filtered_comps = [c for c in comps 
+                                     if c in all_related_components 
+                                     and c not in components_in_modules_only]
+                    if filtered_comps:
+                        impl_comp[iface] = filtered_comps
             else:
                 logger.info(f"{need}: Interface {iface} could not be found")
-                continue
+                
         return (
             structure_text,
             link_text,
@@ -457,34 +629,36 @@ class draw_full_feature:
         self,
         need: dict[str, str],
         all_needs: dict[str, dict[str, str]],
-        interfacelist: list[str],
-        impl_comp: dict[str, str],
+        original_feature_interfaces: list[str],
+        all_interfaces: list[str],
+        impl_comp: dict[str, list[str]],
         link_text: str,
     ) -> str:
         """Add actor-interface and interface-component relations."""
-        for iface in interfacelist:
-            if imcomp := impl_comp.get(iface):
-                # Add relation between Actor and Interfaces
-                link_text += f"{
-                    gen_link_text(
-                        {'id': 'Feature_User'}, '-d->', all_needs[iface], 'use'
-                    )
-                } \n"
-
-                # Add relation between interface and component
-                if imcomp := impl_comp.get(iface):
+        # Draw links for all interfaces (including secondary ones)
+        for iface in all_interfaces:
+            if impl_comps := impl_comp.get(iface):
+                # Add relation between Actor and ONLY original Feature Interfaces
+                if iface in original_feature_interfaces:
                     link_text += f"{
                         gen_link_text(
-                            all_needs[imcomp],
-                            '-u->',
-                            all_needs[iface],
-                            'implements',
+                            {'id': 'Feature_User'}, '-d->', all_needs[iface], 'use'
                         )
                     } \n"
-                else:
-                    logger.info(
-                        f"Interface {iface} is not implemented by any component"
-                    )
+
+                # Add relation between interface and ALL implementing components
+                for imcomp in impl_comps:
+                    if imcomp in all_needs:
+                        link_text += f"{
+                            gen_link_text(
+                                all_needs[imcomp],
+                                '-u->',
+                                all_needs[iface],
+                                'implements',
+                            )
+                        } \n"
+                    else:
+                        logger.info(f"Component {imcomp} not found in all_needs")
             else:
                 logger.info(f"{need}: Interface {iface} could not be found")
                 continue
@@ -494,9 +668,9 @@ class draw_full_feature:
         self, need: dict[str, str], all_needs: dict[str, dict[str, str]]
     ) -> str:
         interfacelist: list[str] = []
-        impl_comp: dict[str, str] = dict()
+        impl_comp: dict[str, list[str]] = dict()
         # Store all Elements which have already been processed
-        proc_impl_interfaces: dict[str, str] = dict()
+        proc_impl_interfaces: dict[str, list[str]] = dict()
         proc_used_interfaces: dict[str, list[str]] = dict()
         proc_modules: list[str] = list()
 
@@ -540,8 +714,10 @@ class draw_full_feature:
         # structure_text += f"}} /' {need['title']}  '/ \n\n"
 
         # Build all links between actor, interfaces, and components
+        # Use all interfaces from impl_comp (which includes all related interfaces)
+        all_interfaces = list(impl_comp.keys())
         link_text = self._build_links(
-            need, all_needs, interfacelist, impl_comp, link_text
+            need, all_needs, interfacelist, all_interfaces, impl_comp, link_text
         )
 
         # Remove duplicate links
@@ -558,7 +734,7 @@ class draw_full_module:
         self, need: dict[str, str], all_needs: dict[str, dict[str, str]]
     ) -> str:
         # Store all Elements which have already been processed
-        proc_impl_interfaces: dict[str, str] = dict()
+        proc_impl_interfaces: dict[str, list[str]] = dict()
         proc_used_interfaces: dict[str, list[str]] = dict()
         structure_text, linkage_text, proc_impl_interfaces, proc_used_interfaces = (
             draw_module(need, all_needs, proc_impl_interfaces, proc_used_interfaces)

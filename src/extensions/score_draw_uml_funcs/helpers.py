@@ -138,6 +138,15 @@ def get_module(component: str, all_needs: dict[str, dict[str, str]]) -> str:
 
         if module:
             return module[0]
+        
+        # If not found in includes_back, check consists_of_back
+        # This handles cases like comp__file_recorder which is part of comp__recorders
+        # via consists_of, and comp__recorders is in mod__logging
+        consists_parents = need.get("consists_of_back", [])
+        for parent in consists_parents:
+            parent_module = get_module(parent, all_needs)
+            if parent_module:
+                return parent_module
     else:
         logger.warning(f"{component}: not defined, misspelled?")
 

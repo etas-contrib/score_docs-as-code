@@ -18,8 +18,7 @@ from pathlib import Path
 
 from sphinx.application import Sphinx
 from sphinx_needs import logging
-from sphinx_needs.data import NeedsView, SphinxNeedsData
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.data import NeedsInfoType, NeedsView, SphinxNeedsData
 
 from src.extensions.score_metamodel.external_needs import connect_external_needs
 from src.extensions.score_metamodel.log import CheckLogger
@@ -40,7 +39,7 @@ from src.extensions.score_metamodel.yaml_parser import (
 
 logger = logging.get_logger(__name__)
 
-local_check_function = Callable[[Sphinx, NeedItem, CheckLogger], None]
+local_check_function = Callable[[Sphinx, NeedsInfoType, CheckLogger], None]
 graph_check_function = Callable[[Sphinx, NeedsView, CheckLogger], None]
 
 local_checks: list[local_check_function] = []
@@ -171,7 +170,7 @@ def _remove_prefix(word: str, prefixes: list[str]) -> str:
     return word
 
 
-def _get_need_type_for_need(app: Sphinx, need: NeedItem) -> ScoreNeedType:
+def _get_need_type_for_need(app: Sphinx, need: NeedsInfoType) -> ScoreNeedType:
     for nt in app.config.needs_types:
         if nt["directive"] == need["type"]:
             return nt

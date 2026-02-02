@@ -16,5 +16,7 @@ project_url = "https://eclipse-score.github.io/docs-as-code/"
 version = "0.1"
 
 extensions = [
+    # TODO remove plantuml here once docs-as-code is updated to sphinx-needs 6
+    "sphinxcontrib.plantuml",
     "score_sphinx_bundle",
 ]

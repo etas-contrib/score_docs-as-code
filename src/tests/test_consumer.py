@@ -12,7 +12,6 @@
 # *******************************************************************************
 import os
 import re
-import shutil
 import subprocess
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -131,17 +130,6 @@ def sphinx_base_dir(tmp_path_factory: TempPathFactory, pytestconfig: Config) -> 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     print(f"[green]Using persistent cache directory: {CACHE_DIR}[/green]")
     return CACHE_DIR
-
-
-def cleanup():
-    """
-    Cleanup before tests are run
-    """
-    for p in Path(".").glob("*/ubproject.toml"):
-        p.unlink()
-    shutil.rmtree("_build", ignore_errors=True)
-    cmd = "bazel clean --async"
-    subprocess.run(cmd.split(), text=True)
 
 
 def get_current_git_commit(curr_path: Path):
@@ -461,8 +449,6 @@ def run_cmd(
 ) -> tuple[list[Result], bool]:
     verbosity: int = pytestconfig.get_verbosity()
 
-    cleanup()
-
     if verbosity >= 3:
         # Level 3 (-vvv): Stream output in real-time
         BR = stream_subprocess_output(cmd, repo_name)
@@ -598,7 +584,6 @@ def prepare_repo_overrides(
 # Updated version of your test loop
 def test_and_clone_repos_updated(sphinx_base_dir: Path, pytestconfig: Config):
     # Get command line options from pytest config
-
     repo_tests: str | None = cast(str | None, pytestconfig.getoption("--repo"))
     disable_cache: bool = bool(pytestconfig.getoption("--disable-cache"))
 
@@ -669,7 +654,7 @@ def test_and_clone_repos_updated(sphinx_base_dir: Path, pytestconfig: Config):
 
     # Printing a 'overview' table as a result
     print_result_table(results)
-    if not overall_success:
-        pytest.fail(
-            reason="Consumer Tests failed, see table for which commands specifically. "
-        )
+    assert overall_success, (
+        "Consumer Tests failed, see table for which commands specifically. "
+        "Enable verbosity for warning/error printouts"
+    )

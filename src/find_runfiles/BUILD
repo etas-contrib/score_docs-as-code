@@ -14,15 +14,9 @@ load("@aspect_rules_py//py:defs.bzl", "py_library")
 load("@pip_process//:requirements.bzl", "all_requirements")
 load("@score_tooling//:defs.bzl", "score_py_pytest")
 
-filegroup(
-    name = "all_sources",
-    srcs = glob(["*.py"]),
-    visibility = ["//visibility:public"],
-)
-
 py_library(
     name = "find_runfiles",
-    srcs = [":all_sources"],
+    srcs = ["__init__.py"],
     imports = ["."],
     visibility = ["//visibility:public"],
 )
