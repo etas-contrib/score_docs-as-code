@@ -135,8 +135,7 @@ def draw_comp_incl_impl_int(
     all_needs: dict[str, dict[str, str]],
     proc_impl_interfaces: dict[str, list[str]],
     proc_used_interfaces: dict[str, list[str]],
-    white_box_view: bool = False,
-) -> tuple[str, str, dict[str, list[str]], dict[str, list[str]]]:
+    white_box_view: bool = False,    components_in_modules_only: set[str] = None,) -> tuple[str, str, dict[str, list[str]], dict[str, list[str]]]:
     """This function draws a component including any interfaces which are implemented
     by the component
 
@@ -172,7 +171,8 @@ def draw_comp_incl_impl_int(
             sub_structure, sub_linkage, proc_impl_interfaces, proc_used_interfaces = (
                 draw_comp_incl_impl_int(
                     curr_need, all_needs, proc_impl_interfaces, proc_used_interfaces,
-                    white_box_view=sub_is_container  # Only enable white-box view if sub-component is also a container
+                    white_box_view=sub_is_container,  # Only enable white-box view if sub-component is also a container
+                    components_in_modules_only=components_in_modules_only
                 )
             )
 
@@ -265,8 +265,12 @@ def _process_used_interfaces(
     local_impl_interfaces: list[str],
     structure_text: str,
     linkage_text: str,
+    components_in_modules_only: set[str] = None,
 ) -> tuple[str, str]:
     """Handle all interfaces which are used by component."""
+    if components_in_modules_only is None:
+        components_in_modules_only = set()
+    
     for iface, comps in proc_used_interfaces.items():
         # Check if this interface has been processed at all (for structure generation)
         interface_structure_exists = iface in proc_impl_interfaces and len(proc_impl_interfaces[iface]) > 0
@@ -276,7 +280,13 @@ def _process_used_interfaces(
             impl_comp_str = get_impl_comp_from_logic_iface(iface, all_needs)
             impl_comp = all_needs.get(impl_comp_str[0], {}) if impl_comp_str else ""
 
-            if impl_comp:
+            # Skip drawing component if it should only appear inside a module
+            if impl_comp and impl_comp_str[0] in components_in_modules_only:
+                # Still add the interface, but don't draw the component structure
+                if iface not in local_impl_interfaces:
+                    structure_text += gen_interface_element(iface, all_needs, True)
+                    proc_impl_interfaces[iface] = [impl_comp_str[0]]
+            elif impl_comp:
                 retval = get_hierarchy_text(impl_comp_str[0], all_needs)
                 structure_text += retval[2]  # module open
                 structure_text += retval[0]  # rest open
@@ -311,6 +321,7 @@ def draw_module(
     all_needs: dict[str, dict[str, str]],
     proc_impl_interfaces: dict[str, list[str]],
     proc_used_interfaces: dict[str, list[str]],
+    components_in_modules_only: set[str] = None,
 ) -> tuple[str, str, dict[str, list[str]], dict[str, list[str]]]:
     """
     Drawing and parsing function of a component.
@@ -364,6 +375,9 @@ def draw_module(
         (Structure Text, Linkage Text, Processed (Real Interfaces),
         Processed Logical Interfaces)
     """
+    if components_in_modules_only is None:
+        components_in_modules_only = set()
+    
     linkage_text = ""
     structure_text = ""
 
@@ -393,7 +407,8 @@ def draw_module(
         sub_structure, sub_linkage, proc_impl_interfaces, proc_used_interfaces = (
             draw_comp_incl_impl_int(
                 curr_need, all_needs, proc_impl_interfaces, proc_used_interfaces,
-                white_box_view=is_container
+                white_box_view=is_container,
+                components_in_modules_only=components_in_modules_only
             )
         )
         structure_text += sub_structure
@@ -406,6 +421,9 @@ def draw_module(
     # No need to add them again here to avoid duplicates
 
     # Add all interfaces which are used by component
+    if components_in_modules_only is None:
+        components_in_modules_only = set()
+    
     structure_text, linkage_text = _process_used_interfaces(
         need,
         all_needs,
@@ -414,6 +432,7 @@ def draw_module(
         list(local_impl_interfaces),
         structure_text,
         linkage_text,
+        components_in_modules_only,
     )
 
     # Remove duplicate links
@@ -576,16 +595,64 @@ class draw_full_feature:
                 if module:
                     modules_to_draw.add(module)
         
-        # Collect all components that are included in modules we're about to draw
-        # BUT exclude primary components - those need to be in impl_comp even if in a module
-        components_in_modules_only: set[str] = set()
+        # Add interfaces implemented by components in modules to all_related_interfaces
+        # This ensures interfaces implemented by module components are drawn
         for module in modules_to_draw:
             if module in all_needs:
                 module_includes = all_needs[module].get("includes", [])
                 for comp_id in module_includes:
-                    # Only add to exclusion list if NOT a primary component
-                    if comp_id not in primary_components:
+                    if comp_id in all_needs:
+                        comp = all_needs[comp_id]
+                        # Add interfaces from implements
+                        for iface in comp.get("implements", []):
+                            all_related_interfaces.add(iface)
+                        # Recursively check sub-components
+                        for sub_comp_id in comp.get("consists_of", []):
+                            if sub_comp_id in all_needs:
+                                sub_comp = all_needs[sub_comp_id]
+                                for iface in sub_comp.get("implements", []):
+                                    all_related_interfaces.add(iface)
+        
+        # Collect all components that are included in modules we're about to draw
+        # Sub-components should ONLY appear inside their parent, even if they are primary components
+        components_in_modules_only: set[str] = set()
+        visited_for_recursion: set[str] = set()
+        
+        def add_sub_components_recursively(comp_id: str) -> None:
+            """Recursively add all sub-components to components_in_modules_only."""
+            if comp_id in visited_for_recursion or comp_id not in all_needs:
+                return
+            visited_for_recursion.add(comp_id)
+            
+            comp = all_needs[comp_id]
+            # Add ALL sub-components to exclusion list, including primary components
+            # Sub-components should only be drawn inside their parent, not separately
+            for sub_comp_id in comp.get("consists_of", []):
+                components_in_modules_only.add(sub_comp_id)
+                add_sub_components_recursively(sub_comp_id)
+            
+            for sub_comp_id in comp.get("includes", []):
+                components_in_modules_only.add(sub_comp_id)
+                add_sub_components_recursively(sub_comp_id)
+        
+        for module in modules_to_draw:
+            if module in all_needs:
+                module_includes = all_needs[module].get("includes", [])
+                for comp_id in module_includes:
+                    # FIRST: Recursively add ALL sub-components to exclusion list
+                    # This marks any components that are sub-components, even if they are primary
+                    add_sub_components_recursively(comp_id)
+                    
+                    # SECOND: Add the component itself to exclusion list
+                    # Exception: Skip primary components that are NOT already marked as sub-components
+                    # This allows primary top-level module components to be drawn separately if needed
+                    # BUT sub-components (even if primary) stay excluded
+                    if comp_id not in primary_components or comp_id in components_in_modules_only:
                         components_in_modules_only.add(comp_id)
+        
+        # Debug logging
+        if components_in_modules_only:
+            logger.info(f"Components excluded from separate drawing (in modules): {components_in_modules_only}")
         
         # Draw all collected modules
         for module in modules_to_draw:
@@ -596,21 +663,23 @@ class draw_full_feature:
                         all_needs,
                         proc_impl_interfaces,
                         proc_used_interfaces,
+                        components_in_modules_only,
                     )
                 )
                 structure_text += tmp
                 proc_modules.append(module)
         
         # Update impl_comp mapping for all related interfaces
-        # Exclude ONLY non-primary components that were drawn as part of a module
+        # Include ALL components, even those in modules
+        # The components won't be drawn separately, but the interfaces and links will be drawn
         for iface in all_related_interfaces:
             if all_needs.get(iface):
                 comps = get_impl_comp_from_logic_iface(iface, all_needs)
                 if comps:
-                    # Filter to include: components in our set AND not in modules-only exclusion list
+                    # Include all components in our related set
+                    # Components in modules will have already been drawn as part of the module
                     filtered_comps = [c for c in comps 
-                                     if c in all_related_components 
-                                     and c not in components_in_modules_only]
+                                     if c in all_related_components]
                     if filtered_comps:
                         impl_comp[iface] = filtered_comps
             else:
