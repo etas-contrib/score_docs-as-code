@@ -105,7 +105,7 @@ bazel_dep(name = "score_process", version = "1.4.2")
 git_override(
     module_name = "score_process",
     remote = "https://github.com/eclipse-score/process_description.git",
-    commit = "4d02d1715c1fd5fef07a10e1b0bf25a0961e950d",
+    commit = "43b3a13eae17f2e539fb8cca2beedb69717b2e12",
 )
 
 # Add Linter

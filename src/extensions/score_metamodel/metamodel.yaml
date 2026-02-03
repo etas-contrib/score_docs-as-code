@@ -581,9 +581,9 @@ needs_types:
       status: ^(valid|invalid)$
     mandatory_links:
       belongs_to: comp
+      fulfils: comp_req
     optional_links:
       uses: logic_arc_int, real_arc_int_op
-      fulfils: comp_req # TODO: make it mandatory
     tags:
       - architecture_view
     parts: 3
@@ -603,8 +603,7 @@ needs_types:
       status: ^(valid|invalid)$
     mandatory_links:
       belongs_to: comp
-    optional_links:
-      fulfils: comp_req # TODO: make it mandatory
+      fulfils: comp_req
     tags:
       - architecture_view
     parts: 3
