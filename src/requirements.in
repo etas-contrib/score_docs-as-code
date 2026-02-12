@@ -12,6 +12,7 @@ sphinxcontrib-plantuml
 pydata-sphinx-theme
 sphinx-design
 sphinx-autobuild
+sphinx-test-reports
 ruamel.yaml
 myst-parser
 PyGithub
