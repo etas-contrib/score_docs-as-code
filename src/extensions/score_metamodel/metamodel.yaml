@@ -413,6 +413,8 @@ needs_types:
       status: ^(valid|invalid)$
     mandatory_links:
       includes: ^logic_arc_int(_op)*__.+$
+    optional_links:
+      consists_of: comp
     tags:
       - architecture_element
     parts: 2
