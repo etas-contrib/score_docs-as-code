@@ -416,6 +416,8 @@ needs_types:
       includes: ^logic_arc_int(_op)*__.+$
     optional_links:
       consists_of: comp
+      provides: ^logic_arc_int(_op)*__.+$
+      uses: ^logic_arc_int(_op)*__.+$
     tags:
       - architecture_element
     parts: 2
@@ -953,6 +955,10 @@ needs_extra_links:
   uses:
     incoming: used by
     outgoing: uses
+
+  provides:
+    incoming: provided by
+    outgoing: provides  
 
   includes:
     incoming: included by
