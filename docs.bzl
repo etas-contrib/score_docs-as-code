@@ -137,6 +137,20 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
     if call_path != "":
         fail("docs() must be called from the root package. Current package: " + call_path)
 
+    # Strip trailing slashes from source_dir (e.g. "docs/" -> "docs")
+    for _ in range(len(source_dir)):
+        if source_dir.endswith("/"):
+            source_dir = source_dir[:-1]
+        else:
+            break
+
+    # Normalize "." and "" to "" (workspace root)
+    if source_dir == "." or source_dir == "":
+        source_dir = ""
+
+    # Prefix for glob patterns and label paths: "dir/" or "" at workspace root.
+    source_dir_prefix = (source_dir + "/") if source_dir else ""
+
     module_deps = deps
     deps = deps + _missing_requirements(deps)
     deps = deps + [
@@ -154,18 +168,18 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
     native.filegroup(
         name = "docs_sources",
         srcs = native.glob([
-            source_dir + "/**/*.png",
-            source_dir + "/**/*.svg",
-            source_dir + "/**/*.md",
-            source_dir + "/**/*.rst",
-            source_dir + "/**/*.html",
-            source_dir + "/**/*.css",
-            source_dir + "/**/*.puml",
-            source_dir + "/**/*.need",
-            source_dir + "/**/*.yaml",
-            source_dir + "/**/*.json",
-            source_dir + "/**/*.csv",
-            source_dir + "/**/*.inc",
+            source_dir_prefix + "**/*.png",
+            source_dir_prefix + "**/*.svg",
+            source_dir_prefix + "**/*.md",
+            source_dir_prefix + "**/*.rst",
+            source_dir_prefix + "**/*.html",
+            source_dir_prefix + "**/*.css",
+            source_dir_prefix + "**/*.puml",
+            source_dir_prefix + "**/*.need",
+            source_dir_prefix + "**/*.yaml",
+            source_dir_prefix + "**/*.json",
+            source_dir_prefix + "**/*.csv",
+            source_dir_prefix + "**/*.inc",
             "more_docs/**/*.rst",
         ], allow_empty = True),
         visibility = ["//visibility:public"],
@@ -184,7 +198,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         data = data + [":sourcelinks_json"],
         deps = deps,
         env = {
-            "SOURCE_DIRECTORY": source_dir,
+            "SOURCE_DIRECTORY": source_dir or ".",
             "DATA": str(data),
             "ACTION": "incremental",
             "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
@@ -198,7 +212,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         data = data_with_docs_sources + [":merged_sourcelinks"],
         deps = deps,
         env = {
-            "SOURCE_DIRECTORY": source_dir,
+            "SOURCE_DIRECTORY": source_dir or ".",
             "DATA": str(data_with_docs_sources),
             "ACTION": "incremental",
             "SCORE_SOURCELINKS": "$(location :merged_sourcelinks)",
@@ -212,7 +226,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         data = data,
         deps = deps,
         env = {
-            "SOURCE_DIRECTORY": source_dir,
+            "SOURCE_DIRECTORY": source_dir or ".",
             "DATA": str(data),
             "ACTION": "linkcheck",
         },
@@ -225,7 +239,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         data = data + [":sourcelinks_json"],
         deps = deps,
         env = {
-            "SOURCE_DIRECTORY": source_dir,
+            "SOURCE_DIRECTORY": source_dir or ".",
             "DATA": str(data),
             "ACTION": "check",
             "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
@@ -239,7 +253,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         data = data + [":sourcelinks_json"],
         deps = deps,
         env = {
-            "SOURCE_DIRECTORY": source_dir,
+            "SOURCE_DIRECTORY": source_dir or ".",
             "DATA": str(data),
             "ACTION": "live_preview",
             "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
@@ -253,7 +267,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         data = data_with_docs_sources + [":merged_sourcelinks"],
         deps = deps,
         env = {
-            "SOURCE_DIRECTORY": source_dir,
+            "SOURCE_DIRECTORY": source_dir or ".",
             "DATA": str(data_with_docs_sources),
             "ACTION": "live_preview",
             "SCORE_SOURCELINKS": "$(location :merged_sourcelinks)",
@@ -272,7 +286,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
     sphinx_docs(
         name = "needs_json",
         srcs = [":docs_sources"],
-        config = ":" + source_dir + "/conf.py",
+        config = ":" + source_dir_prefix + "conf.py",
         extra_opts = [
             "-W",
             "--keep-going",
@@ -291,7 +305,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         name = native.module_name() + "_module",
         srcs = [":docs_sources"],
         # config = ":" + source_dir + "/conf.py",
-        index = source_dir + "/index.rst",
+        index = source_dir_prefix + "index.rst",
         sphinx = "@score_tooling//bazel/rules/rules_score:score_build",
         deps = module_deps,
         visibility = ["//visibility:public"],
