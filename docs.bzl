@@ -137,15 +137,9 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
     if call_path != "":
         fail("docs() must be called from the root package. Current package: " + call_path)
 
-    # Strip trailing slashes from source_dir (e.g. "docs/" -> "docs")
-    for _ in range(len(source_dir)):
-        if source_dir.endswith("/"):
-            source_dir = source_dir[:-1]
-        else:
-            break
 
-    # Normalize "." and "" to "" (workspace root)
-    if source_dir == "." or source_dir == "":
+    # Normalize "." and "./" to "" (workspace root)
+    if source_dir == "." or source_dir == "./":
         source_dir = ""
 
     # Prefix for glob patterns and label paths: "dir/" or "" at workspace root.
