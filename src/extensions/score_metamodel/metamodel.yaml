@@ -411,10 +411,9 @@ needs_types:
       safety: ^(QM|ASIL_B)$
       # req-Id: tool_req__docs_common_attr_status
       status: ^(valid|invalid)$
-    mandatory_links:
-      includes: ^logic_arc_int(_op)*__.+$
     optional_links:
       consists_of: comp # preparation for linking change according to DR-005
+      includes: ^logic_arc_int(_op)*__.+$
       uses: ^logic_arc_int(_op)*__.+$
       provides: ^logic_arc_int(_op)*__.+$ # preparation for linking change according to DR-005
     tags:
