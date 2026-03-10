@@ -10,15 +10,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
-project = "Score Docs-as-Code"
-project_url = "https://eclipse-score.github.io/docs-as-code/"
-version = "0.1"
-
-extensions = [
-    "score_sphinx_bundle",
-]
-
-score_any_folder_mapping = {
-    "../src/extensions/docs": "internals/extensions",
-}
+name: Bzlmod Lockfile Check
+permissions:
+  contents: read
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches:
+      - main
+jobs:
+  bzlmod-lock:
+    uses: eclipse-score/cicd-workflows/.github/workflows/bzlmod-lock-check.yml@main
+    with:
+      working-directory: .
