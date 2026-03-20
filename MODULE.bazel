@@ -95,7 +95,7 @@ http_file(
 bazel_dep(name = "score_process", version = "1.4.3")
 git_override(
     module_name = "score_process",
-    commit = "ea3c34acb93e6396843c06a265c7f47d4bb39f0b",
+    commit = "5205f7bf4a8919a2280989ef5d12e826065e55cd",
     remote = "https://github.com/etas-contrib/score_process_description.git",
 )
 
