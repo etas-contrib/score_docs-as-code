@@ -96,7 +96,7 @@ bazel_dep(name = "score_process")
 git_override(
     module_name = "score_process",
     commit = "5205f7bf4a8919a2280989ef5d12e826065e55cd",
-    remote = "https://github.com/etas-contrib/score_process_description.git",
+    remote = "https://github.com/eclipse-score/process_description.git",
 )
 
 # Add Linter
