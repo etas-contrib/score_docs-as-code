@@ -38,6 +38,9 @@ docs(
         "//src:all_sources",
     ],
     source_dir = "docs",
+    source_dir_extras = [
+        "//src/extensions/docs:doc_sources_extra",
+    ],
 )
 
 cli_helper(
