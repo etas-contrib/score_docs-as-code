@@ -10,6 +10,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+import sys
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pytest
 from attribute_plugin import add_test_properties  # type: ignore[import-untyped]
 from sphinx.application import Sphinx
@@ -21,8 +25,14 @@ from src.extensions.score_metamodel.__init__ import (
     graph_checks,
     local_checks,
     parse_checks_filter,
+    setup,
 )
 from src.extensions.score_metamodel.tests import need
+
+# The module where setup() looks up load_metamodel_data at runtime.
+# Using __globals__ avoids breakage when the same file is imported under
+# two different names (e.g. "score_metamodel" and "src.extensions.score_metamodel").
+_setup_module = sys.modules[setup.__module__]
 
 
 def dummy_local_check(app: Sphinx, need: NeedItem, log: CheckLogger) -> None:
@@ -176,3 +186,58 @@ class TestNeedHelper:
         assert n.get("output", []) == ["output_wp"]
         # Extra fields
         assert n.get("custom_attr") == "custom_value"
+
+
+# =============================================================================
+# Tests for setup() — score_metamodel_yaml config value wiring
+# =============================================================================
+
+
+def _make_mock_app(metamodel_yaml_value: str = "") -> MagicMock:
+    """Return a minimal mock Sphinx app suitable for calling setup()."""
+    app = MagicMock()
+    app.config.score_metamodel_yaml = metamodel_yaml_value
+    app.config.needs_types = []
+    app.config.needs_extra_links = []
+    app.config.needs_extra_options = []
+    return app
+
+
+def _mock_metamodel_return():
+    return MagicMock(
+        needs_types=[],
+        needs_extra_links=[],
+        needs_extra_options=[],
+        needs_graph_check={},
+        prohibited_words_checks=[],
+    )
+
+
+def test_setup_uses_default_path_when_config_empty():
+    """setup() calls load_metamodel_data(None) when score_metamodel_yaml is empty."""
+    app = _make_mock_app(metamodel_yaml_value="")
+
+    with patch.object(
+        _setup_module,
+        "load_metamodel_data",
+        return_value=_mock_metamodel_return(),
+    ) as mock_load:
+        setup(app)
+
+    mock_load.assert_called_once_with(None)
+
+
+def test_setup_passes_path_when_config_set(tmp_path):
+    """setup() calls load_metamodel_data(Path(...)) when score_metamodel_yaml is set."""
+    yaml_file = tmp_path / "custom_metamodel.yaml"
+    yaml_file.write_text("needs_types: {}\n")
+    app = _make_mock_app(metamodel_yaml_value=str(yaml_file))
+
+    with patch.object(
+        _setup_module,
+        "load_metamodel_data",
+        return_value=_mock_metamodel_return(),
+    ) as mock_load:
+        setup(app)
+
+    mock_load.assert_called_once_with(Path(str(yaml_file)))

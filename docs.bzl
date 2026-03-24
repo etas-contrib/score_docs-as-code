@@ -125,7 +125,7 @@ def _missing_requirements(deps):
         fail(msg)
     fail("This case should be unreachable?!")
 
-def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good = None):
+def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good = None, metamodel = None):
     """Creates all targets related to documentation.
 
     By using this function, you'll get any and all updates for documentation targets in one place.
@@ -135,12 +135,23 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
       data: Additional data files to include in the documentation build.
       deps: Additional dependencies for the documentation build.
       scan_code: List of code targets to scan for source code links.
+      known_good: Optional label to a "known good" JSON file for source links.
+      metamodel: Optional label to a metamodel.yaml file. When set, the extension loads this
+                 file instead of the default metamodel shipped with score_metamodel.
     """
 
     call_path = native.package_name()
 
     if call_path != "":
         fail("docs() must be called from the root package. Current package: " + call_path)
+
+    metamodel_data = []
+    metamodel_env = {}
+    metamodel_opts = []
+    if metamodel != None:
+        metamodel_data = [metamodel]
+        metamodel_env = {"SCORE_METAMODEL_YAML": "$(location " + str(metamodel) + ")"}
+        metamodel_opts = ["--define=score_metamodel_yaml=$(location " + str(metamodel) + ")"]
 
     module_deps = deps
     deps = deps + _missing_requirements(deps)
@@ -152,7 +163,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
     sphinx_build_binary(
         name = "sphinx_build",
         visibility = ["//visibility:private"],
-        data = data,
+        data = data + metamodel_data,
         deps = deps,
     )
 
@@ -212,9 +223,14 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         name = "docs",
         tags = ["cli_help=Build documentation:\nbazel run //:docs"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = docs_data,
+        data = data + [":sourcelinks_json"] + metamodel_data,
         deps = deps,
-        env = docs_env
+        env = {
+            "SOURCE_DIRECTORY": source_dir,
+            "DATA": str(data),
+            "ACTION": "incremental",
+            "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
+        } | metamodel_env,
     )
 
     docs_sources_env["ACTION"] = "incremental"
@@ -222,9 +238,14 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         name = "docs_combo",
         tags = ["cli_help=Build full documentation with all dependencies:\nbazel run //:docs_combo"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = combo_data,
+        data = data_with_docs_sources + [":merged_sourcelinks"] + metamodel_data,
         deps = deps,
-        env = docs_sources_env
+        env = {
+            "SOURCE_DIRECTORY": source_dir,
+            "DATA": str(data_with_docs_sources),
+            "ACTION": "incremental",
+            "SCORE_SOURCELINKS": "$(location :merged_sourcelinks)",
+        } | metamodel_env,
     )
 
     native.alias(
@@ -238,9 +259,13 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         name = "docs_link_check",
         tags = ["cli_help=Verify Links inside Documentation:\nbazel run //:link_check\n (Note: this could take a long time)"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = docs_data,
+        data = data + metamodel_data,
         deps = deps,
-        env = docs_env
+        env = {
+            "SOURCE_DIRECTORY": source_dir,
+            "DATA": str(data),
+            "ACTION": "linkcheck",
+        } | metamodel_env,
     )
 
     docs_env["ACTION"] = "check"
@@ -248,9 +273,14 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         name = "docs_check",
         tags = ["cli_help=Verify documentation:\nbazel run //:docs_check"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = docs_data,
+        data = data + [":sourcelinks_json"] + metamodel_data,
         deps = deps,
-        env = docs_env
+        env = {
+            "SOURCE_DIRECTORY": source_dir,
+            "DATA": str(data),
+            "ACTION": "check",
+            "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
+        } | metamodel_env,
     )
 
     docs_env["ACTION"] = "live_preview"
@@ -258,9 +288,14 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         name = "live_preview",
         tags = ["cli_help=Live preview documentation in the browser:\nbazel run //:live_preview"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = docs_data,
+        data = data + [":sourcelinks_json"] + metamodel_data,
         deps = deps,
-        env = docs_env
+        env = {
+            "SOURCE_DIRECTORY": source_dir,
+            "DATA": str(data),
+            "ACTION": "live_preview",
+            "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
+        } | metamodel_env,
     )
 
     docs_sources_env["ACTION"] = "live_preview"
@@ -268,9 +303,14 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         name = "live_preview_combo_experimental",
         tags = ["cli_help=Live preview full documentation with all dependencies in the browser:\nbazel run //:live_preview_combo_experimental"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = combo_data,
+        data = data_with_docs_sources + [":merged_sourcelinks"] + metamodel_data,
         deps = deps,
-        env = docs_sources_env
+        env = {
+            "SOURCE_DIRECTORY": source_dir,
+            "DATA": str(data_with_docs_sources),
+            "ACTION": "live_preview",
+            "SCORE_SOURCELINKS": "$(location :merged_sourcelinks)",
+        } | metamodel_env,
     )
 
     py_venv(
@@ -278,7 +318,8 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         tags = ["cli_help=Create virtual environment (.venv_docs) for documentation support:\nbazel run //:ide_support"],
         venv_name = ".venv_docs",
         deps = deps,
-        data = data,
+        # Add dependencies to ide_support, so esbonio has access to them.
+        data = data + metamodel_data,
         package_collisions = "warning",
     )
 
@@ -293,10 +334,10 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
             "--jobs",
             "auto",
             "--define=external_needs_source=" + str(data),
-        ],
+        ] + metamodel_opts,
         formats = ["needs"],
         sphinx = ":sphinx_build",
-        tools = data,
+        tools = data + metamodel_data,
         visibility = ["//visibility:public"],
         # Persistent workers cause stale symlinks after dependency version
         # changes, corrupting the Bazel cache.
