@@ -100,7 +100,16 @@ def _create_symlinks(app: Sphinx) -> None:
             continue
 
         link.parent.mkdir(parents=True, exist_ok=True)
-        link.symlink_to(source)
+        try:
+            link.symlink_to(source)
+        except OSError as exc:
+            logger.error(
+                "score_any_folder: failed to create symlink %s -> %s: %s",
+                link,
+                source,
+                exc,
+            )
+            continue
         created_links.add(link)
         logger.debug("score_any_folder: created symlink %s -> %s", link, source)
 

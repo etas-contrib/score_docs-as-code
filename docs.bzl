@@ -120,7 +120,7 @@ def _missing_requirements(deps):
         fail(msg)
     fail("This case should be unreachable?!")
 
-def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
+def docs(source_dir = "docs", data = [], deps = [], scan_code = [], source_dir_extras = []):
     """Creates all targets related to documentation.
 
     By using this function, you'll get any and all updates for documentation targets in one place.
@@ -130,6 +130,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
       data: Additional data files to include in the documentation build.
       deps: Additional dependencies for the documentation build.
       scan_code: List of code targets to scan for source code links.
+      source_dir_extras: Additional source targets outside of source_dir (any_folder)
     """
 
     call_path = native.package_name()
@@ -167,7 +168,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
             source_dir + "/**/*.csv",
             source_dir + "/**/*.inc",
             "more_docs/**/*.rst",
-        ], allow_empty = True),
+        ], allow_empty = True) + source_dir_extras,
         visibility = ["//visibility:public"],
     )
 
@@ -181,7 +182,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         name = "docs",
         tags = ["cli_help=Build documentation:\nbazel run //:docs"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = data + [":sourcelinks_json"],
+        data = data + source_dir_extras + [":sourcelinks_json"],
         deps = deps,
         env = {
             "SOURCE_DIRECTORY": source_dir,
@@ -195,7 +196,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         name = "docs_combo",
         tags = ["cli_help=Build full documentation with all dependencies:\nbazel run //:docs_combo"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = data_with_docs_sources + [":merged_sourcelinks"],
+        data = data_with_docs_sources + source_dir_extras + [":merged_sourcelinks"],
         deps = deps,
         env = {
             "SOURCE_DIRECTORY": source_dir,
@@ -215,7 +216,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         name = "docs_link_check",
         tags = ["cli_help=Verify Links inside Documentation:\nbazel run //:link_check\n (Note: this could take a long time)"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = data,
+        data = data + source_dir_extras,
         deps = deps,
         env = {
             "SOURCE_DIRECTORY": source_dir,
@@ -228,7 +229,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         name = "docs_check",
         tags = ["cli_help=Verify documentation:\nbazel run //:docs_check"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = data + [":sourcelinks_json"],
+        data = data + source_dir_extras + [":sourcelinks_json"],
         deps = deps,
         env = {
             "SOURCE_DIRECTORY": source_dir,
@@ -242,7 +243,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         name = "live_preview",
         tags = ["cli_help=Live preview documentation in the browser:\nbazel run //:live_preview"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = data + [":sourcelinks_json"],
+        data = data + source_dir_extras + [":sourcelinks_json"],
         deps = deps,
         env = {
             "SOURCE_DIRECTORY": source_dir,
@@ -256,7 +257,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         name = "live_preview_combo_experimental",
         tags = ["cli_help=Live preview full documentation with all dependencies in the browser:\nbazel run //:live_preview_combo_experimental"],
         srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = data_with_docs_sources + [":merged_sourcelinks"],
+        data = data_with_docs_sources + source_dir_extras + [":merged_sourcelinks"],
         deps = deps,
         env = {
             "SOURCE_DIRECTORY": source_dir,
@@ -272,7 +273,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = []):
         venv_name = ".venv_docs",
         reqs = deps,
         # Add dependencies to ide_support, so esbonio has access to them.
-        data = data,
+        data = data + source_dir_extras,
     )
 
     sphinx_docs(
