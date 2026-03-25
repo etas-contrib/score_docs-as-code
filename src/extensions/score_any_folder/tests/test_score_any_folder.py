@@ -16,6 +16,7 @@ from contextlib import suppress
 from pathlib import Path
 
 import pytest
+from score_any_folder import _extract_mapping_from_conf
 from sphinx.testing.util import SphinxTestApp
 
 
@@ -66,6 +67,49 @@ def make_sphinx_app(
 
     for app in apps:
         app.cleanup()
+
+
+# ---------------------------------------------------------------------------
+# _extract_mapping_from_conf
+# ---------------------------------------------------------------------------
+
+
+def test_extract_mapping_returns_dict(tmp_path: Path) -> None:
+    conf = tmp_path / "conf.py"
+    conf.write_text('score_any_folder_mapping = {"../src": "src"}\n')
+    assert _extract_mapping_from_conf(conf) == {"../src": "src"}
+
+
+def test_extract_mapping_missing_key_returns_empty(tmp_path: Path) -> None:
+    conf = tmp_path / "conf.py"
+    conf.write_text("project = 'test'\n")
+    assert _extract_mapping_from_conf(conf) == {}
+
+
+def test_extract_mapping_non_literal_value_returns_empty(tmp_path: Path) -> None:
+    conf = tmp_path / "conf.py"
+    conf.write_text("score_any_folder_mapping = dict(src='src')\n")
+    assert _extract_mapping_from_conf(conf) == {}
+
+
+def test_extract_mapping_syntax_error_returns_empty(tmp_path: Path) -> None:
+    conf = tmp_path / "conf.py"
+    conf.write_text("score_any_folder_mapping = {this is not valid python\n")
+    assert _extract_mapping_from_conf(conf) == {}
+
+
+def test_extract_mapping_multiple_assignments_returns_first(tmp_path: Path) -> None:
+    conf = tmp_path / "conf.py"
+    conf.write_text(
+        'score_any_folder_mapping = {"../a": "a"}\n'
+        'score_any_folder_mapping = {"../b": "b"}\n'
+    )
+    assert _extract_mapping_from_conf(conf) == {"../a": "a"}
+
+
+# ---------------------------------------------------------------------------
+# Primary symlink behaviour
+# ---------------------------------------------------------------------------
 
 
 def test_symlink_exposes_files_at_target_path(
@@ -175,3 +219,86 @@ def test_target_in_subfolder(
     link = docs_dir / "foo" / "other"
     assert link.is_symlink()
     assert link.resolve() == src_docs.resolve()
+
+
+# ---------------------------------------------------------------------------
+# Auto-discovery of module conf.py files (combo build support)
+# ---------------------------------------------------------------------------
+
+
+def test_autodiscovery_applies_module_mapping(
+    make_sphinx_app: Callable[[dict[str, str]], SphinxTestApp],
+    docs_dir: Path,
+    tmp_path: Path,
+) -> None:
+    """A conf.py found in a subdirectory has its mapping applied automatically."""
+    # Simulate a sphinx_collections mount at docs/_collections/module/
+    module_docs = docs_dir / "_collections" / "module"
+    module_docs.mkdir(parents=True)
+    containers = tmp_path / "module_repo" / "containers" / "docs"
+    containers.mkdir(parents=True)
+    (containers / "page.rst").write_text("Container Page\n==============\n")
+    (module_docs / "conf.py").write_text(
+        'score_any_folder_mapping = {"../../../module_repo/containers/docs":'
+        ' "component/containers"}\n'
+    )
+
+    make_sphinx_app({})
+
+    link = module_docs / "component" / "containers"
+    assert link.is_symlink()
+    assert link.resolve() == containers.resolve()
+    assert (link / "page.rst").read_text() == "Container Page\n==============\n"
+
+
+def test_autodiscovery_cleans_up_secondary_symlinks(
+    make_sphinx_app: Callable[[dict[str, str]], SphinxTestApp],
+    docs_dir: Path,
+    tmp_path: Path,
+) -> None:
+    """Secondary symlinks from auto-discovered modules are removed on build-finished."""
+    module_docs = docs_dir / "_collections" / "module"
+    module_docs.mkdir(parents=True)
+    external = tmp_path / "external"
+    external.mkdir()
+    (module_docs / "conf.py").write_text(
+        'score_any_folder_mapping = {"../../../external": "ext"}\n'
+    )
+
+    make_sphinx_app({}).build()
+
+    assert not (module_docs / "ext").exists()
+
+
+def test_autodiscovery_ignores_conf_without_mapping(
+    make_sphinx_app: Callable[[dict[str, str]], SphinxTestApp],
+    docs_dir: Path,
+) -> None:
+    """A subdirectory conf.py with no score_any_folder_mapping produces no symlinks."""
+    module_docs = docs_dir / "_collections" / "module"
+    module_docs.mkdir(parents=True)
+    (module_docs / "conf.py").write_text("project = 'test'\n")
+
+    make_sphinx_app({}).build()
+
+    assert [p for p in module_docs.iterdir() if p.is_symlink()] == []
+
+
+def test_autodiscovery_nested_conf(
+    make_sphinx_app: Callable[[dict[str, str]], SphinxTestApp],
+    docs_dir: Path,
+    tmp_path: Path,
+) -> None:
+    """Auto-discovery works for conf.py files nested more than one level deep."""
+    nested_docs = docs_dir / "_collections" / "org" / "module" / "docs"
+    nested_docs.mkdir(parents=True)
+    external = tmp_path / "external"
+    external.mkdir()
+    (nested_docs / "conf.py").write_text(
+        'score_any_folder_mapping = {"../../../../../external": "ext"}\n'
+    )
+
+    make_sphinx_app({})
+
+    assert (nested_docs / "ext").is_symlink()
+    assert (nested_docs / "ext").resolve() == external.resolve()

@@ -12,7 +12,8 @@ You can symlink the folders by adding to your ``conf.py``:
        "../score/containers/docs": "component/containers",
    }
 
-With this configuration, all files in ``score/containers/docs/`` become available at ``docs/component/containers/``.
+All files in ``score/containers/docs/`` become available at ``docs/component/containers/``.
+Include them via ``toctree`` as usual.
 
 If you have ``docs/component/overview.rst``, for example,
 you can include the component documentation via ``toctree``:

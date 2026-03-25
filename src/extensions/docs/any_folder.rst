@@ -24,8 +24,23 @@ Sphinx then discovers and buildsthose files as if they were part of ``docs/`` fr
 The extension hooks into the ``builder-inited`` event,
 which fires before Sphinx reads any documents.
 
+Configuration reference
+-----------------------
+
+``score_any_folder_mapping``
+    *dict[str, str]*, default ``{}``
+
+    Maps source directories to symlink paths, both relative to ``confdir``.
+    Applied on every Sphinx build.
+
+    .. code-block:: python
+
+       score_any_folder_mapping = {
+           "../src/my_module/docs": "my_module",
+       }
+
 Difference to Sphinx-Collections
---------------------------------
+---------------------------------
 
 The extension `sphinx-collections <https://sphinx-collections.readthedocs.io/>`_
 is very similar to this extension.
