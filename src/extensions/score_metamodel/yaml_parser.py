@@ -31,7 +31,7 @@ logger = logging.get_logger(__name__)
 class MetaModelData:
     needs_types: list[ScoreNeedType]
     needs_links: dict[str, dict[str, str]]
-    needs_fields: dict[str, dict[str, object]]
+    needs_fields: dict[str, dict[str, Any]]
     prohibited_words_checks: list[ProhibitedWordCheck]
     needs_graph_check: dict[str, object]
 
@@ -170,7 +170,7 @@ def _collect_all_options(needs_types: dict[str, ScoreNeedType]) -> set[str]:
 
 def _collect_all_custom_options(
     needs_types: dict[str, ScoreNeedType],
-) -> dict[str, dict[str, object]]:
+) -> dict[str, dict[str, Any]]:
     """Generate 'needs_fields' entries for sphinx-needs."""
 
     defaults = default_options()
