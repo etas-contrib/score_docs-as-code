@@ -167,6 +167,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], source_dir_e
             source_dir + "/**/*.json",
             source_dir + "/**/*.csv",
             source_dir + "/**/*.inc",
+            source_dir + "/conf.py",
             "more_docs/**/*.rst",
         ], allow_empty = True) + source_dir_extras,
         visibility = ["//visibility:public"],

@@ -50,6 +50,7 @@ priority 600 (above the default 500) to ensure it runs after
 """
 
 import ast
+import os
 from pathlib import Path
 
 from sphinx.application import Sphinx
@@ -171,12 +172,35 @@ def _create_symlinks(app: Sphinx) -> None:
     # Picks up modules mounted by sphinx_collections (or any other mechanism).
     # Running at priority 600 ensures sphinx_collections has already mounted
     # its collections before we scan.
-    for conf_py in sorted(confdir.rglob("conf.py")):
+    # NOTE: Path.rglob() in Python ≤ 3.12 does NOT follow symlinked directories,
+    # so we use os.walk(followlinks=True) instead.
+    conf_py_paths = sorted(
+        Path(dirpath) / "conf.py"
+        for dirpath, _dirs, filenames in os.walk(confdir, followlinks=True)
+        if "conf.py" in filenames
+    )
+    for conf_py in conf_py_paths:
         if conf_py.parent == confdir:
             continue  # skip the main conf.py
         module_mapping = _extract_mapping_from_conf(conf_py)
         if not module_mapping:
             continue
+        # Exclude source directories from direct Sphinx indexing.
+        # sphinx_collections mounts the whole module directory, so source_dir_extras
+        # files appear at two paths: directly through the mount AND via the symlink.
+        # Adding the direct path to exclude_patterns prevents duplicate-label warnings.
+        for source_rel in module_mapping:
+            if not Path(source_rel).is_absolute():
+                unresolved = Path(os.path.normpath(conf_py.parent / source_rel))
+                if unresolved.is_relative_to(confdir):
+                    rel = str(unresolved.relative_to(confdir))
+                    if rel not in app.config.exclude_patterns:
+                        app.config.exclude_patterns.append(rel)
+                        logger.debug(
+                            "score_any_folder: excluding direct path %s"
+                            " (accessible via symlink instead)",
+                            rel,
+                        )
         for source, link in _symlink_pairs(conf_py.parent, module_mapping):
             _maybe_create_symlink(source, link, created_links)
 
