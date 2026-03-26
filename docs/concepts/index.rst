@@ -10,3 +10,4 @@ Here you find explanations how and why docs-as-code works the way it does.
 
    bidirectional_traceability
    docs_deps
+   any_folder
