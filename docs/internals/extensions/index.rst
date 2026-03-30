@@ -1,16 +1,15 @@
-..
-   # *******************************************************************************
-   # Copyright (c) 2025 Contributors to the Eclipse Foundation
-   #
-   # See the NOTICE file(s) distributed with this work for additional
-   # information regarding copyright ownership.
-   #
-   # This program and the accompanying materials are made available under the
-   # terms of the Apache License Version 2.0 which is available at
-   # https://www.apache.org/licenses/LICENSE-2.0
-   #
-   # SPDX-License-Identifier: Apache-2.0
-   # *******************************************************************************
+..  # *******************************************************************************
+    # Copyright (c) 2025 Contributors to the Eclipse Foundation
+    #
+    # See the NOTICE file(s) distributed with this work for additional
+    # information regarding copyright ownership.
+    #
+    # This program and the accompanying materials are made available under the
+    # terms of the Apache License Version 2.0 which is available at
+    # https://www.apache.org/licenses/LICENSE-2.0
+    #
+    # SPDX-License-Identifier: Apache-2.0
+    # *******************************************************************************
 
 .. _extensions:
 
@@ -72,16 +71,6 @@ Hello there
       `ubCode <https://ubcode.useblocks.com>`__ VS Code extension.
       Getting IDE support for Sphinx-Needs in a Bazel context made easy.
 
-   .. grid-item-card::
-
-      Any Folder
-      ^^^^^^^^^^
-
-      Learn about the :doc:`any_folder` extension that creates symlinks
-      from arbitrary repository locations into the docs folder,
-      allowing Sphinx to discover and build source files
-      that live outside the documentation root.
-
 
 
 .. toctree::
@@ -94,4 +83,3 @@ Hello there
    Source Code Linker <source_code_linker>
    Extension Guide <extension_guide>
    Sync TOML <sync_toml>
-   Any Folder <any_folder>
