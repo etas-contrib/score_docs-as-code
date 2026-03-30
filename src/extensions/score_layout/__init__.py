@@ -42,10 +42,9 @@ def update_config(app: Sphinx, _config: Any):
         **sphinx_options.needs_layouts,
         **app.config.needs_layouts,
     }
-    app.config.needs_global_options = {
-        **sphinx_options.needs_global_options,
-        **app.config.needs_global_options,
-    }
+    config_setdefault(
+        app.config, "needs_default_layout", sphinx_options.needs_default_layout
+    )
     config_setdefault(app.config, "html_theme", html_options.html_theme)
     app.config.html_context = {
         **html_options.return_html_context(app),

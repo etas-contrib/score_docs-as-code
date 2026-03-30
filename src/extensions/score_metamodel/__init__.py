@@ -240,8 +240,8 @@ def setup(app: Sphinx) -> dict[str, str | bool]:
 
     # Extend sphinx-needs config rather than overwriting
     app.config.needs_types += metamodel.needs_types
-    app.config.needs_extra_links += metamodel.needs_extra_links
-    app.config.needs_extra_options += metamodel.needs_extra_options
+    app.config.needs_links.update(metamodel.needs_links)
+    app.config.needs_fields.update(metamodel.needs_fields)
     app.config.graph_checks = metamodel.needs_graph_check
     app.config.prohibited_words_checks = metamodel.prohibited_words_checks
 

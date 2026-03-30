@@ -203,7 +203,7 @@ def test_find_xml_files_test_reports(
     dir1: Path
     dir2: Path
     root, dir1, dir2, dir3, dir4 = tmp_xml_dirs(test_folder="tests-report")
-    found = xml_parser.find_xml_files(dir=root)
+    found = xml_parser.find_xml_files(search_path=root)
     assert found is not None
     expected: set[Path] = {
         root / dir1 / "test.xml",

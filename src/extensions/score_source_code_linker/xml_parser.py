@@ -246,7 +246,7 @@ def read_test_xml_file(file: Path) -> tuple[list[DataOfTestCase], list[str], lis
     return test_case_needs, non_prop_tests, missing_prop_tests
 
 
-def find_xml_files(dir: Path) -> list[Path]:
+def find_xml_files(search_path: Path) -> list[Path]:
     """
     Recursively search all test.xml files inside 'bazel-testlogs'
 
@@ -260,13 +260,7 @@ def find_xml_files(dir: Path) -> list[Path]:
     """
 
     test_file_name = "test.xml"
-
-    xml_paths: list[Path] = []
-    for root, _, files in os.walk(dir):
-        if test_file_name in files:
-            xml_paths.append(Path(os.path.join(root, test_file_name)))
-
-    return xml_paths
+    return [x for x in search_path.rglob(test_file_name)]
 
 
 def find_test_folder(base_path: Path | None = None) -> Path | None:
