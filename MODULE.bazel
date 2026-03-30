@@ -95,7 +95,7 @@ http_file(
 bazel_dep(name = "score_process", version = "1.4.3")
 git_override(
     module_name = "score_process",
-    commit = "5205f7bf4a8919a2280989ef5d12e826065e55cd",
+    commit = "b08145aca82faa7d1c3a77fa4eab91aa9df31dd4",
     remote = "https://github.com/eclipse-score/process_description.git",
 )
 
