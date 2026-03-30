@@ -54,6 +54,8 @@ py_library(
         "needlinks.py",
         "testlink.py",
         "xml_parser.py",
+        "helpers.py",
+        "repo_source_links.py",
     ],
     imports = ["."],
     visibility = ["//visibility:public"],

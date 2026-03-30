@@ -33,7 +33,7 @@ from sphinx_needs import logging
 LOGGER = logging.get_logger(__name__)
 
 
-@dataclass(frozen=True, order=True)
+@dataclass(order=True)
 class DataForTestLink:
     name: str
     file: Path
@@ -42,6 +42,56 @@ class DataForTestLink:
     verify_type: str
     result: str
     result_text: str = ""
+    repo_name: str = "local_repo"
+    hash: str = ""
+    url: str = ""
+
+    # Adding hashing & equality as this is needed to make comparisions.
+    # Since the Dataclass is not 'frozen = true' it isn't automatically hashable
+    def __hash__(self):
+        return hash(
+            (
+                self.name,
+                str(self.file),
+                self.line,
+                self.need,
+                self.verify_type,
+                self.result,
+                self.result_text,
+                self.repo_name,
+                self.hash,
+                self.url,
+            )
+        )
+
+    def __eq__(self, other: Any):
+        if not isinstance(other, DataForTestLink):
+            return NotImplemented
+        return (
+            self.name == other.name
+            and self.file == other.file
+            and self.line == other.line
+            and self.need == other.need
+            and self.verify_type == other.verify_type
+            and self.result == other.result
+            and self.result_text == other.result_text
+            and self.repo_name == other.repo_name
+            and self.hash == other.hash
+            and self.url == other.url
+        )
+
+    # Normal 'dictionary conversion'. Converts all fields
+    def to_dict_full(self) -> dict[str, str | Path | int]:
+        return asdict(self)
+
+    # Drops MetaData fields for saving the Dataclass (saving space in json)
+    # The information is in the 'Repo_Source_Link' in the end
+    def to_dict_without_metadata(self) -> dict[str, str | Path | int]:
+        d = asdict(self)
+        d.pop("repo_name", None)
+        d.pop("hash", None)
+        d.pop("url", None)
+        return d
 
 
 class DataForTestLink_JSON_Encoder(json.JSONEncoder):
@@ -60,6 +110,9 @@ def DataForTestLink_JSON_Decoder(d: dict[str, Any]) -> DataForTestLink | dict[st
         "line",
         "need",
         "verify_type",
+        "repo_name",
+        "hash",
+        "url",
         "result",
         "result_text",
     } <= d.keys():
@@ -68,6 +121,9 @@ def DataForTestLink_JSON_Decoder(d: dict[str, Any]) -> DataForTestLink | dict[st
             file=Path(d["file"]),
             line=d["line"],
             need=d["need"],
+            repo_name=d.get("repo_name", ""),
+            hash=d.get("hash", ""),
+            url=d.get("url", ""),
             verify_type=d["verify_type"],
             result=d["result"],
             result_text=d["result_text"],
@@ -83,6 +139,9 @@ class DataOfTestCase:
     file: str | None = None
     line: str | None = None
     result: str | None = None  # passed | falied | skipped | disabled
+    repo_name: str | None = None
+    hash: str | None = None
+    url: str | None = None
     # Intentionally not snakecase to make dict parsing simple
     TestType: str | None = None
     DerivationTechnique: str | None = None
@@ -98,6 +157,9 @@ class DataOfTestCase:
             file=data.get("file"),
             line=data.get("line"),
             result=data.get("result"),
+            repo_name=data.get("repo_name"),
+            hash=data.get("hash"),
+            url=data.get("url"),
             TestType=data.get("TestType"),
             DerivationTechnique=data.get("DerivationTechnique"),
             result_text=data.get("result_text"),
@@ -158,6 +220,8 @@ class DataOfTestCase:
         #         and self.TestType is not None
         #         and self.DerivationTechnique is not None
         # ):
+        # Hash & URL are explictily allowed to be empty but not none.
+        # repo_name has to be always filled or something went wrong
         fields = [
             x
             for x in self.__dataclass_fields__
@@ -199,6 +263,9 @@ class DataOfTestCase:
             assert self.file is not None
             assert self.line is not None
             assert self.result is not None
+            assert self.repo_name is not None
+            assert self.hash is not None
+            assert self.url is not None
             assert self.result_text is not None
             assert self.TestType is not None
             assert self.DerivationTechnique is not None
@@ -212,6 +279,9 @@ class DataOfTestCase:
                     verify_type=verify_type,
                     result=self.result,
                     result_text=self.result_text,
+                    repo_name=self.repo_name,
+                    hash=self.hash,
+                    url=self.url,
                 )
 
         return list(
