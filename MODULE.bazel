@@ -92,12 +92,7 @@ http_file(
 # docs dependency
 # Note: requirements were last aligned with 1.2.0,
 # the switch to 1.3.1 is purely to drop the dependency on docs-as-code 1.x.
-bazel_dep(name = "score_process", version = "1.4.3")
-git_override(
-    module_name = "score_process",
-    commit = "b08145aca82faa7d1c3a77fa4eab91aa9df31dd4",
-    remote = "https://github.com/eclipse-score/process_description.git",
-)
+bazel_dep(name = "score_process", version = "1.5.1")
 
 # Add Linter
 bazel_dep(name = "rules_multitool", version = "1.9.0")
