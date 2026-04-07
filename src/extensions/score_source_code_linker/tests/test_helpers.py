@@ -209,7 +209,7 @@ VALID_KNOWN_GOOD_WITH_VERSION = {
 
 @pytest.fixture
 def known_good_json_with_version(tmp_path: Path):
-    """Fixture providing a known_good.json file that uses 'version' instead of 'hash'."""
+    """Providing a known_good.json file that uses 'version' instead of 'hash'."""
     json_file = tmp_path / "known_good_version.json"
     _ = json_file.write_text(json.dumps(VALID_KNOWN_GOOD_WITH_VERSION))
     return json_file
@@ -254,7 +254,8 @@ def test_parse_info_from_known_good_neither_hash_nor_version(tmp_path: Path):
         )
     )
 
-    with pytest.raises(KeyError, match="score_baselibs has neither 'hash' nor 'version'"):
+    msg = "score_baselibs has neither 'hash' nor 'version'"
+    with pytest.raises(KeyError, match=msg):
         parse_info_from_known_good(json_file, "score_baselibs")
 
 
