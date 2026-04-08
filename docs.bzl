@@ -276,10 +276,6 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         # Add score-tooling editor config and documentation dependencies to the
         # venv so Esbonio and local IDE tooling see the same environment.
         data = ["@score_tooling//python_basics:pyproject.toml"] + data,
-        # ide_support intentionally combines multiple requirement hubs that can
-        # provide the same site-packages files (for example pygments). The
-        # overlap is benign for local IDE support, so do not fail venv creation.
-        package_collisions = "warning",
     )
 
     sphinx_docs(
