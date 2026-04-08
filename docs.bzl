@@ -41,9 +41,10 @@ Easy streamlined way for S-CORE docs-as-code.
 #
 # For user-facing documentation, refer to `/README.md`.
 
-load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_venv")
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
 load("@docs_as_code_hub_env//:requirements.bzl", "all_requirements")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
+load("@score_tooling//:defs.bzl", "score_virtualenv")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "sphinx_module")
 
 def _rewrite_needs_json_to_docs_sources(labels):
@@ -268,14 +269,13 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         env = docs_sources_env
     )
 
-    py_venv(
+    score_virtualenv(
         name = "ide_support",
         tags = ["cli_help=Create virtual environment (.venv_docs) for documentation support:\nbazel run //:ide_support"],
         venv_name = ".venv_docs",
-        deps = deps + ["@rules_python//python/runfiles"],
-        # Add score-tooling editor config and documentation dependencies to the
-        # venv so Esbonio and local IDE tooling see the same environment.
-        data = ["@score_tooling//python_basics:pyproject.toml"] + data,
+        reqs = deps,
+        # Add dependencies to ide_support, so esbonio has access to them.
+        data = data,
     )
 
     sphinx_docs(
