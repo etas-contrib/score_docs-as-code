@@ -80,13 +80,6 @@ http_file(
     urls = ["https://github.com/withered-magic/starpls/releases/download/v0.1.21/starpls-linux-amd64"],
 )
 
-# Provides, pytest & venv
-# bazel_dep(name = "score_python_basics", version = "0.3.4")
-# local_path_override(
-#     module_name = "score_python_basics",
-#     path="../tooling"
-# )
-
 # Checker rule for CopyRight checks/fixes
 
 # docs dependency
