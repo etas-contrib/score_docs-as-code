@@ -31,14 +31,7 @@ pre-commit install
 pre-commit install --hook-type pre-push
 ```
 
-Execute the pre-commit manually via `pre-commit`
-
-### Format your documentation with:
-
-```bash
-bazel test //src:format.check
-bazel run //src:format.fix
-```
+Execute the pre-commit manually via `pre-commit run` or `pre-commit run --all-files` to run it on all files.
 
 ### Find & fix missing copyright
 
