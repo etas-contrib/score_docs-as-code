@@ -15,6 +15,7 @@ load("@score_tooling//:defs.bzl", "cli_helper")
 load("//:docs.bzl", "docs")
 
 package(default_visibility = ["//visibility:public"])
+exports_files(["pyproject.toml"])
 
 docs(
     data = [
