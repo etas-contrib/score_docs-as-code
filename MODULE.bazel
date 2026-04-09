@@ -49,13 +49,6 @@ use_repo(pip, "docs_as_code_hub_env")
 bazel_dep(name = "aspect_rules_py", version = "1.4.0")
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
 
-###############################################################################
-#
-# Generic linting and formatting rules
-#
-###############################################################################
-bazel_dep(name = "aspect_rules_lint", version = "1.5.3")
-
 # PlantUML for docs
 bazel_dep(name = "rules_java", version = "8.15.1")
 
