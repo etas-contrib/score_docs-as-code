@@ -15,11 +15,27 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=150"]
 
-  # use LOCAL hooks for python tooling so versions come from the virtualenv
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.11
+    hooks:
+      - id: actionlint
+        args:
+          # Disable shellcheck and pyflakes for now, to enforce consistent behavior.
+          - -shellcheck=
+          - -pyflakes=
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.9
+    hooks:
+      - id: ruff-check
+        args: [ --fix ]
+      - id: ruff-format
+
+  # Note: this is super slow, therefore it is last
   - repo: local
     hooks:
-      - id: Linter Scripts
-        name: Run linter script
-        entry: ./scripts/run-linters.sh
-        language: unsupported_script
+      - id: BasedPyright
+        name: BasedPyright
+        entry: bash -c 'bazel run //:ide_support && .venv_docs/bin/python3 -m basedpyright'
+        language: system
         pass_filenames: false

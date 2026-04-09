@@ -196,8 +196,8 @@ def filter_repos(repo_filter: str | None) -> list[ConsumerRepo]:
 
     return filtered_repos
 
-def comment_out_git_override(module_content: str) -> str:
 
+def comment_out_git_override(module_content: str) -> str:
     """
     Comment out existing git_override blocks for score_docs_as_code only.
     """
@@ -224,8 +224,10 @@ def comment_out_git_override(module_content: str) -> str:
             block_text = "\n".join(block)
 
             # Comment out if it's for score_docs_as_code
-            if 'module_name = "score_docs_as_code"' in block_text or \
-               "module_name = 'score_docs_as_code'" in block_text:
+            if (
+                'module_name = "score_docs_as_code"' in block_text
+                or "module_name = 'score_docs_as_code'" in block_text
+            ):
                 result.extend("# " + line if line.strip() else "#" for line in block)
             else:
                 result.extend(block)
