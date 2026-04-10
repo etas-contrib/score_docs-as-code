@@ -83,9 +83,4 @@ git_override(
 
 # Add Linter
 bazel_dep(name = "score_tooling", version = "1.2.0")
-git_override(
-    module_name = "score_tooling",
-    commit = "f1380eb29ee7d7648f47135b9033919910405fe3",
-    remote = "https://github.com/eclipse-score/tooling.git",
-)
 
