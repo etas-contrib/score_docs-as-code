@@ -83,4 +83,3 @@ git_override(
 
 # Add Linter
 bazel_dep(name = "score_tooling", version = "1.2.0")
-
