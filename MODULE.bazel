@@ -90,12 +90,3 @@ git_override(
     remote = "https://github.com/eclipse-score/tooling.git",
 )
 
-multitool_root = use_extension("@rules_multitool//multitool:extension.bzl", "multitool")
-use_repo(multitool_root, "actionlint_hub", "multitool", "ruff_hub", "shellcheck_hub", "yamlfmt_hub")
-
-register_toolchains(
-    "@ruff_hub//toolchains:all",
-    "@actionlint_hub//toolchains:all",
-    "@shellcheck_hub//toolchains:all",
-    "@yamlfmt_hub//toolchains:all",
-)
