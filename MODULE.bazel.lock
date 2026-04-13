@@ -631,6 +631,8 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/rules_swift/1.16.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/rules_swift/1.18.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/rules_swift/2.1.1/MODULE.bazel": "not found",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/score_process/1.5.2/MODULE.bazel": "be52d29278d6671221f28921e8f1acfce29c3bfc3e6b4f503f0625ab2c61586f",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/score_process/1.5.2/source.json": "f7f3fca34aca6a9d8471bfa95e45f8f6f2760b4edf86bdb9c83dacae61abcb32",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/score_rust_policies/0.0.2/MODULE.bazel": "ade2bad4a331b02d9b7e7d9842e8de8c6fded6186486e02c4f7db5cd4b71d34d",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/score_rust_policies/0.0.2/source.json": "fbcbc738e652b0c68d5d28dd1db09f2e643dc111f5739b2f6af7ec56c2e88043",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/score_tooling/1.2.0/MODULE.bazel": "982db97a4f8440356ea935f103204f644fb2b84d8188df63533c7312c82afc37",
