@@ -46,28 +46,28 @@ load("@docs_as_code_hub_env//:requirements.bzl", "all_requirements")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
 
 def _rewrite_needs_json_to_docs_sources(labels):
-    """Replace '@repo//:needs_json' -> '@repo//:docs_sources' for every item.
-       Note: Else path has been commented out as this prevented inclusion of CPP files
-       for case when fragment of code shall be displayed as literal include.
-    """
+    """Replace '@repo//:needs_json' -> '@repo//:docs_sources' for every item."""
     out = []
     for x in labels:
         s = str(x)
         if s.endswith("//:needs_json"):
             out.append(s.replace("//:needs_json", "//:docs_sources"))
-        #else:
-            #out.append(s)
+        else:
+            out.append(s)
     return out
 
 def _rewrite_needs_json_to_sourcelinks(labels):
-    """Replace '@repo//:needs_json' -> '@repo//:sourcelinks_json' for every item."""
+    """Replace '@repo//:needs_json' -> '@repo//:sourcelinks_json' for every item.
+        Note: Else path has been commented out as this prevented inclusion of CPP files
+        for case when fragment of code shall be displayed as literal include.
+    """
     out = []
     for x in labels:
         s = str(x)
         if s.endswith("//:needs_json"):
             out.append(s.replace("//:needs_json", "//:sourcelinks_json"))
-        else:
-            out.append(s)
+        #else:
+            #out.append(s)
     return out
 
 def _merge_sourcelinks(name, sourcelinks, known_good = None):
