@@ -794,6 +794,22 @@ needs_types:
       - safety_analysis
     parts: 3
 
+  # DFA Failure Initiator (guidance catalog type)
+  dfa_failure_initiator:
+    title: DFA Failure Initiator
+    prefix: dfa_failure_initiator__
+    mandatory_options:
+      id: ^dfa_failure_initiator__[0-9a-z_]+$
+      status: ^(valid|draft)$
+      element: ^.*$
+      failure_mode: ^.*$
+      importance: ^(High|Medium|Low)$
+    optional_options:
+      parent_need: ^dfa_failure_initiator__[0-9a-z_]+$
+    optional_links:
+      parent_needs: ^dfa_failure_initiator__[0-9a-z_]+$
+    parts: 2
+
   # FMEA (Failure Mode and Effects Analysis)
   # req-Id: tool_req__docs_saf_types
   feat_saf_fmea:
@@ -846,6 +862,22 @@ needs_types:
       - failure_mode_effects_analysis
       - safety_analysis
     parts: 3
+
+  # FMEA Fault Model (guidance catalog type)
+  fmea_fault_model:
+    title: FMEA Fault Model
+    prefix: fmea_fault_model__
+    mandatory_options:
+      id: ^fmea_fault_model__[0-9a-z_]+$
+      status: ^(valid|draft)$
+      element: ^.*$
+      failure_mode: ^.*$
+      importance: ^(High|Medium|Low)$
+    optional_options:
+      parent_need: ^fmea_fault_model__[0-9a-z_]+$
+    optional_links:
+      parent_needs: ^fmea_fault_model__[0-9a-z_]+$
+    parts: 2
 
   testcase:
     title: Testcase Needs parsed from test.xml files
