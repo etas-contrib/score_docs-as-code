@@ -57,17 +57,14 @@ def _rewrite_needs_json_to_docs_sources(labels):
     return out
 
 def _rewrite_needs_json_to_sourcelinks(labels):
-    """Replace '@repo//:needs_json' -> '@repo//:sourcelinks_json' for every item.
-        Note: Else path has been commented out as this prevented inclusion of CPP files
-        for case when fragment of code shall be displayed as literal include.
-    """
+    """Replace '@repo//:needs_json' -> '@repo//:sourcelinks_json' for every item."""
     out = []
     for x in labels:
         s = str(x)
         if s.endswith("//:needs_json"):
             out.append(s.replace("//:needs_json", "//:sourcelinks_json"))
-        #else:
-            #out.append(s)
+        #Items which do not end up with '//:needs_json' shall not be appended to 'out'.
+        #They are treated separately and are not related to source code linking.
     return out
 
 def _merge_sourcelinks(name, sourcelinks, known_good = None):
