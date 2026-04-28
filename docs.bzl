@@ -125,7 +125,7 @@ def _missing_requirements(deps):
         fail(msg)
     fail("This case should be unreachable?!")
 
-def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good = None):
+def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good = None, extra_srcs = []):
     """Creates all targets related to documentation.
 
     By using this function, you'll get any and all updates for documentation targets in one place.
@@ -135,6 +135,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
       data: Additional data files to include in the documentation build.
       deps: Additional dependencies for the documentation build.
       scan_code: List of code targets to scan for source code links.
+      extra_srcs: Additional source files to include in the Sphinx srcs (needed for literalinclude of files outside docs/).
     """
 
     call_path = native.package_name()
@@ -284,7 +285,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
 
     sphinx_docs(
         name = "needs_json",
-        srcs = [":docs_sources"],
+        srcs = [":docs_sources"] + extra_srcs,
         config = ":" + source_prefix + "conf.py",
         extra_opts = [
             "-W",
