@@ -73,8 +73,17 @@ if __name__ == "__main__":
     else:
         workspace = ""
 
+    source_dir = get_env("SOURCE_DIRECTORY")
+    from python.runfiles import Runfiles
+
+    composed_conf = get_env("COMPOSED_SOURCE_CONF")
+    conf_path = Runfiles.Create().Rlocation(composed_conf)
+    if conf_path is None:
+        raise ValueError(f"Composed source not found in runfiles: {composed_conf}")
+    resolved_source_dir = str(Path(conf_path).parent)
+
     base_arguments = [
-        workspace + get_env("SOURCE_DIRECTORY"),
+        resolved_source_dir,
         workspace + "_build",
         "-W",  # treat warning as errors
         "--keep-going",  # do not abort after one error

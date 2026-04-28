@@ -20,6 +20,9 @@ docs(
     data = [
         "@score_process//:needs_json",
     ],
+    extra_docs = [
+        "//src:src_docs",
+    ],
     scan_code = [
         "//scripts_bazel:sources",
         "//src:all_sources",

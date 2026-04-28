@@ -114,7 +114,13 @@ def _run_checks(app: Sphinx, exception: Exception | None) -> None:
 
     ws_root = os.environ.get("BUILD_WORKSPACE_DIRECTORY", None)
     cwd_or_ws_root = Path(ws_root) if ws_root else Path.cwd()
-    prefix = str(Path(app.srcdir).relative_to(cwd_or_ws_root))
+    try:
+        prefix = str(Path(app.srcdir).relative_to(cwd_or_ws_root))
+    except ValueError:
+        # srcdir is outside the workspace (e.g. a Bazel runfiles tree).
+        # prefix is only used for log-message locations, which log.py already
+        # skips when RUNFILES_DIR is set, so any fallback is fine here.
+        prefix = str(app.srcdir)
 
     log = CheckLogger(logger, prefix)
 

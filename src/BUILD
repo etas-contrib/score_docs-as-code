@@ -14,6 +14,7 @@
 load("@aspect_rules_py//py:defs.bzl", "py_library")
 load("@rules_java//java:java_binary.bzl", "java_binary")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 
 # These are only exported because they're passed as files to the //docs.bzl
 # macros, and thus must be visible to other packages. They should only be
@@ -26,6 +27,7 @@ exports_files(
         "incremental.py",
         "dummy.py",
         "generate_sourcelinks_cli.py",
+        "gen_live_preview.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -92,5 +94,13 @@ filegroup(
     srcs = [
         "requirements.txt",
     ],
+    visibility = ["//visibility:public"],
+)
+
+sphinx_docs_library(
+    name = "src_docs",
+    srcs = glob(["docs/**/*.rst"]),
+    strip_prefix = "src/docs/",
+    prefix = "docs/src_extensions/",
     visibility = ["//visibility:public"],
 )

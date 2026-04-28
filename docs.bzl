@@ -44,6 +44,7 @@ Easy streamlined way for S-CORE docs-as-code.
 load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_venv")
 load("@docs_as_code_hub_env//:requirements.bzl", "all_requirements")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
+load("@rules_python//sphinxdocs/private:sphinx_docs_library_info.bzl", "SphinxDocsLibraryInfo")
 
 def _rewrite_needs_json_to_docs_sources(labels):
     """Replace '@repo//:needs_json' -> '@repo//:docs_sources' for every item."""
@@ -125,7 +126,66 @@ def _missing_requirements(deps):
         fail(msg)
     fail("This case should be unreachable?!")
 
-def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good = None):
+def _docs_src_dir_impl(ctx):
+    """Unified rule: materialises a composed source tree AND provides SphinxDocsLibraryInfo.
+
+    Output symlinks land at <name>/<prefix><path> so they are accessible in
+    py_binary runfiles under _main/<name>/<prefix><path>.  incremental.py
+    points Sphinx at that subtree via COMPOSED_SOURCE_CONF.
+
+    SphinxDocsLibraryInfo is also returned so :needs_json can use this target
+    as a dep directly, without a separate sphinx_docs_library wrapper.
+    """
+    strip_prefix = ctx.attr.strip_prefix
+    prefix = ctx.attr.prefix
+    outputs = []
+
+    # Own srcs (strip_prefix/prefix applied)
+    for f in ctx.files.srcs:
+        path = f.short_path
+        if strip_prefix and path.startswith(strip_prefix):
+            path = path[len(strip_prefix):]
+        out = ctx.actions.declare_file(ctx.label.name + "/" + prefix + path)
+        ctx.actions.symlink(output = out, target_file = f)
+        outputs.append(out)
+
+    # Deps (transitive sphinx_docs_library entries)
+    for dep in ctx.attr.deps:
+        for entry in dep[SphinxDocsLibraryInfo].transitive.to_list():
+            for f in entry.files:
+                path = f.short_path
+                if entry.strip_prefix and path.startswith(entry.strip_prefix):
+                    path = path[len(entry.strip_prefix):]
+                out = ctx.actions.declare_file(ctx.label.name + "/" + entry.prefix + path)
+                ctx.actions.symlink(output = out, target_file = f)
+                outputs.append(out)
+
+    # ctx.files.srcs is frozen (from the rule framework) so it is safe as a depset element.
+    own_entry = struct(strip_prefix = strip_prefix, prefix = prefix, files = ctx.files.srcs)
+    return [
+        SphinxDocsLibraryInfo(
+            strip_prefix = strip_prefix,
+            prefix = prefix,
+            files = depset(ctx.files.srcs),
+            transitive = depset(
+                direct = [own_entry],
+                transitive = [dep[SphinxDocsLibraryInfo].transitive for dep in ctx.attr.deps],
+            ),
+        ),
+        DefaultInfo(files = depset(outputs)),
+    ]
+
+_docs_src_dir_rule = rule(
+    implementation = _docs_src_dir_impl,
+    attrs = {
+        "srcs": attr.label_list(allow_files = True),
+        "strip_prefix": attr.string(),
+        "prefix": attr.string(),
+        "deps": attr.label_list(providers = [SphinxDocsLibraryInfo]),
+    },
+)
+
+def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good = None, extra_docs = []):
     """Creates all targets related to documentation.
 
     By using this function, you'll get any and all updates for documentation targets in one place.
@@ -135,6 +195,9 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
       data: Additional data files to include in the documentation build.
       deps: Additional dependencies for the documentation build.
       scan_code: List of code targets to scan for source code links.
+      extra_docs: List of sphinx_docs_library targets to merge into the source tree.
+        Each target controls placement via its strip_prefix/prefix attributes.
+        See sphinx_docs_library in rules_python for details.
     """
 
     call_path = native.package_name()
@@ -182,23 +245,39 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         visibility = ["//visibility:public"],
     )
 
+    # conf.py is not captured by the docs_sources glob (*.py excluded), so we
+    # pass it explicitly alongside the glob results.
+    conf_py = source_prefix + "conf.py"
+
+    _docs_src_dir_rule(
+        name = "docs_src_dir",
+        srcs = [":docs_sources", conf_py],
+        strip_prefix = source_prefix,
+        prefix = "",
+        deps = extra_docs,
+        visibility = ["//visibility:public"],
+    )
+
     _sourcelinks_json(name = "sourcelinks_json", srcs = scan_code)
 
     data_with_docs_sources = _rewrite_needs_json_to_docs_sources(data)
     additional_combo_sourcelinks = _rewrite_needs_json_to_sourcelinks(data)
     _merge_sourcelinks(name = "merged_sourcelinks", sourcelinks = [":sourcelinks_json"] + additional_combo_sourcelinks, known_good = known_good)
-    docs_data = data + [":sourcelinks_json"]
-    combo_data = data_with_docs_sources + [":merged_sourcelinks"]
+    docs_data = data + [":sourcelinks_json", ":docs_src_dir"]
+    combo_data = data_with_docs_sources + [":merged_sourcelinks", ":docs_src_dir"]
 
     docs_env = {
         "SOURCE_DIRECTORY": source_dir,
         "DATA": str(data),
         "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
+        # incremental.py always resolves the composed source tree from runfiles.
+        "COMPOSED_SOURCE_CONF": "_main/docs_src_dir/conf.py",
     }
     docs_sources_env = {
         "SOURCE_DIRECTORY": source_dir,
         "DATA": str(data_with_docs_sources),
         "SCORE_SOURCELINKS": "$(location :merged_sourcelinks)",
+        "COMPOSED_SOURCE_CONF": "_main/docs_src_dir/conf.py",
     }
     if known_good:
         docs_env["KNOWN_GOOD_JSON"] = "$(location "+ known_good + ")"
@@ -253,24 +332,12 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         env = docs_env
     )
 
-    docs_env["ACTION"] = "live_preview"
     py_binary(
-        name = "live_preview",
-        tags = ["cli_help=Live preview documentation in the browser:\nbazel run //:live_preview"],
-        srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = docs_data,
+        name = "gen_live_preview",
+        tags = ["cli_help=Generate ./live_preview script (run that script for a live preview):\nbazel run //:gen_live_preview"],
+        srcs = ["@score_docs_as_code//src:gen_live_preview.py"],
         deps = deps,
-        env = docs_env
-    )
-
-    docs_sources_env["ACTION"] = "live_preview"
-    py_binary(
-        name = "live_preview_combo_experimental",
-        tags = ["cli_help=Live preview full documentation with all dependencies in the browser:\nbazel run //:live_preview_combo_experimental"],
-        srcs = ["@score_docs_as_code//src:incremental.py"],
-        data = combo_data,
-        deps = deps,
-        env = docs_sources_env
+        env = {"SOURCE_DIRECTORY": source_dir},
     )
 
     py_venv(
@@ -286,6 +353,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         name = "needs_json",
         srcs = [":docs_sources"],
         config = ":" + source_prefix + "conf.py",
+        deps = [":docs_src_dir"],
         extra_opts = [
             "-W",
             "--keep-going",
