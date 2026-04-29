@@ -54,10 +54,11 @@ def some_function():
     with open(output_file) as f:
         data: list[dict[str, str | int]] = json.load(f)
     assert isinstance(data, list)
-    assert len(data) > 0
+    # First element is the metadata dict; there must be at least one need entry after it
+    assert len(data) > 1
 
-    # Verify schema of each entry
-    for entry in data:
+    # Verify schema of each need entry (skip the first metadata element)
+    for entry in data[1:]:
         assert "file" in entry
         assert "line" in entry
         assert "tag" in entry
@@ -71,4 +72,4 @@ def some_function():
         assert isinstance(entry["need"], str)
         assert isinstance(entry["full_line"], str)
 
-    assert any(entry["need"] == "tool_req__docs_arch_types" for entry in data)
+    assert any(entry["need"] == "tool_req__docs_arch_types" for entry in data[1:])

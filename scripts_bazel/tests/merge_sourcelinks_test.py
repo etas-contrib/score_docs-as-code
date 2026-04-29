@@ -23,18 +23,21 @@ _MY_PATH = Path(__file__).parent
 
 def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
     """Test basic merge functionality."""
-    # Create test JSON files with correct schema
+    # Each sourcelinks JSON starts with a metadata dict followed by need entries
+    local_meta = {"repo_name": "local_repo", "hash": "", "url": ""}
+
     file1 = tmp_path / "links1.json"
     file1.write_text(
         json.dumps(
             [
+                local_meta,
                 {
                     "file": "test1.py",
                     "line": 10,
                     "tag": "# req-Id:",
                     "need": "tool_req__docs_arch_types",
                     "full_line": "# req-Id: tool_req__docs_arch_types",
-                }
+                },
             ]
         )
     )
@@ -43,16 +46,21 @@ def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
     file2.write_text(
         json.dumps(
             [
+                local_meta,
                 {
                     "file": "test2.py",
                     "line": 20,
                     "tag": "# req-Id:",
                     "need": "gd_req__req_validity",
                     "full_line": "# req-Id: gd_req__req_validity",
-                }
+                },
             ]
         )
     )
+
+    # known_good.json is required by the script; for local_repo it is never read
+    known_good_file = tmp_path / "known_good.json"
+    known_good_file.write_text(json.dumps({"modules": {}}))
 
     output_file = tmp_path / "merged.json"
 
@@ -62,6 +70,8 @@ def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
             _MY_PATH.parent / "merge_sourcelinks.py",
             "--output",
             str(output_file),
+            "--known_good",
+            str(known_good_file),
             str(file1),
             str(file2),
         ],
