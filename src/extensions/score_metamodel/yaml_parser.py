@@ -95,6 +95,10 @@ def default_options():
         # Introduced with sphinx-needs 6.3.0
         "is_import",
         "constraints",
+        # Auto-populated by sphinx-needs when document hierarchy is detected
+        # (e.g. via needimport placing needs as adjacent siblings in the doctree)
+        "parent_need",
+        "parent_needs",
     }
 
 
