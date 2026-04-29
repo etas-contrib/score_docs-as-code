@@ -95,6 +95,9 @@ def default_options():
         # Introduced with sphinx-needs 6.3.0
         "is_import",
         "constraints",
+        # Added by sphinx-needs when needs are imported via needimport
+        "parent_needs",
+        "parent_need",
     }
 
 
