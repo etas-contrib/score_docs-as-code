@@ -67,21 +67,23 @@ if __name__ == "__main__":
         logger.info("Waiting for client to connect on port: " + str(args.debug_port))
         debugpy.wait_for_client()
 
-    workspace = os.getenv("BUILD_WORKSPACE_DIRECTORY")
-    if workspace:
-        workspace += "/"
-    else:
-        workspace = ""
+    workspace = Path(get_env("BUILD_WORKSPACE_DIRECTORY"))
+    source_directory = get_env("SOURCE_DIRECTORY")
+    sphinx_source = os.path.join(
+        get_env("RUNFILES_DIR"), get_env("DOCS_SOURCE_TREE"), source_directory
+    )
 
     base_arguments = [
-        workspace + get_env("SOURCE_DIRECTORY"),
-        workspace + "_build",
+        sphinx_source,
+        str(workspace / "_build"),
         "-W",  # treat warning as errors
         "--keep-going",  # do not abort after one error
         "-T",  # show details in case of errors in extensions
         "--jobs",
         "auto",
         f"--define=external_needs_source={get_env('DATA')}",
+        # Source tree is read-only; redirect generated ubproject.toml to the workspace.
+        f"--define=needscfg_outpath={workspace / source_directory / 'ubproject.toml'}",
     ]
 
     # configure sphinx build with GitHub user and repo from CLI
@@ -89,13 +91,13 @@ if __name__ == "__main__":
         base_arguments.append(f"-A=github_user={args.github_user}")
         base_arguments.append(f"-A=github_repo={args.github_repo}")
         base_arguments.append("-A=github_version=main")
-        base_arguments.append(f"-A=doc_path={get_env('SOURCE_DIRECTORY')}")
+        base_arguments.append(f"-A=doc_path={source_directory}")
     if os.getenv("KNOWN_GOOD_JSON"):
         base_arguments.append(f"--define=KNOWN_GOOD_JSON={get_env('KNOWN_GOOD_JSON')}")
 
     action = get_env("ACTION")
     if action == "live_preview":
-        Path(workspace + "/_build/score_source_code_linker_cache.json").unlink(
+        (workspace / "_build" / "score_source_code_linker_cache.json").unlink(
             missing_ok=True
         )
         sphinx_autobuild_main(

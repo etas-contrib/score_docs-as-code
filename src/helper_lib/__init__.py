@@ -30,7 +30,9 @@ def config_setdefault(config: Config, name: str, value: Any) -> None:
     # Sphinx has no public API for this check. We use ``_raw_config`` which is the
     # de-facto standard across the ecosystem (Furo, RTD-theme, etc.). If Sphinx
     # ever adds a public alternative, update this single function.
-    if name not in config._raw_config:  # pyright: ignore [reportPrivateUsage]
+    #
+    # Also check config.overrides so -D flags to Sphinx can override extension defaults
+    if name not in config._raw_config and name not in config.overrides:  # pyright: ignore [reportPrivateUsage]
         setattr(config, name, value)
 
 

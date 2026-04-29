@@ -45,6 +45,58 @@ load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_venv")
 load("@docs_as_code_hub_env//:requirements.bzl", "all_requirements")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
+load("@rules_python//sphinxdocs/private:sphinx_docs_library_info.bzl", "SphinxDocsLibraryInfo")
+
+def _docs_source_tree_impl(ctx):
+    """Materializes a sphinx_docs_library into a single directory for incremental builds."""
+    output_dir = ctx.actions.declare_directory(ctx.label.name)
+
+    all_inputs = []
+    pairs = []  # list of (src_exec_path, dest_rel_path)
+
+    # conf.py at its natural short_path position (e.g. "docs/conf.py")
+    config = ctx.file.config
+    all_inputs.append(config)
+    pairs.append((config.path, config.short_path))
+
+    for t in ctx.attr.lib:
+        info = t[SphinxDocsLibraryInfo]
+        for entry in info.transitive.to_list():
+            for f in entry.files:
+                dest_rel = entry.prefix + f.short_path.removeprefix(entry.strip_prefix)
+                all_inputs.append(f)
+                pairs.append((f.path, dest_rel))
+
+    cmds = ["set -euo pipefail"]
+    for src, dest_rel in pairs:
+        parent = dest_rel.rsplit("/", 1)[0] if "/" in dest_rel else ""
+        if parent:
+            cmds.append("mkdir -p '{}/{}'".format(output_dir.path, parent))
+        cmds.append("cp '{}' '{}/{}'".format(src, output_dir.path, dest_rel))
+
+    ctx.actions.run_shell(
+        inputs = all_inputs,
+        outputs = [output_dir],
+        command = "\n".join(cmds),
+        progress_message = "Materializing docs source tree for %{label}",
+    )
+
+    return [DefaultInfo(files = depset([output_dir]))]
+
+_docs_source_tree = rule(
+    implementation = _docs_source_tree_impl,
+    attrs = {
+        "lib": attr.label_list(
+            providers = [SphinxDocsLibraryInfo],
+            doc = "sphinx_docs_library targets whose files to merge into the source tree.",
+        ),
+        "config": attr.label(
+            allow_single_file = True,
+            mandatory = True,
+            doc = "The conf.py file to include in the source tree.",
+        ),
+    },
+)
 
 def _rewrite_needs_json_to_docs_sources(labels):
     """Replace '@repo//:needs_json' -> '@repo//:docs_sources' for every item."""
@@ -194,11 +246,19 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
     data_with_docs_sources = _rewrite_needs_json_to_docs_sources(data)
     additional_combo_sourcelinks = _rewrite_needs_json_to_sourcelinks(data)
     _merge_sourcelinks(name = "merged_sourcelinks", sourcelinks = [":sourcelinks_json"] + additional_combo_sourcelinks, known_good = known_good)
-    docs_data = data + [":sourcelinks_json", ":docs_sources"]
+    _docs_source_tree(
+        name = "docs_source_tree",
+        lib = [":docs_sources"],
+        config = ":" + source_prefix + "conf.py",
+        visibility = ["//visibility:private"],
+    )
+
+    docs_data = data + [":sourcelinks_json", ":docs_sources", ":docs_source_tree"]
     combo_data = data_with_docs_sources + [":merged_sourcelinks", ":docs_sources"]
 
     docs_env = {
         "SOURCE_DIRECTORY": source_dir,
+        "DOCS_SOURCE_TREE": "$(rlocationpath :docs_source_tree)",
         "DATA": str(data),
         "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
     }
