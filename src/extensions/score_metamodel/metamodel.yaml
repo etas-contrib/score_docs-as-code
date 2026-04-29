@@ -736,6 +736,7 @@ needs_types:
       violates: feat_arc_sta
     optional_options:
       mitigation_issue: ^https://github.com/.*$
+      safety_relevant: ^(yes|no)$
     optional_links:
       mitigated_by: stkh_req, aou_req
     parts: 3
@@ -758,6 +759,8 @@ needs_types:
     optional_options:
       # req-Id: tool_req__docs_saf_attrs_mitigation_issue
       mitigation_issue: ^https://github.com/.*$
+      # req-Id: tool_req__docs_saf_attrs_safety_relevant
+      safety_relevant: ^(yes|no)$
     optional_links:
       # req-Id: tool_req__docs_saf_attrs_mitigated_by
       # (only mandatory once valid status == valid)
@@ -782,6 +785,8 @@ needs_types:
     optional_options:
       # req-Id: tool_req__docs_saf_attrs_mitigation_issue
       mitigation_issue: ^https://github.com/.*$
+      # req-Id: tool_req__docs_saf_attrs_safety_relevant
+      safety_relevant: ^(yes|no)$
     mandatory_links:
       # req-Id: tool_req__docs_saf_attrs_violates
       violates: comp_arc_sta
@@ -810,6 +815,10 @@ needs_types:
     optional_options:
       # req-Id: tool_req__docs_saf_attrs_mitigation_issue
       mitigation_issue: ^https://github.com/.*$
+      # req-Id: tool_req__docs_saf_attrs_safety_relevant
+      safety_relevant: ^(yes|no)$
+      # req-Id: tool_req__docs_saf_attrs_root_cause
+      root_cause: ^[\s\S]+$
     mandatory_links:
       # req-Id: tool_req__docs_saf_attrs_violates
       violates: feat_arc_dyn
@@ -837,6 +846,10 @@ needs_types:
     optional_options:
       # req-Id: tool_req__docs_saf_attrs_mitigation_issue
       mitigation_issue: ^https://github.com/.*$
+      # req-Id: tool_req__docs_saf_attrs_safety_relevant
+      safety_relevant: ^(yes|no)$
+      # req-Id: tool_req__docs_saf_attrs_root_cause
+      root_cause: ^[\s\S]+$
     mandatory_links:
       # req-Id: tool_req__docs_saf_attrs_violates
       violates: comp_arc_dyn
