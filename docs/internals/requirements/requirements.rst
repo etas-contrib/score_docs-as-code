@@ -1259,6 +1259,31 @@ Safety Analysis (DFA + FMEA) Process to Tool Requirement Mapping
    to have an optional ``root_cause`` attribute with non-empty content.
 
 
+.. tool_req:: Safety Analysis Safety Relevant Attribute
+   :id: tool_req__docs_saf_attrs_safety_relevant
+   :implemented: YES
+   :tags: Safety Analysis
+   :version: 1
+
+   Docs-As-Code shall allow needs of type :need:`tool_req__docs_saf_types` and
+   ``plat_saf_dfa`` to have an optional ``safety_relevant`` attribute. The
+   allowed values are:
+
+   * yes
+   * no
+
+
+.. tool_req:: FMEA: Root Cause Attribute
+   :id: tool_req__docs_saf_attrs_root_cause
+   :implemented: YES
+   :tags: Safety Analysis
+   :version: 1
+
+   Docs-As-Code shall allow FMEA needs (``feat_saf_fmea``, ``comp_saf_fmea``)
+   to have an optional ``root_cause`` attribute with non-empty content.
+
+
+
 🔒 Security Analysis
 #####################
 
