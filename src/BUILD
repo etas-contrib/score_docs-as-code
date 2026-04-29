@@ -101,6 +101,6 @@ sphinx_docs_library(
     name = "src_docs",
     srcs = glob(["docs/**/*.rst"]),
     strip_prefix = "src/docs/",
-    prefix = "docs/src_extensions/",
+    prefix = "docs/BLA/",  # must be under docs(source_dir=X) !
     visibility = ["//visibility:public"],
 )

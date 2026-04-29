@@ -44,7 +44,6 @@ Easy streamlined way for S-CORE docs-as-code.
 load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_venv")
 load("@docs_as_code_hub_env//:requirements.bzl", "all_requirements")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
-load("@rules_python//sphinxdocs/private:sphinx_docs_library_info.bzl", "SphinxDocsLibraryInfo")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 
 def _rewrite_needs_json_to_docs_sources(labels):
@@ -127,64 +126,7 @@ def _missing_requirements(deps):
         fail(msg)
     fail("This case should be unreachable?!")
 
-def _docs_src_dir_impl(ctx):
-    """Unified rule: materialises a composed source tree AND provides SphinxDocsLibraryInfo.
 
-    Output symlinks land at <name>/<prefix><path> so they are accessible in
-    py_binary runfiles under _main/<name>/<prefix><path>.  incremental.py
-    points Sphinx at that subtree via COMPOSED_SOURCE_CONF.
-
-    SphinxDocsLibraryInfo is also returned so :needs_json can use this target
-    as a dep directly, without a separate sphinx_docs_library wrapper.
-    """
-    strip_prefix = ctx.attr.strip_prefix
-    prefix = ctx.attr.prefix
-    outputs = []
-
-    # Own srcs (strip_prefix/prefix applied)
-    for f in ctx.files.srcs:
-        path = f.short_path
-        if strip_prefix and path.startswith(strip_prefix):
-            path = path[len(strip_prefix):]
-        out = ctx.actions.declare_file(ctx.label.name + "/" + prefix + path)
-        ctx.actions.symlink(output = out, target_file = f)
-        outputs.append(out)
-
-    # Deps (transitive sphinx_docs_library entries)
-    for dep in ctx.attr.deps:
-        for entry in dep[SphinxDocsLibraryInfo].transitive.to_list():
-            for f in entry.files:
-                path = f.short_path
-                if entry.strip_prefix and path.startswith(entry.strip_prefix):
-                    path = path[len(entry.strip_prefix):]
-                out = ctx.actions.declare_file(ctx.label.name + "/" + entry.prefix + path)
-                ctx.actions.symlink(output = out, target_file = f)
-                outputs.append(out)
-
-    # ctx.files.srcs is frozen (from the rule framework) so it is safe as a depset element.
-    own_entry = struct(strip_prefix = strip_prefix, prefix = prefix, files = ctx.files.srcs)
-    return [
-        SphinxDocsLibraryInfo(
-            strip_prefix = strip_prefix,
-            prefix = prefix,
-            files = depset(ctx.files.srcs),
-            transitive = depset(
-                direct = [own_entry],
-                transitive = [dep[SphinxDocsLibraryInfo].transitive for dep in ctx.attr.deps],
-            ),
-        ),
-        DefaultInfo(files = depset(outputs)),
-    ]
-
-_docs_src_dir_rule = rule(
-    implementation = _docs_src_dir_impl,
-    attrs = {
-        "srcs": attr.label_list(allow_files = True),
-        "strip_prefix": attr.string(),
-        "prefix": attr.string(),
-        "deps": attr.label_list(providers = [SphinxDocsLibraryInfo]),
-    },
-)
 
 def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good = None, extra_docs = []):
     """Creates all targets related to documentation.
@@ -243,22 +185,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
             source_prefix + "**/*.csv",
             source_prefix + "**/*.inc",
         ], allow_empty = True),
-        strip_prefix = source_prefix,
-        prefix = "",
         deps = extra_docs,
-        visibility = ["//visibility:public"],
-    )
-
-    # conf.py is not captured by the docs_sources glob (*.py excluded), so we
-    # pass it explicitly alongside the glob results.
-    conf_py = source_prefix + "conf.py"
-
-    sphinx_docs_library(
-        name = "docs_src_dir",
-        srcs = [conf_py],
-        strip_prefix = source_prefix,
-        prefix = "",
-        deps = extra_docs + [":docs_sources"],
         visibility = ["//visibility:public"],
     )
 
@@ -267,21 +194,18 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
     data_with_docs_sources = _rewrite_needs_json_to_docs_sources(data)
     additional_combo_sourcelinks = _rewrite_needs_json_to_sourcelinks(data)
     _merge_sourcelinks(name = "merged_sourcelinks", sourcelinks = [":sourcelinks_json"] + additional_combo_sourcelinks, known_good = known_good)
-    docs_data = data + [":sourcelinks_json", ":docs_src_dir"]
-    combo_data = data_with_docs_sources + [":merged_sourcelinks", ":docs_src_dir"]
+    docs_data = data + [":sourcelinks_json", ":docs_sources"]
+    combo_data = data_with_docs_sources + [":merged_sourcelinks", ":docs_sources"]
 
     docs_env = {
         "SOURCE_DIRECTORY": source_dir,
         "DATA": str(data),
         "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
-        # incremental.py always resolves the composed source tree from runfiles.
-        "COMPOSED_SOURCE_CONF": "_main/docs_src_dir/conf.py",
     }
     docs_sources_env = {
         "SOURCE_DIRECTORY": source_dir,
         "DATA": str(data_with_docs_sources),
         "SCORE_SOURCELINKS": "$(location :merged_sourcelinks)",
-        "COMPOSED_SOURCE_CONF": "_main/docs_src_dir/conf.py",
     }
     if known_good:
         docs_env["KNOWN_GOOD_JSON"] = "$(location "+ known_good + ")"
@@ -357,7 +281,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         name = "needs_json",
         srcs = [],
         config = ":" + source_prefix + "conf.py",
-        deps = [":docs_src_dir", ":docs_sources"],
+        deps = [":docs_sources"],
         extra_opts = [
             "-W",
             "--keep-going",
