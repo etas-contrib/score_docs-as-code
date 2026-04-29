@@ -45,6 +45,7 @@ load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_venv")
 load("@docs_as_code_hub_env//:requirements.bzl", "all_requirements")
 load("@rules_python//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
 load("@rules_python//sphinxdocs/private:sphinx_docs_library_info.bzl", "SphinxDocsLibraryInfo")
+load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 
 def _rewrite_needs_json_to_docs_sources(labels):
     """Replace '@repo//:needs_json' -> '@repo//:docs_sources' for every item."""
@@ -226,7 +227,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
     else:
         source_prefix = source_dir + "/"
 
-    native.filegroup(
+    sphinx_docs_library(
         name = "docs_sources",
         srcs = native.glob([
             source_prefix + "**/*.png",
@@ -242,6 +243,9 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
             source_prefix + "**/*.csv",
             source_prefix + "**/*.inc",
         ], allow_empty = True),
+        strip_prefix = source_prefix,
+        prefix = "",
+        deps = extra_docs,
         visibility = ["//visibility:public"],
     )
 
@@ -249,12 +253,12 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
     # pass it explicitly alongside the glob results.
     conf_py = source_prefix + "conf.py"
 
-    _docs_src_dir_rule(
+    sphinx_docs_library(
         name = "docs_src_dir",
-        srcs = [":docs_sources", conf_py],
+        srcs = [conf_py],
         strip_prefix = source_prefix,
         prefix = "",
-        deps = extra_docs,
+        deps = extra_docs + [":docs_sources"],
         visibility = ["//visibility:public"],
     )
 
@@ -351,9 +355,9 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
 
     sphinx_docs(
         name = "needs_json",
-        srcs = [":docs_sources"],
+        srcs = [],
         config = ":" + source_prefix + "conf.py",
-        deps = [":docs_src_dir"],
+        deps = [":docs_src_dir", ":docs_sources"],
         extra_opts = [
             "-W",
             "--keep-going",
