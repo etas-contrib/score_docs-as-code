@@ -14,14 +14,19 @@
 """Tests for merge_sourcelinks.py"""
 
 import json
-import subprocess
 import sys
 from pathlib import Path
+
+import pytest
+
+import scripts_bazel.merge_sourcelinks
 
 _MY_PATH = Path(__file__).parent
 
 
-def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
+def test_merge_sourcelinks_basic(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test basic merge functionality."""
     # Each sourcelinks JSON starts with a metadata dict followed by need entries
     local_meta = {"repo_name": "local_repo", "hash": "", "url": ""}
@@ -58,26 +63,22 @@ def test_merge_sourcelinks_basic(tmp_path: Path) -> None:
         )
     )
 
-    # known_good.json is required by the script; for local_repo it is never read
-    known_good_file = tmp_path / "known_good.json"
-    known_good_file.write_text(json.dumps({"modules": {}}))
-
     output_file = tmp_path / "merged.json"
 
-    result = subprocess.run(
+    monkeypatch.setattr(
+        sys,
+        "argv",
         [
-            sys.executable,
             _MY_PATH.parent / "merge_sourcelinks.py",
             "--output",
             str(output_file),
-            "--known_good",
-            str(known_good_file),
             str(file1),
             str(file2),
         ],
     )
+    result = scripts_bazel.merge_sourcelinks.main()
 
-    assert result.returncode == 0
+    assert result == 0
     assert output_file.exists()
 
     with open(output_file) as f:

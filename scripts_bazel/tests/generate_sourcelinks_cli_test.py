@@ -14,14 +14,19 @@
 """Tests for generate_sourcelinks_cli.py"""
 
 import json
-import subprocess
 import sys
 from pathlib import Path
+
+import pytest
+
+import scripts_bazel.generate_sourcelinks_cli
 
 _MY_PATH = Path(__file__).parent
 
 
-def test_generate_sourcelinks_cli_basic(tmp_path: Path) -> None:
+def test_generate_sourcelinks_cli_basic(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test basic functionality of generate_sourcelinks_cli."""
     # Create a test source file with a traceability tag
     test_file = tmp_path / "test_source.py"
@@ -37,17 +42,19 @@ def some_function():
     output_file = tmp_path / "output.json"
 
     # Execute the script
-    result = subprocess.run(
+    monkeypatch.setattr(
+        sys,
+        "argv",
         [
-            sys.executable,
             _MY_PATH.parent / "generate_sourcelinks_cli.py",
             "--output",
             str(output_file),
             str(test_file),
         ],
     )
+    result = scripts_bazel.generate_sourcelinks_cli.main()
 
-    assert result.returncode == 0
+    assert result == 0
     assert output_file.exists()
 
     # Check the output content
