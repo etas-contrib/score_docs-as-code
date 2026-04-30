@@ -72,7 +72,7 @@ def _docs_source_tree_impl(ctx):
         parent = dest_rel.rsplit("/", 1)[0] if "/" in dest_rel else ""
         if parent:
             cmds.append("mkdir -p '{}/{}'".format(output_dir.path, parent))
-        cmds.append("cp '{}' '{}/{}'".format(src, output_dir.path, dest_rel))
+        cmds.append("ln -s '{}' '{}/{}'".format(src, output_dir.path, dest_rel))
 
     ctx.actions.run_shell(
         inputs = all_inputs,
@@ -247,18 +247,18 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
     additional_combo_sourcelinks = _rewrite_needs_json_to_sourcelinks(data)
     _merge_sourcelinks(name = "merged_sourcelinks", sourcelinks = [":sourcelinks_json"] + additional_combo_sourcelinks, known_good = known_good)
     _docs_source_tree(
-        name = "docs_source_tree",
+        name = "docs_src_dir",
         lib = [":docs_sources"],
         config = ":" + source_prefix + "conf.py",
         visibility = ["//visibility:private"],
     )
 
-    docs_data = data + [":sourcelinks_json", ":docs_sources", ":docs_source_tree"]
+    docs_data = data + [":sourcelinks_json", ":docs_sources", ":docs_src_dir"]
     combo_data = data_with_docs_sources + [":merged_sourcelinks", ":docs_sources"]
 
     docs_env = {
         "SOURCE_DIRECTORY": source_dir,
-        "DOCS_SOURCE_TREE": "$(rlocationpath :docs_source_tree)",
+        "DOCS_SOURCE_TREE": "$(rlocationpath :docs_src_dir)",
         "DATA": str(data),
         "SCORE_SOURCELINKS": "$(location :sourcelinks_json)",
     }
