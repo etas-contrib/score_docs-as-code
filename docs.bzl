@@ -198,8 +198,8 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
     data_with_docs_sources = _rewrite_needs_json_to_docs_sources(data)
     additional_combo_sourcelinks = _rewrite_needs_json_to_sourcelinks(data)
     _merge_sourcelinks(name = "merged_sourcelinks", sourcelinks = [":sourcelinks_json"] + additional_combo_sourcelinks, known_good = known_good)
-    docs_data = data + [":sourcelinks_json"]
-    combo_data = data_with_docs_sources + [":merged_sourcelinks"]
+    docs_data = data + metamodel_data + [":sourcelinks_json"]
+    combo_data = data_with_docs_sources + metamodel_data + [":merged_sourcelinks"]
 
     docs_env = {
         "SOURCE_DIRECTORY": source_dir,
@@ -307,7 +307,7 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
         ] + metamodel_opts,
         formats = ["needs"],
         sphinx = ":sphinx_build",
-        tools = data,
+        tools = data + metamodel_data,
         visibility = ["//visibility:public"],
         # Persistent workers cause stale symlinks after dependency version
         # changes, corrupting the Bazel cache.
