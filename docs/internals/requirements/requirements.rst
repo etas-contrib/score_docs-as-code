@@ -984,7 +984,7 @@ Testing
 
 .. tool_req:: Safety Analysis Mitigation Attribute
   :id: tool_req__docs_saf_attrs_mitigated_by
-  :implemented: NO
+  :implemented: YES
   :tags: Safety Analysis
   :version: 1
   :satisfies:
@@ -995,10 +995,11 @@ Testing
     gd_req__saf_linkage_safety,
     gd_req__sec_attr_mitigated_by,
     gd_req__sec_attr_requirements_check,
+    gd_req__saf_linkage_status_check,
   :parent_covered: YES
 
   Docs-As-Code shall enforce valid needs (`status` == `valid`) of type
-  :need:`tool_req__docs_saf_types` to have at least one `mitigated_by` link to a
+  :need:`tool_req__docs_saf_types` and ASIL-B level to have at least one `mitigated_by` link to a
   requirement on the corresponding level.
 
   At least one of the linked requirements must have
