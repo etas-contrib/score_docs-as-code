@@ -72,7 +72,7 @@ def _docs_source_tree_impl(ctx):
         parent = dest_rel.rsplit("/", 1)[0] if "/" in dest_rel else ""
         if parent:
             cmds.append("mkdir -p '{}/{}'".format(output_dir.path, parent))
-        cmds.append("ln -s '{}' '{}/{}'".format(src, output_dir.path, dest_rel))
+        cmds.append("ln '{}' '{}/{}'".format(src, output_dir.path, dest_rel))
 
     ctx.actions.run_shell(
         inputs = all_inputs,
