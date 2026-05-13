@@ -304,14 +304,22 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
             "--jobs",
             "auto",
             "--define=external_needs_source=" + str(data),
-        ] + metamodel_opts,
+            "--define=score_sourcelinks_json=$(location :sourcelinks_json)",
+            "--define=score_source_code_linker_plain_links=1",
+        ],
         formats = ["needs"],
         sphinx = ":sphinx_build",
-        tools = data + metamodel_data,
+        tools = data + [":sourcelinks_json"],
         visibility = ["//visibility:public"],
         # Persistent workers cause stale symlinks after dependency version
         # changes, corrupting the Bazel cache.
         allow_persistent_workers = False,
+    )
+
+    native.alias(
+        name = "traceability_gate",
+        actual = "@score_docs_as_code//scripts_bazel:traceability_gate",
+        tags = ["cli_help=Enforce traceability coverage thresholds:\nbazel run //:traceability_gate -- --metrics-json bazel-bin/needs_json/_build/needs/metrics.json"],
     )
 
 def _sourcelinks_json(name, srcs):
