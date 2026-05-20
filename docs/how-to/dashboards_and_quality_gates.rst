@@ -50,6 +50,11 @@ In ``docs/conf.py``:
    score_metamodel_requirement_types = "feat_req,comp_req,aou_req"
    score_metamodel_include_external_needs = False
 
+By default, ``score_metamodel`` autodiscovers requirement types from the
+repository needs that are present in the current build. If
+``score_metamodel_requirement_types`` is set, that explicit list overrides
+autodiscovery.
+
 Use ``score_metamodel_include_external_needs = True`` only in repositories that
 intentionally aggregate requirements across module dependencies, such as
 integration repositories. Use ``False`` for module repositories to gate only on
