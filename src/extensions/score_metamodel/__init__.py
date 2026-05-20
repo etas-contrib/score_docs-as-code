@@ -118,7 +118,9 @@ def _write_metrics_json(app: Sphinx, exception: Exception | None) -> None:
     raw = str(getattr(app.config, "score_metamodel_requirement_types", "")).strip()
     requirement_types = {t.strip() for t in raw.split(",") if t.strip()}
     if not requirement_types:
-        requirement_types = _discover_requirement_types(app, all_needs, include_external)
+        requirement_types = _discover_requirement_types(
+            app, all_needs, include_external
+        )
     include_not_implemented = True
 
     metrics_by_type: dict[str, Any] = {}
@@ -164,6 +166,19 @@ def _get_need_value(need: Any, key: str, default: Any = None) -> Any:
         return default
 
 
+def _as_requirement_directive(need_type: Any) -> str | None:
+    if not isinstance(need_type, dict):
+        return None
+    directive = need_type.get("directive")
+    tags = need_type.get("tags", [])
+    if not isinstance(directive, str) or not isinstance(tags, list):
+        return None
+    normalized = {str(tag).strip() for tag in tags}
+    if "requirement_excl_process" in normalized or "requirement" in normalized:
+        return directive
+    return None
+
+
 def _discover_requirement_types(
     app: Sphinx, all_needs: list[Any], include_external: bool
 ) -> set[str]:
@@ -171,16 +186,8 @@ def _discover_requirement_types(
     tagged_requirements: set[str] = set()
     needs_types = getattr(app.config, "needs_types", [])
     for need_type in needs_types or []:
-        if not isinstance(need_type, dict):
-            continue
-        directive = need_type.get("directive")
-        tags = need_type.get("tags", [])
-        if not isinstance(directive, str):
-            continue
-        if not isinstance(tags, list):
-            continue
-        normalized = {str(tag).strip() for tag in tags}
-        if "requirement_excl_process" in normalized or "requirement" in normalized:
+        directive = _as_requirement_directive(need_type)
+        if directive:
             tagged_requirements.add(directive)
 
     present_types: set[str] = set()
