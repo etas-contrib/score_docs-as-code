@@ -35,6 +35,11 @@ filegroup(
 )
 
 filegroup(
+    name = "metamodel_yaml",
+    srcs = ["metamodel.yaml"],
+)
+
+filegroup(
     name = "all_sources",
     srcs = [
         ":sources",
