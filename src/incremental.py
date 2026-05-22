@@ -86,6 +86,10 @@ if __name__ == "__main__":
 
     metamodel_yaml = os.environ.get("SCORE_METAMODEL_YAML", "")
     if metamodel_yaml:
+        # Normalize to absolute path so it resolves correctly after Sphinx changes cwd
+        if not os.path.isabs(metamodel_yaml):
+            metamodel_yaml = workspace + metamodel_yaml
+        metamodel_yaml = os.path.abspath(metamodel_yaml)
         base_arguments.append(f"--define=score_metamodel_yaml={metamodel_yaml}")
 
     # configure sphinx build with GitHub user and repo from CLI
