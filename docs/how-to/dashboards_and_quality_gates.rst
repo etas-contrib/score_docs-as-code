@@ -40,25 +40,35 @@ Typical Setup
 
 For details, see :ref:`setup`.
 
-Minimal Configuration Example
------------------------------
+Configuration
+-------------
 
-In ``docs/conf.py``:
+Default Behavior (No Configuration Needed)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, ``score_metamodel`` autodiscovers requirement types from the
+repository needs present in the current build. Requirement types are identified
+from ``needs_types`` entries tagged with ``requirement`` or
+``requirement_excl_process``.
+
+This is the recommended setup for most repositories.
+
+Optional Override for Requirement Types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a repository needs to force a specific set of requirement types, set an
+explicit override in ``docs/conf.py``:
 
 .. code-block:: python
 
    score_metamodel_requirement_types = "feat_req,comp_req,aou_req"
-   score_metamodel_include_external_needs = False
 
-By default, ``score_metamodel`` autodiscovers requirement types from the
-repository needs that are present in the current build. If
-``score_metamodel_requirement_types`` is set, that explicit list overrides
+When this setting is provided, the explicit list is used instead of
 autodiscovery.
 
 Use ``score_metamodel_include_external_needs = True`` only in repositories that
 intentionally aggregate requirements across module dependencies, such as
-integration repositories. Use ``False`` for module repositories to gate only on
-local traceability.
+integration repositories.
 
 Building the Dashboard
 ----------------------
@@ -92,7 +102,7 @@ There are two common modes:
 
 **Module repository**
 
-- Set ``score_metamodel_include_external_needs = False``.
+- No setting needed. Local-only scope is the default.
 - Gate only on the needs owned by the repository itself.
 - Use this for per-module implementation progress and traceability.
 

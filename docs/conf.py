@@ -18,7 +18,3 @@ version = "0.1"
 extensions = [
     "score_sphinx_bundle",
 ]
-
-# Configure traceability metrics explicitly for this repository.
-score_metamodel_requirement_types = "tool_req"
-score_metamodel_include_external_needs = False

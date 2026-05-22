@@ -98,47 +98,10 @@ class _FakeNonReqNeedsData:
         }
 
 
-class _NeedObj:
-    def __init__(self, payload: dict[str, object]):
-        self._payload = payload
-
-    def get(self, key: str, default: object | None = None) -> object | None:
-        return self._payload.get(key, default)
-
-
-class _FakeObjectNeedsData:
-    def __init__(self, env: object):
-        self._env = env
-
-    def get_needs_view(self) -> dict[str, _NeedObj]:
-        return {
-            "LOCAL_REQ": _NeedObj(
-                {
-                    "id": "LOCAL_REQ",
-                    "type": "tool_req",
-                    "implemented": "YES",
-                    "source_code_link": "",
-                    "testlink": "",
-                    "is_external": False,
-                }
-            ),
-            "LOCAL_FEAT": _NeedObj(
-                {
-                    "id": "LOCAL_FEAT",
-                    "type": "feat_req",
-                    "implemented": "YES",
-                    "source_code_link": "",
-                    "testlink": "",
-                    "is_external": False,
-                }
-            ),
-        }
-
-
 def _app(
     tmp_path: Path,
     include_external: bool,
-    requirement_types: str = "tool_req",
+    requirement_types: str = "",
     needs_types: list[dict[str, object]] | None = None,
 ) -> SimpleNamespace:
     discovered_types = needs_types or [
@@ -281,7 +244,7 @@ def test_write_metrics_json_empty_when_no_types_configured_or_discovered(
     assert payload["metrics_by_type"] == {}
 
 
-def test_autodiscovery_falls_back_to_present_req_suffix_types(
+def test_autodiscovery_without_tagged_requirement_types_is_empty(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(metamodel_init, "SphinxNeedsData", _FakeNeedsData)
@@ -300,7 +263,7 @@ def test_autodiscovery_falls_back_to_present_req_suffix_types(
     )
 
     payload = json.loads((tmp_path / "metrics.json").read_text(encoding="utf-8"))
-    assert set(payload["metrics_by_type"].keys()) == {"feat_req", "tool_req"}
+    assert payload["metrics_by_type"] == {}
 
 
 def test_autodiscovery_respects_include_external_scope(
@@ -315,7 +278,11 @@ def test_autodiscovery_respects_include_external_scope(
                 tmp_path,
                 include_external=True,
                 requirement_types="",
-                needs_types=[{"directive": "workflow", "tags": []}],
+                needs_types=[
+                    {"directive": "tool_req", "tags": ["requirement_excl_process"]},
+                    {"directive": "feat_req", "tags": ["requirement"]},
+                    {"directive": "gd_req", "tags": ["requirement"]},
+                ],
             ),
         ),
         None,
@@ -323,28 +290,6 @@ def test_autodiscovery_respects_include_external_scope(
 
     payload = json.loads((tmp_path / "metrics.json").read_text(encoding="utf-8"))
     assert set(payload["metrics_by_type"].keys()) == {"feat_req", "gd_req", "tool_req"}
-
-
-def test_autodiscovery_handles_needitem_like_objects(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    monkeypatch.setattr(metamodel_init, "SphinxNeedsData", _FakeObjectNeedsData)
-
-    metamodel_init._write_metrics_json(
-        cast(
-            Sphinx,
-            _app(
-                tmp_path,
-                include_external=False,
-                requirement_types="",
-                needs_types=[{"directive": "workflow", "tags": []}],
-            ),
-        ),
-        None,
-    )
-
-    payload = json.loads((tmp_path / "metrics.json").read_text(encoding="utf-8"))
-    assert set(payload["metrics_by_type"].keys()) == {"feat_req", "tool_req"}
 
 
 @pytest.mark.parametrize(

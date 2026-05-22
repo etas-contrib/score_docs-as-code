@@ -157,13 +157,7 @@ def _write_metrics_json(app: Sphinx, exception: Exception | None) -> None:
 
 
 def _get_need_value(need: Any, key: str, default: Any = None) -> Any:
-    getter = getattr(need, "get", None)
-    if callable(getter):
-        return getter(key, default)
-    try:
-        return need[key]
-    except Exception:
-        return default
+    return need.get(key, default)
 
 
 def _as_requirement_directive(need_type: Any) -> str | None:
@@ -198,11 +192,15 @@ def _discover_requirement_types(
         need_type: Any = _get_need_value(need, "type", None)
         if isinstance(need_type, str):
             present_types.add(need_type)
+
     discovered = tagged_requirements.intersection(present_types)
-    if not discovered:
-        # Fallback for repositories that use *_req directives but do not tag
-        # requirement types in needs_types.
-        discovered = {t for t in present_types if t.endswith("_req")}
+
+    if tagged_requirements and not discovered:
+        logger.warning(
+            "No requirement types discovered in current build for tagged "
+            "needs_types requirement directives."
+        )
+
     if discovered:
         logger.info(
             "score_metamodel_requirement_types is not configured; "
