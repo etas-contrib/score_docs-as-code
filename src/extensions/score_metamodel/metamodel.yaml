@@ -1026,6 +1026,18 @@ graph_checks:
       fulfils: safety != QM
     explanation: An QM architecture element cannot implement ASIL requirements.
 
+  # req-Id: tool_req__docs_arch_link_safety_belongs_to
+  tool_req__docs_arch_link_safety_belongs_to:
+    needs:
+      include: feat_arc_sta, feat_arc_dyn, comp_arc_sta, comp_arc_dyn
+      condition:
+        and:
+          - safety != QM
+          - status == valid
+    check:
+      belongs_to: safety != QM
+    explanation: Safety architecture views must belong to safety architecture elements.
+
   # req-Id: tool_req__docs_req_arch_link_safety_to_arch
   tool_req__docs_req_arch_link_safety_to_arch:
     needs:
