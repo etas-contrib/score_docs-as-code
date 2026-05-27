@@ -715,16 +715,15 @@ Architecture Attributes
   Docs-as-Code shall enforce that valid safety architectural elements (Safety != QM) can
   only be linked against valid safety architectural elements.
 
-.. tool_req:: Check safety architecture view belongs_to a safety parent
-  :id: tool_req__docs_arch_link_safety_belongs_to
+.. tool_req:: Check safety architecture view fulfils only safety requirements
+  :id: tool_req__docs_arch_link_safety_fulfils
   :tags: Architecture
   :implemented: YES
   :version: 1
   :satisfies: gd_req__arch_linkage_safety
   :parent_covered: YES
 
-  Enforce that valid ASIL architecture views link only
-  to ASIL architecture elements via ``belongs_to``.
+  Enforce that valid ASIL architecture views fulfil only ASIL requirements.
 
 .. tool_req:: Security: Restrict linkage
   :id: tool_req__docs_arch_link_security
