@@ -453,12 +453,16 @@ Expect no errors related to "violates" field. We need to be generic for expect-n
    :status: valid
    :safety: QM
 
+   Some content to satisfy the mandatory description requirement.
+
 #EXPECT-NOT: pattern
 
 .. dd_sta:: This is a test
    :id: dd_sta__test_good_2
    :status: valid
    :safety: ASIL_B
+
+   Some content to satisfy the mandatory description requirement.
 
 
 #EXPECT-NOT: pattern
@@ -468,12 +472,32 @@ Expect no errors related to "violates" field. We need to be generic for expect-n
    :status: valid
    :safety: QM
 
+   Some content to satisfy the mandatory description requirement.
+
 #EXPECT-NOT: pattern
 
 .. dd_dyn:: This is a test
    :id: dd_dyn__test_good_2
    :status: valid
    :safety: ASIL_B
+
+   Some content to satisfy the mandatory description requirement.
+
+
+#EXPECT: dd_sta__test_no_content: is missing required attribute: `content`.
+
+.. dd_sta:: Missing content
+   :id: dd_sta__test_no_content
+   :status: valid
+   :safety: QM
+
+
+#EXPECT: sw_unit__test_no_content: is missing required attribute: `content`.
+
+.. sw_unit:: Missing content
+   :id: sw_unit__test_no_content
+   :status: valid
+   :safety: QM
 
 
 #EXPECT-NOT: pattern
@@ -483,6 +507,8 @@ Expect no errors related to "violates" field. We need to be generic for expect-n
    :status: valid
    :safety: QM
 
+   Some content to satisfy the mandatory description requirement.
+
 
 #EXPECT-NOT: pattern
 
@@ -490,6 +516,36 @@ Expect no errors related to "violates" field. We need to be generic for expect-n
    :id: sw_unit__test_good_2
    :status: valid
    :safety: ASIL_B
+
+   Some content to satisfy the mandatory description requirement.
+
+
+#EXPECT-NOT: pattern
+
+.. sw_unit_int:: This is a test
+   :id: sw_unit_int__test_good_1
+   :status: valid
+   :safety: QM
+
+   Some content to satisfy the mandatory description requirement.
+
+
+#EXPECT-NOT: pattern
+
+.. sw_unit_int:: This is a test
+   :id: sw_unit_int__test_good_2
+   :status: valid
+   :safety: ASIL_B
+
+   Some content to satisfy the mandatory description requirement.
+
+
+#EXPECT: sw_unit_int__test_no_content: is missing required attribute: `content`.
+
+.. sw_unit_int:: Missing content
+   :id: sw_unit_int__test_no_content
+   :status: valid
+   :safety: QM
 
 
 

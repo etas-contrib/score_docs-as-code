@@ -811,6 +811,54 @@ Architecture Attributes
 ..    Provide needs type ``dd_dyn`` for dynamic diagrams showing unit interactions as UML.
 
 
+
+.. tool_req:: Diagram mandatory safety and status attributes
+   :id: tool_req__docs_dd_diagram_safety_status
+   :tags: Detailed Design & Code
+   :version: 1
+   :implemented: YES
+   :satisfies:
+     gd_req__impl_diagram_safety,
+     gd_req__impl_diagram_status,
+
+   Diagrams (``dd_sta``, ``dd_dyn``) shall have mandatory ``safety`` (``QM`` or ``ASIL_B``) and ``status`` (``valid`` or ``invalid``) attributes.
+
+.. tool_req:: Diagram mandatory title
+   :id: tool_req__docs_dd_diagram_title
+   :tags: Detailed Design & Code
+   :version: 1
+   :implemented: YES
+   :satisfies: gd_req__impl_diagram_title
+
+   Diagrams (``dd_sta``, ``dd_dyn``) shall have a title.
+   The title must not contain requirement wording (``shall``, ``must``, ``will``).
+
+.. tool_req:: Unique IDs for implementation needs
+   :id: tool_req__docs_dd_uid
+   :tags: Detailed Design & Code
+   :version: 1
+   :implemented: YES
+   :satisfies:
+     gd_req__impl_diagram_uid,
+     gd_req__impl_unit_uid,
+     gd_req__impl_interface_uid,
+
+   Sphinx-Needs enforces globally unique IDs for all needs.
+   This covers ``dd_sta``, ``dd_dyn``, ``sw_unit``, and ``sw_unit_int``.
+
+.. tool_req:: Mandatory description for diagrams, units, and interfaces
+   :id: tool_req__docs_dd_description
+   :tags: Detailed Design & Code
+   :version: 1
+   :implemented: YES
+   :satisfies:
+     gd_req__impl_diagram_description,
+     gd_req__impl_unit_description,
+     gd_req__impl_interface_description,
+
+   ``dd_sta``, ``dd_dyn``, ``sw_unit``, and ``sw_unit_int`` needs shall have non-empty content serving as description.
+
+
 Testing
 #######
 
