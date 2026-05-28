@@ -121,7 +121,7 @@ REPOS_TO_TEST: list[ConsumerRepo] = [
 ]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def sphinx_base_dir(tmp_path_factory: TempPathFactory, pytestconfig: Config) -> Path:
     """Create base directory for testing - either temporary or persistent cache"""
     disable_cache: bool = bool(pytestconfig.getoption("--disable-cache"))
@@ -137,20 +137,20 @@ def sphinx_base_dir(tmp_path_factory: TempPathFactory, pytestconfig: Config) -> 
     return CACHE_DIR
 
 
-def cleanup(cmd: str):
+def cleanup(cwd: Path, cmd: str):
     """
     Cleanup before tests are run
     """
-    for p in Path(".").glob("*/ubproject.toml"):
+    for p in cwd.glob("*/ubproject.toml"):
         p.unlink()
-    shutil.rmtree("_build", ignore_errors=True)
+    shutil.rmtree(cwd / "_build", ignore_errors=True)
     if cmd == "bazel run //:ide_support":
-        shutil.rmtree(".venv_docs", ignore_errors=True)
+        shutil.rmtree(cwd / ".venv_docs", ignore_errors=True)
         cmd = "bazel clean --async"
-    subprocess.run(cmd.split(), text=True)
+    subprocess.run(cmd.split(), text=True, cwd=cwd)
 
 
-def get_current_git_commit(curr_path: Path):
+def get_current_git_commit(git_repo: Path):
     """
     Get the current git commit hash (HEAD).
     """
@@ -159,7 +159,7 @@ def get_current_git_commit(curr_path: Path):
         capture_output=True,
         text=True,
         check=True,
-        cwd=curr_path,
+        cwd=git_repo,
     )
     return result.stdout.strip()
 
@@ -243,7 +243,7 @@ def replace_bazel_dep_with_local_override(module_content: str) -> str:
     # Match bazel_dep with required name and optional version
     pattern = r'bazel_dep\(name = "score_docs_as_code"(?:, version = "[^"]+")?\)'
 
-    replacement = """bazel_dep(name = "score_docs_as_code", version = "0.0.0")
+    replacement = """bazel_dep(name = "score_docs_as_code")
 local_path_override(
     module_name = "score_docs_as_code",
     path = "../docs_as_code"
@@ -256,7 +256,7 @@ def replace_bazel_dep_with_git_override(
 ) -> str:
     pattern = r'bazel_dep\(name = "score_docs_as_code"(?:, version = "[^"]+")?\)'
 
-    replacement = f'''bazel_dep(name = "score_docs_as_code", version = "0.0.0")
+    replacement = f'''bazel_dep(name = "score_docs_as_code")
 git_override(
     module_name = "score_docs_as_code",
     remote = "{gh_url}",
@@ -468,7 +468,7 @@ def print_result_table(results: list[Result]):
     console.print(table)
 
 
-def stream_subprocess_output(cmd: str, repo_name: str):
+def stream_subprocess_output(cmd: str, repo_name: str, cwd: Path):
     """Stream subprocess output in real-time for maximum verbosity"""
     console.print(f"[green]Streaming output for: {cmd}[/green]")
 
@@ -478,6 +478,7 @@ def stream_subprocess_output(cmd: str, repo_name: str):
         stderr=subprocess.STDOUT,  # Merge stderr into stdout
         universal_newlines=True,
         bufsize=1,
+        cwd=cwd,
     )
 
     # Stream output line by line
@@ -504,17 +505,18 @@ def run_cmd(
     repo_name: str,
     local_or_git: str,
     pytestconfig: Config,
+    cwd: Path,
 ) -> tuple[list[Result], bool]:
     verbosity: int = pytestconfig.get_verbosity()
 
-    cleanup(cmd)
+    cleanup(cwd, cmd)
 
     if verbosity >= 3:
         # Level 3 (-vvv): Stream output in real-time
-        BR = stream_subprocess_output(cmd, repo_name)
+        BR = stream_subprocess_output(cmd, repo_name, cwd)
     else:
         # Level 0-2: Capture output and parse later
-        out = subprocess.run(cmd.split(), capture_output=True, text=True)
+        out = subprocess.run(cmd.split(), capture_output=True, text=True, cwd=cwd)
         BR = BuildOutput(
             returncode=out.returncode,
             stdout=str(out.stdout),
@@ -553,7 +555,6 @@ def setup_test_environment(sphinx_base_dir: Path, pytestconfig: Config):
     gh_url = get_github_base_url(git_root)
     current_hash = get_current_git_commit(git_root)
 
-    os.chdir(Path(sphinx_base_dir).absolute())
     verbosity: int = pytestconfig.get_verbosity()
 
     def debug_print(message: str):
@@ -601,32 +602,50 @@ def has_uncommitted_changes(path: Path) -> bool:
     return bool(result.stdout.strip())
 
 
-def prepare_repo_overrides(
-    repo_name: str, git_url: str, current_hash: str, gh_url: str, use_cache: bool = True
-):
-    """Clone repo and prepare both local and git overrides."""
-    repo_path = Path(repo_name)
-
-    if not use_cache and repo_path.exists():
-        console.print(f"[green]Using cached repository: {repo_name}[/green]")
-        # Update the existing repo
-        os.chdir(repo_name)
-        subprocess.run(["git", "fetch", "origin"], check=True, capture_output=True)
-        subprocess.run(
-            ["git", "reset", "--hard", "origin/main"], check=True, capture_output=True
-        )
-    else:
-        # Clone the repository fresh
-        if repo_path.exists():
+def clone_or_update_repo(repo_path: Path, git_url: str, use_cache: bool = True):
+    """Clone the repository if it doesn't exist, or update it if it does."""
+    if repo_path.exists():
+        if use_cache:
+            console.print(f"[green]Using cached repository: {repo_path.name}[/green]")
+            # Update the existing repo
+            subprocess.run(
+                ["git", "fetch", "origin"],
+                check=True,
+                capture_output=True,
+                cwd=repo_path,
+            )
+            subprocess.run(
+                ["git", "reset", "--hard", "origin/main"],
+                check=True,
+                capture_output=True,
+                cwd=repo_path,
+            )
+        else:
+            console.print(f"[yellow]Re-cloning repository: {repo_path.name}[/yellow]")
             import shutil
 
             shutil.rmtree(repo_path)
-        subprocess.run(["git", "clone", git_url], check=True, capture_output=True)
-        os.chdir(repo_name)
+            subprocess.run(
+                ["git", "clone", git_url],
+                check=True,
+                capture_output=True,
+                cwd=repo_path.parent,
+            )
+    else:
+        console.print(f"[green]Cloning repository: {repo_path.name}[/green]")
+        subprocess.run(
+            ["git", "clone", git_url],
+            check=True,
+            capture_output=True,
+            cwd=repo_path.parent,
+        )
+
+
+def get_repo_overrides(repo_path: Path, current_hash: str, gh_url: str):
+    """Prepare both local and git overrides."""
 
     # Read original MODULE.bazel
-    with open("MODULE.bazel") as f:
-        module_orig = f.read()
+    module_orig = (repo_path / "MODULE.bazel").read_text(encoding="utf-8")
 
     # Prepare override versions
     module_orig_clean = comment_out_git_override(module_orig)
@@ -676,13 +695,14 @@ def test_and_clone_repos_updated(sphinx_base_dir: Path, pytestconfig: Config):
         #          ┌─────────────────────────────────────────┐
         #          │ Preparing the Repository for testing │
         #          └─────────────────────────────────────────┘
-        module_local_override, module_git_override = prepare_repo_overrides(
-            repo.name, repo.git_url, current_hash, gh_url, use_cache=disable_cache
+        repo_path = sphinx_base_dir / repo.name
+        clone_or_update_repo(repo_path, repo.git_url, use_cache=not disable_cache)
+        module_local_override, module_git_override = get_repo_overrides(
+            repo_path, current_hash, gh_url
         )
         overrides = {"local": module_local_override, "git": module_git_override}
         for type, override_content in overrides.items():
-            with open("MODULE.bazel", "w") as f:
-                f.write(override_content)
+            (repo_path / "MODULE.bazel").write_text(override_content, encoding="utf-8")
 
             #          ┌─────────────────────────────────────────┐
             #          │  Running the different build & run   │
@@ -692,7 +712,7 @@ def test_and_clone_repos_updated(sphinx_base_dir: Path, pytestconfig: Config):
                 print_running_cmd(repo.name, cmd, f"{type.upper()} OVERRIDE")
                 # Running through all 'cmds' specified with the local override
                 gotten_results, is_success = run_cmd(
-                    cmd, results, repo.name, type, pytestconfig
+                    cmd, results, repo.name, type, pytestconfig, cwd=repo_path
                 )
                 results = gotten_results
                 if not is_success:
@@ -706,16 +726,12 @@ def test_and_clone_repos_updated(sphinx_base_dir: Path, pytestconfig: Config):
                 print_running_cmd(repo.name, test_cmd, "LOCAL OVERRIDE")
 
                 gotten_results, is_success = run_cmd(
-                    test_cmd, results, repo.name, "local", pytestconfig
+                    test_cmd, results, repo.name, "local", pytestconfig, cwd=repo_path
                 )
                 results = gotten_results
 
                 if not is_success:
                     overall_success = False
-
-        # NOTE: We have to change directories back to the parent
-        # otherwise the cloning & override will not be correct
-        os.chdir(Path.cwd().parent)
 
     # Printing a 'overview' table as a result
     print_result_table(results)
