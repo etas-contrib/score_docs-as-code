@@ -689,5 +689,6 @@ def test_consumer_repo(
     print_result_table(results)
     if not overall_success:
         pytest.fail(
-            reason="Consumer Tests failed, see table for which commands specifically."
+            reason="Consumer Tests failed, see table for which commands specifically.",
+            pytrace=False,
         )
