@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+import atexit
 import os
 import re
 import shutil
@@ -17,7 +18,6 @@ import subprocess
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import cast
 
 import pytest
 from _pytest.config import Config
@@ -54,6 +54,7 @@ log_file_name = "consumer_test.log"
 # can not use a context manager to open the log file, even though it would be preferable
 # In a future re-write this should be considered.
 log_fp = open(log_file_name, "a", encoding="utf-8")  # noqa: SIM115
+atexit.register(log_fp.close)
 console = Console(file=log_fp, force_terminal=False, width=120, color_system=None)
 
 
@@ -163,38 +164,6 @@ def get_current_git_commit(git_repo: Path):
     )
     return result.stdout.strip()
 
-
-def filter_repos(repo_filter: str | None) -> list[ConsumerRepo]:
-    """Filter repositories based on command line argument"""
-    if not repo_filter:
-        return REPOS_TO_TEST
-
-    requested_repos = [name.strip() for name in repo_filter.split(",")]
-    filtered_repos: list[ConsumerRepo] = []
-
-    for repo in REPOS_TO_TEST:
-        if repo.name in requested_repos:
-            filtered_repos.append(repo)
-            requested_repos.remove(repo.name)
-
-    # Warn about any repos that weren't found
-    if requested_repos:
-        available_names = [repo.name for repo in REPOS_TO_TEST]
-        console.print(
-            f"[yellow]Warning: Unknown repositories: {requested_repos}[/yellow]"
-        )
-        console.print(f"[yellow]Available repositories: {available_names}[/yellow]")
-
-    # If no valid repos were found but filter was provided, return all repos
-    # This prevents accidentally running zero tests due to typos
-    if not filtered_repos and repo_filter:
-        console.print(
-            "[red]No valid repositories found in filter, "
-            "running all repositories instead[/red]"
-        )
-        return REPOS_TO_TEST
-
-    return filtered_repos
 
 
 def comment_out_git_override(module_content: str) -> str:
@@ -657,86 +626,68 @@ def get_repo_overrides(repo_path: Path, current_hash: str, gh_url: str):
     return module_local_override, module_git_override
 
 
-# Updated version of your test loop
-def test_and_clone_repos_updated(sphinx_base_dir: Path, pytestconfig: Config):
-    global log_file_name
-    # Get command line options from pytest config
+@pytest.fixture(scope="module")
+def consumer_env(sphinx_base_dir: Path, pytestconfig: Config) -> tuple[str, str]:
+    return setup_test_environment(sphinx_base_dir, pytestconfig)
 
-    repo_tests: str | None = cast(str | None, pytestconfig.getoption("--repo"))
+
+@pytest.mark.parametrize(
+    "consumer_params",
+    [(repo, override) for repo in REPOS_TO_TEST for override in ("local", "git")],
+    ids=[
+        f"{repo.name}-{override}"
+        for repo in REPOS_TO_TEST
+        for override in ("local", "git")
+    ],
+)
+def test_consumer_repo(
+    consumer_params: tuple[ConsumerRepo, str],
+    sphinx_base_dir: Path,
+    consumer_env: tuple[str, str],
+    pytestconfig: Config,
+):
+    repo, override_type = consumer_params
+    gh_url, current_hash = consumer_env
     disable_cache: bool = bool(pytestconfig.getoption("--disable-cache"))
 
-    repos_to_test = filter_repos(repo_tests)
-
-    # Exit early if we don't find repos to test.
-    if not repos_to_test:
-        console.print("[red]No repositories to test after filtering![/red]")
-        return
-
+    len_left_repo = len_max - len(repo.name)
+    console.print(f"{'=' * len_max}")
     console.print(
-        f"[green]Testing {len(repos_to_test)} repositories: "
-        f"{[r.name for r in repos_to_test]}[/green]"
+        f"{'=' * int(len_left_repo / 2)}{repo.name}{'=' * int(len_left_repo / 2)}"
     )
-    # This might be hacky, but currently the best way I could solve the issue
-    #  of going to the right place.
-    gh_url, current_hash = setup_test_environment(sphinx_base_dir, pytestconfig)
 
+    repo_path = sphinx_base_dir / repo.name
+    clone_or_update_repo(repo_path, repo.git_url, use_cache=not disable_cache)
+
+    module_local_override, module_git_override = get_repo_overrides(
+        repo_path, current_hash, gh_url
+    )
+    override_content = (
+        module_local_override if override_type == "local" else module_git_override
+    )
+    (repo_path / "MODULE.bazel").write_text(override_content, encoding="utf-8")
+
+    results: list[Result] = []
     overall_success = True
 
-    # We capture the results for each command run.
-    results: list[Result] = []
-
-    for repo in repos_to_test:
-        len_left_repo = len_max - len(repo.name)
-        console.print(f"{'=' * len_max}")
-        console.print(f"{'=' * len_max}")
-        console.print(
-            f"{'=' * int(len_left_repo / 2)}{repo.name}{'=' * int(len_left_repo / 2)}"
+    for cmd in repo.commands:
+        print_running_cmd(repo.name, cmd, f"{override_type.upper()} OVERRIDE")
+        results, is_success = run_cmd(
+            cmd, results, repo.name, override_type, pytestconfig, cwd=repo_path
         )
-        #          ┌─────────────────────────────────────────┐
-        #          │ Preparing the Repository for testing │
-        #          └─────────────────────────────────────────┘
-        repo_path = sphinx_base_dir / repo.name
-        clone_or_update_repo(repo_path, repo.git_url, use_cache=not disable_cache)
-        module_local_override, module_git_override = get_repo_overrides(
-            repo_path, current_hash, gh_url
+        if not is_success:
+            overall_success = False
+
+    for test_cmd in repo.test_commands:
+        print_running_cmd(repo.name, test_cmd, f"{override_type.upper()} OVERRIDE")
+        results, is_success = run_cmd(
+            test_cmd, results, repo.name, override_type, pytestconfig, cwd=repo_path
         )
-        overrides = {"local": module_local_override, "git": module_git_override}
-        for type, override_content in overrides.items():
-            (repo_path / "MODULE.bazel").write_text(override_content, encoding="utf-8")
+        if not is_success:
+            overall_success = False
 
-            #          ┌─────────────────────────────────────────┐
-            #          │  Running the different build & run   │
-            #          │               commands               │
-            #          └─────────────────────────────────────────┘
-            for cmd in repo.commands:
-                print_running_cmd(repo.name, cmd, f"{type.upper()} OVERRIDE")
-                # Running through all 'cmds' specified with the local override
-                gotten_results, is_success = run_cmd(
-                    cmd, results, repo.name, type, pytestconfig, cwd=repo_path
-                )
-                results = gotten_results
-                if not is_success:
-                    overall_success = False
-
-            #          ┌─────────────────────────────────────────┐
-            #          │ Running the different test commands  │
-            #          └─────────────────────────────────────────┘
-            for test_cmd in repo.test_commands:
-                # Running through all 'test cmds' specified with the local override
-                print_running_cmd(repo.name, test_cmd, "LOCAL OVERRIDE")
-
-                gotten_results, is_success = run_cmd(
-                    test_cmd, results, repo.name, "local", pytestconfig, cwd=repo_path
-                )
-                results = gotten_results
-
-                if not is_success:
-                    overall_success = False
-
-    # Printing a 'overview' table as a result
     print_result_table(results)
     if not overall_success:
         pytest.fail(
-            reason="Consumer Tests failed, see table for which commands specifically. "
+            reason="Consumer Tests failed, see table for which commands specifically."
         )
-    log_fp.close()
