@@ -723,7 +723,9 @@ Architecture Attributes
   :satisfies: gd_req__arch_linkage_safety
   :parent_covered: YES
 
-  Enforce that valid ASIL architecture views fulfil only ASIL requirements.
+  Enforce that valid ASIL architecture views
+  (``feat_arc_sta``, ``feat_arc_dyn``, ``comp_arc_sta``, ``comp_arc_dyn``)
+  "fulfil" only ASIL requirements.
 
 .. tool_req:: Security: Restrict linkage
   :id: tool_req__docs_arch_link_security
@@ -749,7 +751,7 @@ Architecture Attributes
     gd_req__arch_viewpoints,
   :parent_covered: YES
 
-  Docs-as-Code shall enable the rendering of diagrams for the following architecture views:
+  Enable the rendering of diagrams for the following architecture views:
 
   * Feature Package Diagram (feat_arc_sta)
   * Feature Sequence Diagram (feat_arc_dyn)
