@@ -152,7 +152,9 @@ def git_repo_with_https_remote(temp_dir: Path) -> Path:
 
 
 # Test error handling
-def test_git_operations_with_no_commits(temp_dir: Path):
+def test_git_operations_with_no_commits(
+    temp_dir: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Test git operations on repo with no commits."""
     git_dir: Path = temp_dir / "empty_repo"
     git_dir.mkdir()
@@ -164,7 +166,6 @@ def test_git_operations_with_no_commits(temp_dir: Path):
     )
     subprocess.run(["git", "config", "user.name", "Test User"], cwd=git_dir, check=True)
 
-    os.chdir(Path(git_dir).absolute())
     # Should raise an exception when trying to get hash
     with pytest.raises(subprocess.CalledProcessError):
         get_current_git_hash(git_dir)
@@ -187,7 +188,6 @@ def test_git_repo_with_no_remotes(temp_dir: Path):
     test_file.write_text("# Test file\nprint('hello')\n")
     subprocess.run(["git", "add", "."], cwd=git_dir, check=True)
     subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=git_dir, check=True)
-    os.chdir(git_dir)
 
     # Should raise an exception when trying to get repo info
     with pytest.raises(AssertionError):
