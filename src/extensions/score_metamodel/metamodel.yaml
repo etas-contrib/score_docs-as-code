@@ -1099,7 +1099,7 @@ graph_checks:
           - status == valid
     check:
       fulfils: safety != QM
-    explanation: Safety architecture views must only fulfil safety architecture elements.
+    explanation: Safety-critical architecture views must only "fulfil" safety-critical architecture elements.
 
   # req-Id: tool_req__docs_req_arch_link_safety_to_arch
   tool_req__docs_req_arch_link_safety_to_arch:
