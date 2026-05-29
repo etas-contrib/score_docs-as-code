@@ -287,6 +287,20 @@ def test_rst_files(
 
     # Build the documentation with the enabled checks
     app.config.score_metamodel_checks = rst_data.enabled_checks
+
+    # Replace any network json_url with a local json_path to avoid network I/O in tests
+    local_needs = RST_DIR / Path(rst_file).parent / "needs.json"
+    if local_needs.exists():
+        shutil.copy(local_needs, app.srcdir)
+        app.config.needs_external_needs = [
+            {k: v for k, v in ext.items() if k != "json_url"} | {"json_path": "needs.json"}
+            if "json_url" in ext
+            else ext
+            for ext in (app.config.needs_external_needs or [])
+        ]
+    else:
+        app.config.needs_external_needs = []
+
     app.build()
 
     # Collect the warnings

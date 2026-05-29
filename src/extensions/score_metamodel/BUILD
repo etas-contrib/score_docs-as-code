@@ -86,7 +86,7 @@ score_pytest(
     name = "file_based_tests_attributes",
     size = "medium",
     srcs = ["tests/test_rules_file_based.py"],
-    data = glob(["tests/rst/attributes/*.rst"]) + ["tests/rst/conf.py"],
+    data = glob(["tests/rst/attributes/*.rst"]) + ["tests/rst/conf.py", "tests/rst/attributes/needs.json"],
     pytest_config = "//:pyproject.toml",
     deps = [":score_metamodel"],
 )
