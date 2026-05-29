@@ -584,7 +584,7 @@
 
 .. Security Analysis: feat_sec_threat
 
-#EXPECT: feat_sec_threat__test__bad_1: is missing required attribute: `threat_id`.
+#EXPECT[+2]: feat_sec_threat__test__bad_1: is missing required attribute: `threat_id`.
 
 .. feat_sec_threat:: Missing threat_id
    :id: feat_sec_threat__test__bad_1
@@ -593,7 +593,7 @@
    Some content.
 
 
-#EXPECT: feat_sec_threat__test__bad_2.status (done): does not follow pattern `^(valid|invalid)$`.
+#EXPECT[+2]: feat_sec_threat__test__bad_2.status (done): does not follow pattern `^(valid|invalid)$`.
 
 .. feat_sec_threat:: Invalid status
    :id: feat_sec_threat__test__bad_2
@@ -603,7 +603,7 @@
    Some content.
 
 
-#EXPECT-NOT: feat_sec_threat__test__ok_3
+#EXPECT-NOT[+2]: feat_sec_threat__test__ok_3
 
 .. feat_sec_threat:: Valid threat
    :id: feat_sec_threat__test__ok_3
@@ -615,7 +615,7 @@
 
 .. Security Analysis: feat_sec_ana
 
-#EXPECT: feat_sec_ana__test__bad_4: is missing required attribute: `threat_scenario_id`.
+#EXPECT[+2]: feat_sec_ana__test__bad_4: is missing required attribute: `threat_scenario_id`.
 
 .. feat_sec_ana:: Missing threat_scenario_id
    :id: feat_sec_ana__test__bad_4
@@ -626,7 +626,7 @@
    Argument why mitigation is insufficient.
 
 
-#EXPECT: feat_sec_ana__test__bad_5.sufficient (maybe): does not follow pattern `^(yes|no)$`.
+#EXPECT[+2]: feat_sec_ana__test__bad_5.sufficient (maybe): does not follow pattern `^(yes|no)$`.
 
 .. feat_sec_ana:: Invalid sufficient value
    :id: feat_sec_ana__test__bad_5
@@ -638,7 +638,7 @@
    Argument why mitigation is insufficient.
 
 
-#EXPECT: feat_sec_ana__test__bad_6.status (done): does not follow pattern `^(valid|invalid)$`.
+#EXPECT[+2]: feat_sec_ana__test__bad_6.status (done): does not follow pattern `^(valid|invalid)$`.
 
 .. feat_sec_ana:: Invalid status value
    :id: feat_sec_ana__test__bad_6
@@ -650,7 +650,7 @@
    Argument why mitigation is insufficient.
 
 
-#EXPECT: feat_sec_ana__test__bad_7: is missing required attribute: `threat_effect`.
+#EXPECT[+2]: feat_sec_ana__test__bad_7: is missing required attribute: `threat_effect`.
 
 .. feat_sec_ana:: Missing threat_effect
    :id: feat_sec_ana__test__bad_7
@@ -661,7 +661,7 @@
    Argument why mitigation is insufficient.
 
 
-#EXPECT-NOT: feat_sec_ana__test__ok_8
+#EXPECT-NOT[+2]: feat_sec_ana__test__ok_8
 
 .. feat_sec_ana:: Valid threat scenario
    :id: feat_sec_ana__test__ok_8
@@ -673,7 +673,7 @@
    Mitigation is sufficient because access controls are in place.
 
 
-#EXPECT-NOT: feat_sec_ana__test__ok_9
+#EXPECT-NOT[+2]: feat_sec_ana__test__ok_9
 
 .. feat_sec_ana:: Valid threat scenario with optional mitigation_issue
    :id: feat_sec_ana__test__ok_9
@@ -686,7 +686,7 @@
    Mitigation not yet implemented.
 
 
-#EXPECT: feat_sec_ana__test__bad_10.mitigation_issue (https://github.com/eclipse-score/docs-as-code/pull/508): does not follow pattern
+#EXPECT[+2]: feat_sec_ana__test__bad_10.mitigation_issue (https://github.com/eclipse-score/docs-as-code/pull/508): does not follow pattern
 
 .. feat_sec_ana:: Invalid mitigation_issue (pull request, not issue)
    :id: feat_sec_ana__test__bad_10
@@ -699,7 +699,7 @@
    Mitigation not yet implemented.
 
 
-#EXPECT: feat_sec_ana__test__bad_11: is missing required attribute: `content`.
+#EXPECT[+2]: feat_sec_ana__test__bad_11: is missing required attribute: `content`.
 
 .. feat_sec_ana:: Missing argument content
    :id: feat_sec_ana__test__bad_11
