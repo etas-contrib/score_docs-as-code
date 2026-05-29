@@ -591,3 +591,130 @@ Expect no errors related to "violates" field. We need to be generic for expect-n
 .. feat_req:: milestone must be a version
    :id: feat_req__random_id4
    :valid_until: 2035-03
+
+
+.. Security Analysis: feat_sec_threat
+
+#EXPECT: feat_sec_threat__test__bad_1: is missing required attribute: `threat_id`.
+
+.. feat_sec_threat:: Missing threat_id
+   :id: feat_sec_threat__test__bad_1
+   :status: valid
+
+   Some content.
+
+
+#EXPECT: feat_sec_threat__test__bad_2.status (done): does not follow pattern `^(valid|invalid)$`.
+
+.. feat_sec_threat:: Invalid status
+   :id: feat_sec_threat__test__bad_2
+   :threat_id: MT_01_03
+   :status: done
+
+   Some content.
+
+
+#EXPECT-NOT: feat_sec_threat__test__ok_3
+
+.. feat_sec_threat:: Valid threat
+   :id: feat_sec_threat__test__ok_3
+   :threat_id: MT_01_03
+   :status: valid
+
+   message timing is manipulated (Tampering)
+
+
+.. Security Analysis: feat_sec_ana
+
+#EXPECT: feat_sec_ana__test__bad_4: is missing required attribute: `threat_scenario_id`.
+
+.. feat_sec_ana:: Missing threat_scenario_id
+   :id: feat_sec_ana__test__bad_4
+   :status: invalid
+   :sufficient: no
+   :threat_effect: Unauthorized access to stored data.
+
+   Argument why mitigation is insufficient.
+
+
+#EXPECT: feat_sec_ana__test__bad_5.sufficient (maybe): does not follow pattern `^(yes|no)$`.
+
+.. feat_sec_ana:: Invalid sufficient value
+   :id: feat_sec_ana__test__bad_5
+   :threat_scenario_id: SC_01_02
+   :status: valid
+   :sufficient: maybe
+   :threat_effect: Unauthorized access to stored data.
+
+   Argument why mitigation is insufficient.
+
+
+#EXPECT: feat_sec_ana__test__bad_6.status (done): does not follow pattern `^(valid|invalid)$`.
+
+.. feat_sec_ana:: Invalid status value
+   :id: feat_sec_ana__test__bad_6
+   :threat_scenario_id: SC_01_02
+   :status: done
+   :sufficient: no
+   :threat_effect: Unauthorized access to stored data.
+
+   Argument why mitigation is insufficient.
+
+
+#EXPECT: feat_sec_ana__test__bad_7: is missing required attribute: `threat_effect`.
+
+.. feat_sec_ana:: Missing threat_effect
+   :id: feat_sec_ana__test__bad_7
+   :threat_scenario_id: SC_01_02
+   :status: invalid
+   :sufficient: no
+
+   Argument why mitigation is insufficient.
+
+
+#EXPECT-NOT: feat_sec_ana__test__ok_8
+
+.. feat_sec_ana:: Valid threat scenario
+   :id: feat_sec_ana__test__ok_8
+   :threat_scenario_id: SC_01_02
+   :status: valid
+   :sufficient: yes
+   :threat_effect: Unauthorized access to stored data.
+
+   Mitigation is sufficient because access controls are in place.
+
+
+#EXPECT-NOT: feat_sec_ana__test__ok_9
+
+.. feat_sec_ana:: Valid threat scenario with optional mitigation_issue
+   :id: feat_sec_ana__test__ok_9
+   :threat_scenario_id: SC_01_03
+   :status: invalid
+   :sufficient: no
+   :threat_effect: Data integrity violation via tampering.
+   :mitigation_issue: https://github.com/eclipse-score/score/issues/1
+
+   Mitigation not yet implemented.
+
+
+#EXPECT: feat_sec_ana__test__bad_10.mitigation_issue (https://github.com/eclipse-score/docs-as-code/pull/508): does not follow pattern
+
+.. feat_sec_ana:: Invalid mitigation_issue (pull request, not issue)
+   :id: feat_sec_ana__test__bad_10
+   :threat_scenario_id: SC_01_04
+   :status: invalid
+   :sufficient: no
+   :threat_effect: Unauthorized data access.
+   :mitigation_issue: https://github.com/eclipse-score/docs-as-code/pull/508
+
+   Mitigation not yet implemented.
+
+
+#EXPECT: feat_sec_ana__test__bad_11: is missing required attribute: `content`.
+
+.. feat_sec_ana:: Missing argument content
+   :id: feat_sec_ana__test__bad_11
+   :threat_scenario_id: SC_01_04
+   :status: invalid
+   :sufficient: no
+   :threat_effect: Unauthorized data access.
