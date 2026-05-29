@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-import os
 import re
 import shutil
 from collections.abc import Callable
@@ -178,7 +177,9 @@ def strip_ansi_codes(text: str) -> str:
 
 @pytest.mark.parametrize("rst_file", RST_FILES)
 def test_rst_files(
-    rst_file: str, sphinx_app_setup: Callable[[Path], SphinxTestApp]
+    rst_file: str,
+    sphinx_app_setup: Callable[[Path], SphinxTestApp],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ### Test function to check rules in the given rst file
     # The function uses the SphinxTestApp to build the documentation
@@ -190,7 +191,7 @@ def test_rst_files(
             f"{rst_file}. Please check the file for the correct format."
         )
     app: SphinxTestApp = sphinx_app_setup(RST_DIR / rst_file)
-    os.chdir(app.srcdir)  # Change working directory to the source directory
+    monkeypatch.chdir(app.srcdir)  # Change working directory to the source directory
 
     # Build the documentation with the enabled checks
     app.config.score_metamodel_checks = rst_data.enabled_checks
