@@ -75,7 +75,6 @@ score_pytest(
 
 score_pytest(
     name = "file_based_tests_architecture",
-    size = "medium",
     srcs = ["tests/test_rules_file_based.py"],
     data = glob(["tests/rst/architecture/*.rst"]) + ["tests/rst/conf.py"],
     pytest_config = "//:pyproject.toml",
@@ -84,7 +83,6 @@ score_pytest(
 
 score_pytest(
     name = "file_based_tests_attributes",
-    size = "medium",
     srcs = ["tests/test_rules_file_based.py"],
     data = glob(["tests/rst/attributes/*.rst"]) + ["tests/rst/conf.py", "tests/rst/attributes/needs.json"],
     pytest_config = "//:pyproject.toml",
@@ -93,7 +91,6 @@ score_pytest(
 
 score_pytest(
     name = "file_based_tests_graph",
-    size = "medium",
     srcs = ["tests/test_rules_file_based.py"],
     data = glob(["tests/rst/graph/*.rst"]) + ["tests/rst/conf.py"],
     pytest_config = "//:pyproject.toml",
@@ -102,7 +99,6 @@ score_pytest(
 
 score_pytest(
     name = "file_based_tests_id_contains_feature",
-    size = "medium",
     srcs = ["tests/test_rules_file_based.py"],
     data = glob(["tests/rst/id_contains_feature/*.rst"]) + ["tests/rst/conf.py"],
     pytest_config = "//:pyproject.toml",
@@ -111,7 +107,6 @@ score_pytest(
 
 score_pytest(
     name = "file_based_tests_options",
-    size = "medium",
     srcs = ["tests/test_rules_file_based.py"],
     data = glob(["tests/rst/options/*.rst"]) + ["tests/rst/conf.py"],
     pytest_config = "//:pyproject.toml",

@@ -293,7 +293,8 @@ def test_rst_files(
     if local_needs.exists():
         shutil.copy(local_needs, app.srcdir)
         app.config.needs_external_needs = [
-            {k: v for k, v in ext.items() if k != "json_url"} | {"json_path": "needs.json"}
+            {k: v for k, v in ext.items() if k != "json_url"}
+            | {"json_path": "needs.json"}
             if "json_url" in ext
             else ext
             for ext in (app.config.needs_external_needs or [])
