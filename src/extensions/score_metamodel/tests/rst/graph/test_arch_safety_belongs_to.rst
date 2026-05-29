@@ -47,7 +47,7 @@
 
 
 .. Positive Test: Safety feat_arc_sta fulfils a safety feat_req — should not warn.
-#EXPECT-NOT: Safety architecture views must only fulfil safety architecture elements
+#EXPECT-NOT: fulfil
 
 .. feat_arc_sta:: Safety view with safety parent
    :id: feat_arc_sta__test__safety_to_asil
@@ -58,7 +58,7 @@
 
 
 .. Positive Test: QM feat_arc_sta — check does not apply to QM elements.
-#EXPECT-NOT: Safety architecture views must only fulfil safety architecture elements
+#EXPECT-NOT: fulfil
 
 .. feat_arc_sta:: QM view with QM parent
    :id: feat_arc_sta__test__qm_to_qm
@@ -80,7 +80,7 @@
 
 
 .. Positive Test: Safety feat_arc_dyn fulfils a safety feat_req — should not warn.
-#EXPECT-NOT: Safety architecture views must only fulfil safety architecture elements
+#EXPECT-NOT: fulfil
 
 .. feat_arc_dyn:: Safety dynamic view with safety parent
    :id: feat_arc_dyn__test__safety_to_asil
@@ -91,7 +91,7 @@
 
 
 .. Positive Test: QM feat_arc_dyn — check does not apply to QM elements.
-#EXPECT-NOT: Safety architecture views must only fulfil safety architecture elements
+#EXPECT-NOT: fulfil
 
 .. feat_arc_dyn:: QM dynamic view with QM parent
    :id: feat_arc_dyn__test__qm_to_qm
@@ -113,7 +113,7 @@
 
 
 .. Positive Test: Safety comp_arc_sta fulfils a safety comp_req — should not warn.
-#EXPECT-NOT: Safety architecture views must only fulfil safety architecture elements
+#EXPECT-NOT: fulfil
 
 .. comp_arc_sta:: Safety component view with safety parent
    :id: comp_arc_sta__test__safety_to_asil
@@ -135,7 +135,7 @@
 
 
 .. Positive Test: Safety comp_arc_dyn fulfils a safety comp_req — should not warn.
-#EXPECT-NOT: Safety architecture views must only fulfil safety architecture elements
+#EXPECT-NOT: fulfil
 
 .. comp_arc_dyn:: Safety dynamic component view with safety parent
    :id: comp_arc_dyn__test__safety_to_asil
