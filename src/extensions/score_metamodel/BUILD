@@ -74,16 +74,46 @@ score_pytest(
 )
 
 score_pytest(
-    name = "file_based_tests",
+    name = "file_based_tests_architecture",
     size = "medium",
     srcs = ["tests/test_rules_file_based.py"],
-    # All requirements already in the library so no need to have it double
-    data = glob(
-        [
-            "tests/**/*.rst",
-            "tests/**/*.yaml",
-        ],
-    ) + ["tests/rst/conf.py"],
+    data = glob(["tests/rst/architecture/*.rst"]) + ["tests/rst/conf.py"],
+    pytest_config = "//:pyproject.toml",
+    deps = [":score_metamodel"],
+)
+
+score_pytest(
+    name = "file_based_tests_attributes",
+    size = "medium",
+    srcs = ["tests/test_rules_file_based.py"],
+    data = glob(["tests/rst/attributes/*.rst"]) + ["tests/rst/conf.py"],
+    pytest_config = "//:pyproject.toml",
+    deps = [":score_metamodel"],
+)
+
+score_pytest(
+    name = "file_based_tests_graph",
+    size = "medium",
+    srcs = ["tests/test_rules_file_based.py"],
+    data = glob(["tests/rst/graph/*.rst"]) + ["tests/rst/conf.py"],
+    pytest_config = "//:pyproject.toml",
+    deps = [":score_metamodel"],
+)
+
+score_pytest(
+    name = "file_based_tests_id_contains_feature",
+    size = "medium",
+    srcs = ["tests/test_rules_file_based.py"],
+    data = glob(["tests/rst/id_contains_feature/*.rst"]) + ["tests/rst/conf.py"],
+    pytest_config = "//:pyproject.toml",
+    deps = [":score_metamodel"],
+)
+
+score_pytest(
+    name = "file_based_tests_options",
+    size = "medium",
+    srcs = ["tests/test_rules_file_based.py"],
+    data = glob(["tests/rst/options/*.rst"]) + ["tests/rst/conf.py"],
     pytest_config = "//:pyproject.toml",
     deps = [":score_metamodel"],
 )
