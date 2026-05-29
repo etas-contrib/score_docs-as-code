@@ -794,53 +794,6 @@ Architecture Attributes
 
    e.g. gd_req__req_linkage_architecture
 
-
-.. tool_req:: Static Diagram for Unit Interactions
-   :id: tool_req__docs_dd_sta
-   :tags: Detailed Design & Code
-   :version: 1
-   :implemented: YES
-   :parent_covered: YES
-   :satisfies: gd_req__impl_static_diagram
-
-   Provide needs type ``dd_sta`` for static diagrams showing unit interactions as UML.
-
-.. .. tool_req:: Dynamic Diagram for Unit Interactions
-..    :id: tool_req__docs_dd_dyn
-..    :tags: Detailed Design & Code
-..    :implemented: YES
-..    :parent_covered: YES
-..    :satisfies: gd_req__impl_dynamic_diagram
-
-..    Provide needs type ``dd_dyn`` for dynamic diagrams showing unit interactions as UML.
-
-
-
-.. tool_req:: Diagram mandatory safety and status attributes
-   :id: tool_req__docs_dd_diagram_safety_status
-   :tags: Detailed Design & Code
-   :version: 1
-   :implemented: YES
-   :satisfies:
-     gd_req__impl_diagram_safety,
-     gd_req__impl_diagram_status,
-
-   Diagrams (``dd_sta``, ``dd_dyn``) shall have mandatory ``safety`` (``QM`` or ``ASIL_B``) and ``status`` (``valid`` or ``invalid``) attributes.
-
-
-.. tool_req:: Mandatory description for diagrams, units, and interfaces
-   :id: tool_req__docs_dd_description
-   :tags: Detailed Design & Code
-   :version: 1
-   :implemented: YES
-   :satisfies:
-     gd_req__impl_diagram_description,
-     gd_req__impl_unit_description,
-     gd_req__impl_interface_description,
-
-   ``dd_sta``, ``dd_dyn``, ``sw_unit``, and ``sw_unit_int`` needs shall have non-empty content serving as description.
-
-
 Testing
 #######
 
