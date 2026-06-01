@@ -31,6 +31,7 @@ def sphinx_base_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     ### Create a temporary directory for Sphinx and copy all necessary files.
     base_dir: Path = tmp_path_factory.mktemp("docs")
     shutil.copy(RST_DIR / "conf.py", base_dir)
+    shutil.copy(RST_DIR / "needs.json", base_dir)
     return base_dir
 
 
