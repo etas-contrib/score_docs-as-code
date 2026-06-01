@@ -60,9 +60,23 @@ py_library(
 )
 
 score_pytest(
-    name = "score_metamodel_tests",
+    name = "unit_tests",
     size = "small",
-    srcs = glob(["tests/*.py"]),
+    srcs = glob(
+        [
+            "tests/*.py",
+        ],
+        exclude = ["tests/test_rules_file_based.py"],
+    ),
+    data = ["tests/model/simple_model.yaml"],
+    pytest_config = "//:pyproject.toml",
+    deps = [":score_metamodel"],
+)
+
+score_pytest(
+    name = "file_based_tests",
+    size = "medium",
+    srcs = ["tests/test_rules_file_based.py"],
     # All requirements already in the library so no need to have it double
     data = glob(
         [
@@ -70,6 +84,6 @@ score_pytest(
             "tests/**/*.yaml",
         ],
     ) + ["tests/rst/conf.py"],
-    deps = [":score_metamodel"],
     pytest_config = "//:pyproject.toml",
+    deps = [":score_metamodel"],
 )
