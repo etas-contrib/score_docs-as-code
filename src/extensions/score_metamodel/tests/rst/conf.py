@@ -21,6 +21,13 @@ extensions = [
     "score_metamodel",
 ]
 
+needs_external_needs = [
+    {
+        "base_url": "https://eclipse-score.github.io/process_description/main/",
+        "json_path": "needs.json",
+    }
+]
+
 # We add these suppress_warnings here to ease the load of the warnings
 # In the future we might want to check if ANY warnings comes in the document
 # And then ensure that we error, as this could also be parsing errors etc.
