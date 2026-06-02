@@ -52,12 +52,12 @@ def _docs_source_tree_impl(ctx):
     output_dir = ctx.actions.declare_directory(ctx.label.name)
 
     all_inputs = []
-    pairs = []  # list of (src_exec_path, dest_rel_path)
+    pairs = []  # list of (src_exec_path, dest_rel_path, original_short_path)
 
     # conf.py at its natural short_path position (e.g. "docs/conf.py")
     config = ctx.file.config
     all_inputs.append(config)
-    pairs.append((config.path, config.short_path))
+    pairs.append((config.path, config.short_path, config.short_path))
 
     for t in ctx.attr.lib:
         info = t[SphinxDocsLibraryInfo]
@@ -65,17 +65,28 @@ def _docs_source_tree_impl(ctx):
             for f in entry.files:
                 dest_rel = entry.prefix + f.short_path.removeprefix(entry.strip_prefix)
                 all_inputs.append(f)
-                pairs.append((f.path, dest_rel))
+                pairs.append((f.path, dest_rel, f.short_path))
+
+    # Build _sourcemap.json content in Starlark to avoid shell quoting issues.
+    sourcemap_entries = []
+    for _src, dest_rel, original in pairs:
+        sourcemap_entries.append('  "{}": "{}"'.format(dest_rel, original))
+    sourcemap_content = "{\n" + ",\n".join(sourcemap_entries) + "\n}"
+    sourcemap_template = ctx.actions.declare_file(ctx.label.name + "_sourcemap.json")
+    ctx.actions.write(sourcemap_template, sourcemap_content)
 
     cmds = ["set -euo pipefail"]
-    for src, dest_rel in pairs:
+    for src, dest_rel, _original in pairs:
         parent = dest_rel.rsplit("/", 1)[0] if "/" in dest_rel else ""
         if parent:
             cmds.append("mkdir -p '{}/{}'".format(output_dir.path, parent))
         cmds.append("ln '{}' '{}/{}'".format(src, output_dir.path, dest_rel))
 
+    # Copy the pre-built sourcemap into the declared directory.
+    cmds.append("cp '{}' '{}/_sourcemap.json'".format(sourcemap_template.path, output_dir.path))
+
     ctx.actions.run_shell(
-        inputs = all_inputs,
+        inputs = all_inputs + [sourcemap_template],
         outputs = [output_dir],
         command = "\n".join(cmds),
         progress_message = "Materializing docs source tree for %{label}",
