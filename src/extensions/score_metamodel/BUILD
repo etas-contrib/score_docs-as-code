@@ -72,5 +72,6 @@ score_pytest(
         ],
     ) + ["tests/rst/conf.py"],
     deps = [":score_metamodel"],
+    visibility = ["//visibility:public"],
     pytest_config = "//:pyproject.toml",
 )
