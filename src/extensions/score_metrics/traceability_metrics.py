@@ -102,8 +102,8 @@ def calculate_test_metrics(
 
     for test_need in test_needs:
         test_id = str(test_need.get("id"))
-        partially: list[str] = test_need.get("partially_verifies")
-        fully: list[str] = test_need.get("fully_verifies")
+        partially: list[str] = test_need.get("partially_verifies") or []
+        fully: list[str] = test_need.get("fully_verifies") or []
         refs = set(partially + fully)
         if refs:
             tests_linked += 1
@@ -125,7 +125,6 @@ def calculate_full_need_metrics(app: Sphinx, include_external: bool):
     Will save the result in a global variable 'CALCULATED_METRICS'
     """
     #            ───────────────[ Getting configuration values ]───────────────
-    global CALCULATED_METRICS
     all_needs: NeedsView = SphinxNeedsData(app.env).get_needs_view()
 
     raw_metamodel_path = app.config.score_metamodel_yaml
@@ -138,7 +137,7 @@ def calculate_full_need_metrics(app: Sphinx, include_external: bool):
     raw = getattr(app.config, "score_metamodel_requirement_types", "").strip()
     filter_reqs = [t.strip() for t in raw.split(",") if t.strip()]
     if not filter_reqs:
-        filter_reqs = get_need_types_by_tags(metamodel.needs_types, {"reqiurement"})
+        filter_reqs = get_need_types_by_tags(metamodel.needs_types, {"requirement"})
     #            ──────────────────[ Calculate Test Metrics ]──────────────────
 
     test_needs = list(all_needs.filter_types(["testcase"]).values())
@@ -186,7 +185,7 @@ def calculate_full_need_metrics(app: Sphinx, include_external: bool):
         "metrics_by_type": metrics_by_type,
         "tests": test_metrics,
     }
-    # Save the metrics in a Global Variable to enable access from other parts.
-    # Not a great solution but it is needed, as needpie filter functions for example
-    # can not access 'app'.
-    CALCULATED_METRICS = output
+    # Update the module-level dict in-place so all importers (regardless of which
+    # module path they used to import CALCULATED_METRICS) see the new values.
+    CALCULATED_METRICS.clear()
+    CALCULATED_METRICS.update(output)
