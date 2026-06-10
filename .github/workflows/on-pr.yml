@@ -10,19 +10,39 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-name: Bzlmod Lockfile Check
-permissions:
-  contents: read
+
+name: PR Checks
+
 on:
   pull_request:
     types: [opened, reopened, synchronize]
   merge_group:
     types: [checks_requested]
-  push:
-    branches:
-      - main
+
 jobs:
-  bzlmod-lock:
-    uses: eclipse-score/cicd-workflows/.github/workflows/bzlmod-lock-check.yml@c1c90b1a82a1fab0fc202979dde6686b2162d5a8 # v0.0.0
-    with:
-      working-directory: .
+  pre-commit:
+    name: Run pre-commit checks
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: 🛡️ Harden Runner
+        if: github.repository_owner == 'eclipse-score'
+        uses: step-security/harden-runner@v2.18.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          disk-cache: true
+          repository-cache: true
+          bazelisk-cache: true
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit checks
+        run: pre-commit run -a
