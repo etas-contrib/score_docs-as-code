@@ -104,6 +104,12 @@ def _parse_need_type(
     global_base_opts: dict[str, Any],
 ):
     """Build a single ScoreNeedType dict from the metamodel entry, incl defaults."""
+    optional_options = yaml_data.get("optional_options", {})
+    if overlap := set(optional_options.keys()) & set(global_base_opts.keys()):
+        logger.error(
+            f"Directive '{directive_name}' has optional_options that overlap with global base options: {overlap}."
+        )
+
     t: ScoreNeedType = {
         "directive": directive_name,
         "title": yaml_data["title"],
@@ -111,7 +117,7 @@ def _parse_need_type(
         "tags": yaml_data.get("tags", []),
         "parts": yaml_data.get("parts", 3),
         "mandatory_options": yaml_data.get("mandatory_options", {}),
-        "optional_options": yaml_data.get("optional_options", {}) | global_base_opts,
+        "optional_options": optional_options | global_base_opts,
         "mandatory_links": yaml_data.get("mandatory_links", {}),
         "optional_links": yaml_data.get("optional_links", {}),
     }
@@ -207,7 +213,6 @@ def load_metamodel_data(yaml_path: Path | None = None) -> MetaModelData:
     )
 
     # Convert "types" from {directive_name: {...}, ...} to a list of dicts
-
     needs_types = _parse_needs_types(
         data.get("needs_types", {}), global_base_options_optional_opts
     )

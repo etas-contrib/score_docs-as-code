@@ -262,8 +262,6 @@ needs_types:
       # req-Id: tool_req__docs_common_attr_security
       security: ^(YES|NO)$
     optional_options:
-      codelink: ^.*$
-      testlink: ^.*$
       # req-Id: tool_req__docs_req_attr_reqcov
       reqcovered: ^(YES|NO)$
       # req-Id: tool_req__docs_req_attr_testcov
@@ -296,8 +294,6 @@ needs_types:
       # req-Id: tool_req__docs_req_link_satisfies_allowed
       satisfies: stkh_req
     optional_options:
-      codelink: ^.*$
-      testlink: ^.*$
       # req-Id: tool_req__docs_req_attr_reqcov
       reqcovered: ^(YES|NO)$
       # req-Id: tool_req__docs_req_attr_testcov
@@ -334,8 +330,6 @@ needs_types:
       satisfies: feat_req
       belongs_to: comp
     optional_options:
-      codelink: ^.*$
-      testlink: ^.*$
       # req-Id: tool_req__docs_req_attr_reqcov
       reqcovered: ^(YES|NO)$
       # req-Id: tool_req__docs_req_attr_testcov
@@ -360,7 +354,6 @@ needs_types:
       # TODO: make it mandatory
       satisfies: gd_req, stkh_req, feat_req, comp_req
     optional_options:
-      codelink: ^.*$
       tags: ^.*$
       # req-Id: tool_req__docs_req_attr_reqcov
       reqcovered: ^(YES|NO)$
@@ -392,8 +385,6 @@ needs_types:
       # req-Id: tool_req__docs_common_attr_description
       content: ^[\s\S]+$
     optional_options:
-      codelink: ^.*$
-      testlink: ^.*$
       # req-Id: tool_req__docs_req_attr_reqcov
       reqcovered: ^(YES|NO)$
       # req-Id: tool_req__docs_req_attr_testcov
