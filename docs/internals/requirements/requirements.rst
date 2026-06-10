@@ -919,12 +919,12 @@ Testing
   :id: tool_req__docs_tvr_version
   :tags: Tool Verification Reports
   :implemented: YES
-  :version: 1
+  :version: 2
   :satisfies: gd_req__tool_attr_version
   :parent_covered: YES
 
   Docs-as-Code shall enforce that every Tool Verification Report (`doc_tool`) includes a
-  `version` attribute.
+  `tool_version` attribute.
 
 .. tool_req:: Enforce confidence level classification
   :id: tool_req__docs_tvr_confidence_level

@@ -227,8 +227,6 @@ needs_types:
     mandatory_options:
       # req-Id: tool_req__docs_tvr_status
       status: ^(draft|evaluated|qualified|released|rejected)$
-      # req-Id: tool_req__docs_tvr_version
-      version: ^.*$
       # req-Id: tool_req__docs_tvr_safety
       safety_affected: "^(YES|NO)$"
       # req-Id: tool_req__docs_tvr_security
@@ -240,6 +238,9 @@ needs_types:
       author: ^.*$
       approver: ^.*$
       reviewer: ^.*$
+      # FIXME: temp optional for migration. Will be made mandatory in future releases.
+      # req-Id: tool_req__docs_tvr_version
+      tool_version: ^.*$
     optional_links:
       realizes: workproduct
     parts: 2
