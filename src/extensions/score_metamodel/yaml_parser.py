@@ -123,10 +123,6 @@ def _parse_need_type(
     errors: list[str] = []
     for a_name, a, b_name, b in overlap_checks:
         if overlap := set(a.keys()) & set(b.keys()):
-            # FIXME: remove once "version" is clarified with process team
-            if overlap == {"version"}:
-                continue
-
             errors.append(
                 f"Directive '{directive_name}': {a_name} and {b_name} overlap: {overlap}."
             )
