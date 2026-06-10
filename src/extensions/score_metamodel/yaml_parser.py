@@ -104,11 +104,32 @@ def _parse_need_type(
     global_base_opts: dict[str, Any],
 ):
     """Build a single ScoreNeedType dict from the metamodel entry, incl defaults."""
+
+    # Check for overlapping option names between mandatory / optional options / links
+    # and global_base_opts, as this would cause issues for usability.
+    mandatory_options = yaml_data.get("mandatory_options", {})
     optional_options = yaml_data.get("optional_options", {})
-    if overlap := set(optional_options.keys()) & set(global_base_opts.keys()):
-        logger.error(
-            f"Directive '{directive_name}' has optional_options that overlap with global base options: {overlap}."
-        )
+    mandatory_links = yaml_data.get("mandatory_links", {})
+    optional_links = yaml_data.get("optional_links", {})
+
+    overlap_checks: list[tuple[str, dict[str, Any], str, dict[str, Any]]] = [
+        ("mandatory_options", mandatory_options, "optional_options", optional_options),
+        ("mandatory_options", mandatory_options, "global_base_opts", global_base_opts),
+        ("optional_options", optional_options, "global_base_opts", global_base_opts),
+        ("mandatory_links", mandatory_links, "optional_links", optional_links),
+        ("mandatory_links", mandatory_links, "global_base_opts", global_base_opts),
+        ("optional_links", optional_links, "global_base_opts", global_base_opts),
+    ]
+    errors: list[str] = []
+    for a_name, a, b_name, b in overlap_checks:
+        if overlap := set(a.keys()) & set(b.keys()):
+            # FIXME: remove once "version" is clarified with process team
+            if overlap == {"version"}:
+                continue
+
+            errors.append(
+                f"Directive '{directive_name}': {a_name} and {b_name} overlap: {overlap}."
+            )
 
     t: ScoreNeedType = {
         "directive": directive_name,
@@ -116,10 +137,10 @@ def _parse_need_type(
         "prefix": yaml_data.get("prefix", f"{directive_name}__"),
         "tags": yaml_data.get("tags", []),
         "parts": yaml_data.get("parts", 3),
-        "mandatory_options": yaml_data.get("mandatory_options", {}),
+        "mandatory_options": mandatory_options,
         "optional_options": optional_options | global_base_opts,
-        "mandatory_links": yaml_data.get("mandatory_links", {}),
-        "optional_links": yaml_data.get("optional_links", {}),
+        "mandatory_links": mandatory_links,
+        "optional_links": optional_links,
     }
 
     # Ensure ID regex is set
@@ -132,7 +153,7 @@ def _parse_need_type(
     if "style" in yaml_data:
         t["style"] = yaml_data["style"]
 
-    return t
+    return t, errors
 
 
 def _parse_needs_types(
@@ -142,14 +163,21 @@ def _parse_needs_types(
     """Parse the 'needs_types' section of the metamodel.yaml."""
 
     needs_types: dict[str, ScoreNeedType] = {}
+    all_errors: list[str] = []
     for directive_name, directive_data in types_dict.items():
         assert isinstance(directive_name, str)
         assert isinstance(directive_data, dict)
 
-        needs_types[directive_name] = _parse_need_type(
+        needs_types[directive_name], parsing_errors = _parse_need_type(
             directive_name, directive_data, global_base_options_optional_opts
         )
+        all_errors.extend(parsing_errors)
 
+    if all_errors:
+        raise SystemExit(
+            "ERROR: Please resolve these overlaps in the metamodel.yaml to ensure proper functionality:\n"
+            + "\n".join(all_errors)
+        )
     return needs_types
 
 
