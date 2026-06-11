@@ -74,7 +74,14 @@ def setup(app: Sphinx) -> dict[str, str | bool]:
     app.setup_extension("score_metamodel")
 
     # Calculates the metrics & sets global var for access
-    _ = app.connect("env-updated", calculate_need_metrics, priority=600)
+    #
+    # Note: this must run after post_process_needs_data. Although we do (currently) not
+    # rely on any post-processing for the metrics, it's safer to run after all
+    # processing is done, to ensure the metrics reflect the final state of the needs.
+    # The final state is enforced at "write-started", where sphinx-needs will trigger
+    # get_needs_view(), which implicitly turns all needs to read-only. That's also the
+    # reason why get_needs_view() must never be used before "write-started".
+    _ = app.connect("write-started", calculate_need_metrics)
 
     # Writes the metrics to a json in '_build'
     _ = app.connect("build-finished", _write_metrics_json, priority=550)
