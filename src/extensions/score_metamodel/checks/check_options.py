@@ -32,14 +32,12 @@ def get_need_type(needs_types: list[ScoreNeedType], directive: str) -> ScoreNeed
     raise ValueError(f"Need type {directive} not found in needs_types")
 
 
-def _get_normalized(need: NeedItem, key: str, remove_prefix: bool = False) -> list[str]:
+def _get_normalized(need: NeedItem, key: str) -> list[str]:
     """Normalize a raw value into a list of strings."""
     raw_value = need.get(key, None)
     if not raw_value:
         return []
     if isinstance(raw_value, str):
-        if remove_prefix:
-            return [_remove_namespace_prefix_(raw_value)]
         return [raw_value]
     if isinstance(raw_value, list):
         # Verify all elements are strings
@@ -47,10 +45,7 @@ def _get_normalized(need: NeedItem, key: str, remove_prefix: bool = False) -> li
         for item in raw_list:
             if not isinstance(item, str):
                 raise ValueError
-        str_list = cast(list[str], raw_value)
-        if remove_prefix:
-            return [_remove_namespace_prefix_(v) for v in str_list]
-        return str_list
+        return cast(list[str], raw_value)
     raise ValueError
 
 
@@ -71,11 +66,6 @@ def _validate_value_pattern(
             f"Error in metamodel.yaml at {need['type']}->{field}: "
             f"pattern `{pattern}` is not a valid regex pattern."
         ) from e
-
-
-def _remove_namespace_prefix_(word: str) -> str:
-    # If the word starts with uppercase letters followed by an underscore, remove them.
-    return re.sub(r"^[A-Z]+_", "", word)
 
 
 def validate_options(
@@ -144,6 +134,22 @@ def validate_options(
 #         )
 
 
+def _to_link_pattern(value: "str | ScoreNeedType") -> str:
+    """Convert a link constraint to a regex pattern.
+
+    - A plain type name like ``"stkh_req"`` becomes ``^stkh_req__``
+      (matching IDs that start with the type name followed by ``__``).
+    - A string already starting with ``^`` is treated as an explicit regex
+      and returned unchanged.
+    - A ScoreNeedType dict uses its ``mandatory_options.id`` pattern.
+    """
+    if isinstance(value, str):
+        if value.startswith("^"):
+            return value
+        return f"^{value}__"
+    return value["mandatory_options"]["id"]
+
+
 def validate_links(
     log: CheckLogger,
     need_type: ScoreNeedType,
@@ -159,16 +165,11 @@ def validate_links(
         treat_as_info: bool = False,
     ):
         for attribute, allowed_values in attributes_to_allowed_values.items():
-            values = _get_normalized(need, attribute, remove_prefix=True)
+            values = _get_normalized(need, attribute)
             if mandatory and not values:
                 log.warning_for_need(need, f"is missing required link: `{attribute}`.")
 
-            allowed_regex = "|".join(
-                [
-                    v if isinstance(v, str) else v["mandatory_options"]["id"]
-                    for v in allowed_values
-                ]
-            )
+            allowed_regex = "|".join(_to_link_pattern(v) for v in allowed_values)
 
             # regex based validation
             for value in values:
