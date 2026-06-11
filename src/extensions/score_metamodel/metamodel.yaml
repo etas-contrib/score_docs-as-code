@@ -291,9 +291,15 @@ needs_types:
       status: ^(valid|invalid)$
       # req-Id: tool_req__docs_common_attr_description
       content: ^[\s\S]+$
-    mandatory_links:
+    optional_links:
       # req-Id: tool_req__docs_req_link_satisfies_allowed
-      satisfies: stkh_req
+      # TODO: make derived_from mandatory once downstream repos migrate from satisfies
+      derived_from: stkh_req
+      satisfies: stkh_req # for backward compatibility - remove once downstream repos migrate to derived_from
+      belongs_to: feat # for evaluation
+      satisfied_by: feat # new preferred name for belongs_to
+      # req-Id: tool_req__docs_req_link_covers_aou
+      covers: aou_req
     optional_options:
       # req-Id: tool_req__docs_req_attr_reqcov
       reqcovered: ^(YES|NO)$
@@ -303,10 +309,6 @@ needs_types:
       # req-Id: tool_req__docs_req_attr_validity_correctness
       valid_from: ^v(0|[1-9]\d*)\.(0|[1-9]\d*)(\.(0|[1-9]\d*))?$
       valid_until: ^v(0|[1-9]\d*)\.(0|[1-9]\d*)(\.(0|[1-9]\d*))?$
-    optional_links:
-      belongs_to: feat # for evaluation
-      # req-Id: tool_req__docs_req_link_covers_aou
-      covers: aou_req
     tags:
       - requirement
       - requirement_excl_process
@@ -326,19 +328,22 @@ needs_types:
       status: ^(valid|invalid)$
       # req-Id: tool_req__docs_common_attr_description
       content: ^[\s\S]+$
-    mandatory_links:
+    optional_links:
       # req-Id: tool_req__docs_req_link_satisfies_allowed
-      satisfies: feat_req
-      belongs_to: comp
+      # TODO: make derived_from mandatory once downstream repos migrate from satisfies
+      derived_from: feat_req
+      satisfies: feat_req # for backward compatibility - remove once downstream repos migrate to derived_from
+      belongs_to: comp # for backward compatibility
+      satisfied_by: comp # new preferred name for belongs_to
+      # TODO: make satisfied_by mandatory once downstream repos migrate from belongs_to
+      # req-Id: tool_req__docs_req_link_covers_aou
+      covers: aou_req
     optional_options:
       # req-Id: tool_req__docs_req_attr_reqcov
       reqcovered: ^(YES|NO)$
       # req-Id: tool_req__docs_req_attr_testcov
       testcovered: ^(YES|NO)$
       hash: ^.*$
-    optional_links:
-      # req-Id: tool_req__docs_req_link_covers_aou
-      covers: aou_req
     tags:
       - requirement
       - requirement_excl_process
@@ -978,9 +983,9 @@ needs_extra_links:
   #  S-CORE Metamodel
   ##############################################################
   # Requirements
-  satisfies:
-    incoming: satisfied by
-    outgoing: satisfies
+  derived_from:
+    incoming: derives
+    outgoing: derived from
 
   # req-Id: tool_req__docs_req_link_covers_aou
   covers:
@@ -996,6 +1001,17 @@ needs_extra_links:
     incoming: has
     outgoing: belongs to
 
+  satisfied_by:
+    incoming: satisfies
+    outgoing: satisfied by
+
+  # TODO: hard-deprecate satisfies in a follow-up PR once score + module_template migrate to
+  # derived_from. Tracked in https://github.com/eclipse-score/docs-as-code/issues/594
+  satisfies:
+    incoming: satisfied by
+    outgoing: satisfies
+
+  # kept for backward compatibility - old name for satisfies
   fulfils:
     incoming: fulfilled by
     outgoing: fulfils
@@ -1059,8 +1075,9 @@ graph_checks:
       include: stkh_req, feat_req, comp_req, aou_req, gd_req, tool_req
       condition: safety == QM
     check:
+      derived_from: safety == QM
       satisfies: safety == QM
-    explanation: QM requirements cannot satisfy ASIL requirements.
+    explanation: QM requirements cannot be derived from ASIL requirements.
 
   # req-Id: tool_req__docs_arch_link_qm_to_safety_req
   tool_req__docs_arch_link_qm_to_safety_req:

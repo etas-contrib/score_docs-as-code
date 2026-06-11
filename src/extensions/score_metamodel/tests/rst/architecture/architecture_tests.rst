@@ -27,7 +27,7 @@
    :reqtype: Process
    :security: YES
    :safety: ASIL_B
-   :satisfies: stkh_req__test_stakeholder_requirement_1__basic_stkh_req
+   :derived_from: stkh_req__test_stakeholder_requirement_1__basic_stkh_req
    :status: invalid
 
    Test Feature Requirement 1
@@ -99,7 +99,7 @@ Component 1
    :reqtype: Process
    :security: YES
    :safety: ASIL_B
-   :satisfies: feat_req__test_feature_1__test_req_1
+   :derived_from: feat_req__test_feature_1__test_req_1
    :status: invalid
 
    Test Component 1 Requirement
