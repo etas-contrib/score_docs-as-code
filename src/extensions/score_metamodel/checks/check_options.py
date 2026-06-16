@@ -40,12 +40,18 @@ def _get_normalized(need: NeedItem, key: str) -> list[str]:
         return [raw_value]
     if isinstance(raw_value, list):
         # Verify all elements are strings
-        raw_list = cast(list[object], raw_value)
-        for item in raw_list:
-            if not isinstance(item, str):
-                raise ValueError
+        if not all(isinstance(item, str) for item in raw_value):  # pyright: ignore[reportUnknownVariableType]
+            raise ValueError(
+                f"Expected a list of strings for key '{key}', got {raw_value}"
+            )
         return cast(list[str], raw_value)
-    raise ValueError
+    if isinstance(raw_value, int):
+        # Doesnt make a lot of sense, but this preserves regex matching behavior for
+        # numeric values
+        return [str(raw_value)]
+    raise ValueError(
+        f"Expected a string or list of strings for key '{key}', got {type(raw_value)}"
+    )
 
 
 def _validate_value_pattern(
