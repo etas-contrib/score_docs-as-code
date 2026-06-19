@@ -27,12 +27,12 @@ Overall Coverage
 
 .. needpie:: Overall Requirement Coverage
    :labels: Remaining (no selected links), With Test Link, With Code Link, Fully Linked
-   :colors: #4E79A7, #F28E2B, #59A14F, #B07AA1
+   :colors: #ca2828, #009ad2, #d26403, #37a12d
    :filter-func: score_metrics.sphinx_filters.get_metrics_with_first_value_total(overall_metrics:total,overall_metrics:with_test_link,overall_metrics:with_code_link,overall_metrics:fully_linked)
 
 .. needpie:: Test Linkages
    :labels: Tests Not Linked, Tests Linked
-   :colors: #59A14F, #4E79A7
+   :colors: #ca2828, #37a12d
    :filter-func: score_metrics.sphinx_filters.get_metrics_with_first_value_total(tests:total,tests:linked_to_requirements)
 
 Requirement → Test Traceability
