@@ -31,7 +31,7 @@ Overall Coverage
    :filter-func: score_metrics.sphinx_filters.get_metrics_with_first_value_total(overall_metrics:total,overall_metrics:with_test_link,overall_metrics:with_code_link,overall_metrics:fully_linked)
 
 .. needpie:: Test Linkages
-   :labels: Tests Linked, Tests Not Linked
+   :labels: Tests Not Linked, Tests Linked
    :colors: #59A14F, #4E79A7
    :filter-func: score_metrics.sphinx_filters.get_metrics_with_first_value_total(tests:total,tests:linked_to_requirements)
 
