@@ -113,6 +113,8 @@ class RstData:
     warning_infos: list[WarningInfo] = field(default_factory=list)
     found_objects: list[int] = field(default_factory=list)
     syntax_errors: list[str] = field(default_factory=list)
+    partially_verifies: list[str] = field(default_factory=list)
+    fully_verifies: list[str] = field(default_factory=list)
 
 
 def parse_line_for_message(line: str) -> str:
@@ -179,6 +181,17 @@ def extract_test_data(rst_file: Path) -> tuple[RstData, list[ErrorChecks]]:
             if line.startswith("#CHECK:"):
                 assert not rst_data.enabled_checks, "only one CHECK per file allowed"
                 rst_data.enabled_checks = parse_line_for_message(line)
+
+            # Requirement references for traceability
+            if line.startswith("#PARTIALLY-VERIFIES:"):
+                ids_str = parse_line_for_message(line)
+                rst_data.partially_verifies = [
+                    rid.strip() for rid in ids_str.split(",")
+                ]
+
+            if line.startswith("#FULLY-VERIFIES:"):
+                ids_str = parse_line_for_message(line)
+                rst_data.fully_verifies = [rid.strip() for rid in ids_str.split(",")]
 
     return rst_data, parsed_checks
 
@@ -257,12 +270,30 @@ def test_rst_files(
     rst_file: str,
     sphinx_app_setup: Callable[[Path], SphinxTestApp],
     monkeypatch: pytest.MonkeyPatch,
+    record_property: Callable[[str, str], None],
+    record_xml_attribute: Callable[[str, str], None],
 ) -> None:
     ### Test function to check rules in the given rst file
     # The function uses the SphinxTestApp to build the documentation
     # and checks for the expected/unexpected warnings.
     rst_data_raw, parsed_checks_raw = extract_test_data(RST_DIR / rst_file)
     rst_data = group_test_data(rst_data_raw, parsed_checks_raw)
+
+    # Point the XML testcase file/line to the actual .rst file under test,
+    # so traceability links reference the specification, not the test harness.
+    rst_rel_path = f"src/extensions/score_metamodel/tests/rst/{rst_file}"
+    record_xml_attribute("file", rst_rel_path)
+    record_xml_attribute("line", "1")
+
+    # Attach requirement references as pytest properties for traceability.
+    # These appear in JUnit XML output and are picked up by score_source_code_linker.
+    if rst_data.partially_verifies:
+        record_property("PartiallyVerifies", ", ".join(rst_data.partially_verifies))
+    if rst_data.fully_verifies:
+        record_property("FullyVerifies", ", ".join(rst_data.fully_verifies))
+    # Always set these for consistency with other test frameworks.
+    record_property("TestType", "requirements-based")
+    record_property("DerivationTechnique", "requirements-analysis")
 
     # ╓                                                          ╖
     # ║ Will be activated once 'architecture_check.rst' is fixed ║
