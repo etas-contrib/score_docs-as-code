@@ -13,6 +13,8 @@
    # *******************************************************************************
 #CHECK: check_id_format
 
+#PARTIALLY-VERIFIES: tool_req__docs_common_attr_id_scheme
+
 .. Id does not consists of 3 parts
 #EXPECT[+2]: stkh_req__test.id (stkh_req__test): expected to consist of this format: `<Req Type>__<Abbreviations>__<Architectural Element>`.
 

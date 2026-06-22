@@ -14,6 +14,10 @@
 
 #CHECK: check_options
 
+#PARTIALLY-VERIFIES: tool_req__docs_arch_types
+#PARTIALLY-VERIFIES: tool_req__docs_arch_attr_mandatory
+#PARTIALLY-VERIFIES: tool_req__docs_arch_link_fulfils
+
 .. stkh_req:: Test Stakeholder Requirement 1
    :id: stkh_req__test_stakeholder_requirement_1__basic_stkh_req
    :reqtype: Non-Functional
