@@ -303,12 +303,12 @@ Versioning
 .. tool_req:: Mandatory attributes of Generic Documents
   :id: tool_req__docs_doc_generic_mandatory
   :tags: Documents
-  :implemented: PARTIAL
-  :version: 2
+  :implemented: YES
+  :version: 3
   :satisfies:
-   gd_req__doc_attributes_manual,
-   gd_req__change_attr_impact_safety,
-   gd_req__doc_attr_status,
+   gd_req__doc_attributes_manual[version==1],
+   gd_req__change_attr_impact_safety[version==1],
+   gd_req__doc_attr_status[version==1],
   :parent_covered: YES
 
   Enforce that each Generic Document ``doc__*`` has the following attributes:
@@ -492,10 +492,10 @@ Versioning
 .. tool_req:: Enforce validity attribute correctness
   :id: tool_req__docs_req_attr_validity_correctness
   :tags: Requirements
-  :implemented: PARTIAL
-  :version: 1
+  :implemented: YES
+  :version: 2
   :parent_covered: YES
-  :satisfies: gd_req__req_validity
+  :satisfies: gd_req__req_validity[version==1]
   :status: valid
 
   Docs-as-Code shall enforce that the ``valid_from`` and ``valid_until`` attributes of stakeholder and feature requirements are correct.
@@ -506,10 +506,10 @@ Versioning
 .. tool_req:: Enforce validity start is before end
   :id: tool_req__docs_req_attr_validity_consistency
   :tags: Requirements
-  :implemented: PARTIAL
-  :version: 1
+  :implemented: YES
+  :version: 2
   :parent_covered: YES
-  :satisfies: gd_req__req_validity
+  :satisfies: gd_req__req_validity[version==1]
   :status: valid
 
   Docs-as-Code shall enforce that ``valid_from`` is before ``valid_until`` attribute in stakeholder and feature requirements.
@@ -1098,10 +1098,10 @@ Testing
 
 .. tool_req:: Safety Analysis Mandatory Content
    :id: tool_req__docs_saf_attrs_content
-   :implemented: NO
+   :implemented: YES
    :tags: Safety Analysis
-   :version: 1
-   :satisfies: gd_req__saf_argument
+   :version: 2
+   :satisfies: gd_req__saf_argument[version==1]
    :parent_covered: NO
 
    Docs-As-Code shall enforce needs of type :need:`tool_req__docs_saf_types` to have a
@@ -1111,42 +1111,42 @@ Testing
 
 .. tool_req:: Safety Analysis Linkage Violates
   :id: tool_req__docs_saf_attrs_violates
-  :implemented: NO
+  :implemented: YES
   :tags: Safety Analysis
-  :version: 1
+  :version: 2
   :satisfies:
-    gd_req__saf_linkage_check,
-    gd_req__saf_linkage,
-    gd_req__sec_linkage_check,
+    gd_req__saf_linkage_check[version==1],
+    gd_req__saf_linkage[version==1],
+    gd_req__sec_linkage_check[version==1],
+    gd_req__sec_linkage[version==1],
   :parent_covered: YES
 
   Docs-As-Code shall enforce that needs of type :need:`tool_req__docs_saf_types` have a
   `violates` links to at least one dynamic / static diagram according to the table.
 
-
   .. table::
      :widths: auto
 
-     =============  ===================
+     =============  ==========================
      Link Source    Allowed Link Target
-     =============  ===================
+     =============  ==========================
      feat_saf_dfa   feat_arc_sta
      comp_saf_dfa   comp_arc_sta
-     feat_saf_fmea  feat_arc_dyn
-     comp_saf_fmea  comp_arc_dyn
-     =============  ===================
+     feat_saf_fmea  feat_arc_dyn, feat_arc_sta
+     comp_saf_fmea  comp_arc_dyn, comp_arc_sta
+     =============  ==========================
 
 
 
 .. tool_req:: FMEA: fault id attribute
    :id: tool_req__docs_saf_attr_fmea_fault_id
-   :implemented: NO
+   :implemented: YES
    :tags: Safety Analysis
-   :version: 1
-   :satisfies: gd_req__saf_attr_fault_id
+   :version: 2
+   :satisfies: gd_req__saf_attr_fault_id[version==1]
    :parent_covered: NO
 
-   Docs-As-Code shall enforce that needs of type DFA (see
+   Docs-As-Code shall enforce that needs of type FMEA (see
    :need:`tool_req__docs_saf_types`) have a `fault_id` attribute.
 
    Allowed values are listed as ID in tables at :need:`gd_guidl__dfa_failure_initiators`.
@@ -1154,16 +1154,16 @@ Testing
 
 .. tool_req:: DFA: failure id attribute
    :id: tool_req__docs_saf_attr_dfa_failure_id
-   :implemented: NO
+   :implemented: YES
    :tags: Safety Analysis
-   :version: 1
-   :satisfies: gd_req__saf_attr_failure_id
+   :version: 2
+   :satisfies: gd_req__saf_attr_failure_id[version==1]
    :parent_covered: NO
 
    Docs-As-Code shall enforce that needs of type DFA (see
-   :need:`tool_req__docs_saf_types`) have a `fault_id` attribute.
+   :need:`tool_req__docs_saf_types`) have a `failure_id` attribute.
 
-   Allowed values are listed as ID in tables at :need:`gd_guidl__dfa_failure_initiators`.
+   Note: Allowed values are listed as ID in tables at :need:`gd_guidl__dfa_failure_initiators`. This is not verified.
 
 
 .. tool_req:: Failure Effect
