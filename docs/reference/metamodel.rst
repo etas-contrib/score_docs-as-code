@@ -10,7 +10,6 @@
    # https://www.apache.org/licenses/LICENSE-2.0
    #
    # SPDX-License-Identifier: Apache-2.0
-   # Assisted-by: Anthropic Claude-opus-4.6
    # *******************************************************************************
 
 .. _metamodel_reference:
