@@ -210,7 +210,6 @@ This section provides an overview of current process requirements and their clar
   :satisfies:
      gd_req__req_check_mandatory,
      gd_req__req_attr_safety,
-     gd_req__impl_diagram_safety,
      gd_req__arch_attr_safety
 
   Docs-as-Code shall enforce that the ``safety`` attribute has one of the following values:
@@ -240,7 +239,6 @@ This section provides an overview of current process requirements and their clar
     gd_req__req_attr_status,
     gd_req__arch_attr_status,
     gd_req__saf_attr_status,
-    gd_req__impl_diagram_status,
     gd_req__req_check_mandatory,
 
   Docs-as-Code shall enforce that the ``status`` attribute has one of the following values:
@@ -772,10 +770,6 @@ Architecture Attributes
   :implemented: PARTIAL
   :version: 1
   :satisfies:
-    gd_req__impl_diagram_check_id,
-    gd_req__impl_diagram_linkage_id,
-    gd_req__impl_diagram_check_includes,
-    gd_req__impl_diagram_linkage_includes,
   :parent_covered: YES
 
   Architectural diagrams (``mod_view_sta``, ``feat_arc_sta``, ``comp_arc_sta``,
@@ -787,6 +781,13 @@ Architecture Attributes
 
      "belongs_to", "corresponding architecture element same level"
      "includes", "corresponding architecture element lower level"
+
+.. note::
+  :need:`tool_req__docs_arch_links` satisfies
+  ``gd_req__impl_diagram_check_id`` and
+  ``gd_req__impl_diagram_linkage_id``,
+  but those were accidentally removed in process v2.0.0.
+  See `PR #730 <https://github.com/eclipse-score/process_description/pull/730>`_.
 
 
 💻 Detailed Design & Code
