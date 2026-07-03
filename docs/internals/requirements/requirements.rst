@@ -1162,6 +1162,7 @@ Testing
    :implemented: YES
    :tags: Safety Analysis
    :version: 1
+   :satisfies: gd_req__saf_attr_safety_relevant
 
    Docs-As-Code shall allow needs of type :need:`tool_req__docs_saf_types` and
    ``plat_saf_dfa`` to have an optional ``safety_relevant`` attribute. The
@@ -1176,6 +1177,7 @@ Testing
    :implemented: YES
    :tags: Safety Analysis
    :version: 1
+   :satisfies: gd_req__saf_attr_failure_root_cause
 
    Docs-As-Code shall allow FMEA needs (``feat_saf_fmea``, ``comp_saf_fmea``)
    to have an optional ``root_cause`` attribute with non-empty content.
