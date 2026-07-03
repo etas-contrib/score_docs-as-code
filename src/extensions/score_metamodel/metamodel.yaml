@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -13,12 +13,10 @@
 # yaml-language-server: $schema=./metamodel-schema.json
 
 needs_types_base_options:
-  optional_options:
+  mandatory_options:
     # req-Id: tool_req__docs_dd_link_source_code_link
     source_code_link: ^https://github.com/.*
     testlink: ^https://github.com/.*
-    # Version will be mandatory global option in future releases
-    # For now giving grace periods to consumers
     # req-Id: tool_req__docs_common_attr_version
     version: ^[0-9]*$
 
