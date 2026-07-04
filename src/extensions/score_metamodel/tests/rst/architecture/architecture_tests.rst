@@ -12,7 +12,16 @@
    # SPDX-License-Identifier: Apache-2.0
    # *******************************************************************************
 
-#CHECK: check_options
+
+.. test_metadata:: Test Architecture Needs
+   :id: test_metadata__architecture
+   :partially_verifies_list: tool_req__docs_arch_types
+   :test_type: requirements_based
+   :derivation_technique: requirements_based
+
+   This file tests if the architecture drawing logic we have is correct.
+   And if all of the metamodel options for the reqs are correctly followed
+
 
 .. stkh_req:: Test Stakeholder Requirement 1
    :id: stkh_req__test_stakeholder_requirement_1__basic_stkh_req
@@ -27,7 +36,7 @@
    :reqtype: Process
    :security: YES
    :safety: ASIL_B
-   :satisfies: stkh_req__test_stakeholder_requirement_1__basic_stkh_req
+   :derived_from: stkh_req__test_stakeholder_requirement_1__basic_stkh_req
    :status: invalid
 
    Test Feature Requirement 1
@@ -92,23 +101,17 @@ Component 1
    :status: invalid
    :implements: logic_arc_int__test_feature_1__test_interface_1
    :uses: logic_arc_int__test_feature_1__test_interface_2
-   :consists_of: sw_unit__component_1__test_unit_1, comp__test_sub_component_1
+   :consists_of: comp__test_sub_component_1
 
 .. comp_req:: Test Component 1 Requirement 1
    :id: comp_req__test_component_1__requirement_1
    :reqtype: Process
    :security: YES
    :safety: ASIL_B
-   :satisfies: feat_req__test_feature_1__test_req_1
+   :derived_from: feat_req__test_feature_1__test_req_1
    :status: invalid
 
    Test Component 1 Requirement
-
-.. sw_unit:: SW Test Unit 1
-   :id: sw_unit__component_1__test_unit_1
-   :security: YES
-   :safety: ASIL_B
-   :status: invalid
 
 .. comp:: Test Sub Component 1
    :id: comp__test_sub_component_1
@@ -116,7 +119,6 @@ Component 1
    :safety: ASIL_B
    :status: invalid
    :implements: logic_arc_int__test_feature_1__test_interface_1
-   :consists_of: sw_unit__sub_component_1__test_unit_2
 
 .. comp_arc_sta:: Test Component Architecture Component 1
    :id: comp_arc_sta__feature_name__component_name
@@ -126,12 +128,6 @@ Component 1
    :fulfils: comp_req__test_component_1__requirement_1
    :implements: logic_arc_int__test_feature_1__test_interface_1
    :belongs_to: comp__test_sub_component_1
-
-.. sw_unit:: SW Test Unit 2
-   :id: sw_unit__sub_component_1__test_unit_2
-   :security: YES
-   :safety: ASIL_B
-   :status: invalid
 
 Component 1
 ~~~~~~~~~~~

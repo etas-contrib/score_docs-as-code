@@ -28,10 +28,10 @@ docs-as-code as a Bazel dependency.
 Pages
 -----
 
-- ``implementation_state`` describes tooling coverage: implemented capabilities,
-  source-code links, test links, full linkage, and process-to-tool mapping.
 - ``tooling_verification`` describes verification evidence for the tooling
   itself, including test results and testcase metadata.
+- ``requirement_coverage`` shows per-requirement test and code linkage,
+  using the same metrics as CI quality gates.
 
 .. toctree::
    :maxdepth: 1
@@ -39,5 +39,5 @@ Pages
    capabilities
    process_overview
    requirements
-   implementation_state
+   requirement_coverage
    tooling_verification

@@ -39,7 +39,9 @@ class TestCheckOptions:
                 "some_required_option": "^some_value__.*$",
             },
             "optional_options": {},
+            "mandatory_links_str": {},
             "mandatory_links": {},
+            "optional_links_str": {},
             "optional_links": {},
         }
     ]
@@ -57,7 +59,9 @@ class TestCheckOptions:
             "optional_options": {
                 "some_optional_option": "^some_value__.*$",
             },
+            "mandatory_links_str": {},
             "mandatory_links": {},
+            "optional_links_str": {},
             "optional_links": {},
         }
     ]

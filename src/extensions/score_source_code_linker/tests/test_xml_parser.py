@@ -22,7 +22,6 @@ Once we enable those we will need to change the tests
 """
 
 import json
-import os
 import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from pathlib import Path
@@ -302,7 +301,9 @@ def test_read_test_xml_file(
 
     # No properties at all => Should not be a 'valid' testlink
     needs2, no_props2, missing_props2 = xml_parser.read_test_xml_file(dir2 / "test.xml")
-    assert needs2 == []
+    assert isinstance(needs2, list) and len(needs2) == 1
+    tcneed2 = needs2[0]
+    assert isinstance(tcneed2, DataOfTestCase)
     assert no_props2 == ["tc_no_props"]
     assert missing_props2 == []
 
@@ -316,7 +317,9 @@ def test_read_test_xml_file(
 
     # Missing some properties => Should not be a 'valid' testlink
     needs4, no_props4, missing_props4 = xml_parser.read_test_xml_file(dir4 / "test.xml")
-    assert needs4 == []
+    assert isinstance(needs4, list) and len(needs4) == 1
+    tcneed4 = needs4[0]
+    assert isinstance(tcneed4, DataOfTestCase)
     assert no_props4 == []
     assert missing_props4 == ["tc_with_missing_props"]
 
@@ -467,41 +470,27 @@ def test_get_metadata_from_test_path_local():
     assert md["url"] == ""
 
 
-def test_get_metadata_from_test_path_combo_with_hash(tmp_path: Path):
+def test_get_metadata_from_test_path_combo_with_hash(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Combo builds with 'hash' in known_good.json populate metadata correctly."""
     json_file = tmp_path / "known_good.json"
     json_file.write_text(json.dumps(_KNOWN_GOOD_WITH_HASH))
-
-    old = os.environ.get("KNOWN_GOOD_JSON")
-    try:
-        os.environ["KNOWN_GOOD_JSON"] = str(json_file)
-        md = xml_parser.get_metadata_from_test_path(_COMBO_TEST_PATH)
-    finally:
-        if old is None:
-            os.environ.pop("KNOWN_GOOD_JSON", None)
-        else:
-            os.environ["KNOWN_GOOD_JSON"] = old
-
+    monkeypatch.setenv("KNOWN_GOOD_JSON", str(json_file))
+    md = xml_parser.get_metadata_from_test_path(_COMBO_TEST_PATH)
     assert md["repo_name"] == "score_docs_as_code"
     assert md["hash"] == "abc123hashvalue"
     assert md["url"] == "https://github.com/eclipse-score/docs-as-code"
 
 
-def test_get_metadata_from_test_path_combo_with_version(tmp_path: Path):
+def test_get_metadata_from_test_path_combo_with_version(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Combo builds with 'version' in known_good.json populate metadata correctly."""
     json_file = tmp_path / "known_good.json"
     json_file.write_text(json.dumps(_KNOWN_GOOD_WITH_VERSION))
-
-    old = os.environ.get("KNOWN_GOOD_JSON")
-    try:
-        os.environ["KNOWN_GOOD_JSON"] = str(json_file)
-        md = xml_parser.get_metadata_from_test_path(_COMBO_TEST_PATH)
-    finally:
-        if old is None:
-            os.environ.pop("KNOWN_GOOD_JSON", None)
-        else:
-            os.environ["KNOWN_GOOD_JSON"] = old
-
+    monkeypatch.setenv("KNOWN_GOOD_JSON", str(json_file))
+    md = xml_parser.get_metadata_from_test_path(_COMBO_TEST_PATH)
     assert md["repo_name"] == "score_docs_as_code"
     assert md["hash"] == "v2.1.0"
     assert md["url"] == "https://github.com/eclipse-score/docs-as-code"

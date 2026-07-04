@@ -19,7 +19,6 @@ from score_metamodel import (
     default_options,
     local_check,
 )
-from score_metamodel.metamodel_types import AllowedLinksType
 from sphinx.application import Sphinx
 from sphinx_needs.need_item import NeedItem
 
@@ -32,26 +31,27 @@ def get_need_type(needs_types: list[ScoreNeedType], directive: str) -> ScoreNeed
     raise ValueError(f"Need type {directive} not found in needs_types")
 
 
-def _get_normalized(need: NeedItem, key: str, remove_prefix: bool = False) -> list[str]:
+def _get_normalized(need: NeedItem, key: str) -> list[str]:
     """Normalize a raw value into a list of strings."""
     raw_value = need.get(key, None)
     if not raw_value:
         return []
     if isinstance(raw_value, str):
-        if remove_prefix:
-            return [_remove_namespace_prefix_(raw_value)]
         return [raw_value]
     if isinstance(raw_value, list):
         # Verify all elements are strings
-        raw_list = cast(list[object], raw_value)
-        for item in raw_list:
-            if not isinstance(item, str):
-                raise ValueError
-        str_list = cast(list[str], raw_value)
-        if remove_prefix:
-            return [_remove_namespace_prefix_(v) for v in str_list]
-        return str_list
-    raise ValueError
+        if not all(isinstance(item, str) for item in raw_value):  # pyright: ignore[reportUnknownVariableType]
+            raise ValueError(
+                f"Expected a list of strings for key '{key}', got {raw_value}"
+            )
+        return cast(list[str], raw_value)
+    if isinstance(raw_value, int):
+        # Doesnt make a lot of sense, but this preserves regex matching behavior for
+        # numeric values
+        return [str(raw_value)]
+    raise ValueError(
+        f"Expected a string or list of strings for key '{key}', got {type(raw_value)}"
+    )
 
 
 def _validate_value_pattern(
@@ -71,11 +71,6 @@ def _validate_value_pattern(
             f"Error in metamodel.yaml at {need['type']}->{field}: "
             f"pattern `{pattern}` is not a valid regex pattern."
         ) from e
-
-
-def _remove_namespace_prefix_(word: str) -> str:
-    # If the word starts with uppercase letters followed by an underscore, remove them.
-    return re.sub(r"^[A-Z]+_", "", word)
 
 
 def validate_options(
@@ -144,6 +139,26 @@ def validate_options(
 #         )
 
 
+def _to_link_pattern(value: ScoreNeedType) -> str:
+    """
+    Convert a link constraint to a regex pattern.
+
+    Note: the pattern is already stored in "id" attribute, this is just a helper
+    function to retrieve it safely.
+    """
+    assert isinstance(value, dict), f"Expected dict for ScoreNeedType, got {value}"
+    assert "mandatory_options" in value, (
+        f"ScoreNeedType dict must have 'mandatory_options', got {value}"
+    )
+    assert isinstance(value["mandatory_options"], dict), (
+        f"'mandatory_options' must be a dict, got {value['mandatory_options']}"
+    )
+    assert "id" in value["mandatory_options"], (
+        f"'mandatory_options' must contain 'id', got {value['mandatory_options']}"
+    )
+    return value["mandatory_options"]["id"]
+
+
 def validate_links(
     log: CheckLogger,
     need_type: ScoreNeedType,
@@ -154,21 +169,18 @@ def validate_links(
     """
 
     def _validate(
-        attributes_to_allowed_values: AllowedLinksType,
+        attributes_to_allowed_values: dict[str, list[ScoreNeedType]] | None,
         mandatory: bool,
         treat_as_info: bool = False,
     ):
+        assert attributes_to_allowed_values is not None
+
         for attribute, allowed_values in attributes_to_allowed_values.items():
-            values = _get_normalized(need, attribute, remove_prefix=True)
+            values = _get_normalized(need, attribute)
             if mandatory and not values:
                 log.warning_for_need(need, f"is missing required link: `{attribute}`.")
 
-            allowed_regex = "|".join(
-                [
-                    v if isinstance(v, str) else v["mandatory_options"]["id"]
-                    for v in allowed_values
-                ]
-            )
+            allowed_regex = "|".join(_to_link_pattern(v) for v in allowed_values)
 
             # regex based validation
             for value in values:
@@ -188,7 +200,7 @@ def validate_links(
                     )
 
     _validate(need_type["mandatory_links"], True)
-    _validate(need_type["optional_links"], False, treat_as_info=True)
+    _validate(need_type["optional_links"], False)
 
 
 # req-Id: tool_req__docs_req_attr_reqtype
@@ -237,7 +249,9 @@ def check_extra_options(
         "mandatory_links",
         "optional_links",
     ):
-        allowed_options.update(need_options[o].keys())
+        val = need_options[o]
+        assert val is not None
+        allowed_options.update(val.keys())
 
     extra_options = [
         option

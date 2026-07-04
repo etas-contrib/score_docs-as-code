@@ -11,12 +11,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 import importlib
-import json
 import os
 import pkgutil
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
 
 from sphinx.application import Sphinx
 from sphinx_needs import logging
@@ -30,9 +28,6 @@ from src.extensions.score_metamodel.log import CheckLogger
 from src.extensions.score_metamodel.metamodel_types import (
     ProhibitedWordCheck as ProhibitedWordCheck,
     ScoreNeedType as ScoreNeedType,
-)
-from src.extensions.score_metamodel.traceability_metrics import (
-    compute_traceability_summary,
 )
 from src.extensions.score_metamodel.yaml_parser import (
     default_options as default_options,
@@ -97,54 +92,6 @@ def graph_check(func: graph_check_function):
     logger.debug(f"new graph_check: {func}")
     graph_checks.append(func)
     return func
-
-
-def _write_metrics_json(app: Sphinx, exception: Exception | None) -> None:
-    """Write a schema-v1 metrics.json alongside needs.json in the build output.
-
-    This is the single source of truth for traceability metrics. It runs
-    inside the Sphinx build so it has access to all needs (local + external)
-    and produces the same metrics the dashboard pie charts display.
-    The traceability_gate reads this file to enforce CI thresholds.
-    """
-    if exception:
-        return
-
-    all_needs: list[Any] = list(SphinxNeedsData(app.env).get_needs_view().values())
-
-    raw = str(getattr(app.config, "score_metamodel_requirement_types", "tool_req"))
-    requirement_types = {t.strip() for t in raw.split(",") if t.strip()} or {"tool_req"}
-    include_not_implemented = True
-    include_external: bool = bool(
-        getattr(app.config, "score_metamodel_include_external_needs", False)
-    )
-
-    metrics_by_type: dict[str, Any] = {}
-    for req_type in sorted(requirement_types):
-        type_summary = compute_traceability_summary(
-            all_needs=all_needs,
-            requirement_types={req_type},
-            include_not_implemented=include_not_implemented,
-            filtered_test_types=set(),
-            include_external=include_external,
-        )
-        metrics_by_type[req_type] = {
-            "include_not_implemented": type_summary["include_not_implemented"],
-            "include_external": type_summary["include_external"],
-            "requirements": type_summary["requirements"],
-            "tests": type_summary["tests"],
-        }
-
-    output: dict[str, Any] = {
-        "schema_version": "1",
-        "generated_by": "sphinx_build",
-        "metrics_by_type": metrics_by_type,
-    }
-
-    out_path = Path(app.outdir) / "metrics.json"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(output, indent=2), encoding="utf-8")
-    logger.info(f"Traceability metrics written to: {out_path}")
 
 
 def _run_checks(app: Sphinx, exception: Exception | None) -> None:
@@ -214,86 +161,82 @@ def _run_checks(app: Sphinx, exception: Exception | None) -> None:
         )
 
 
-def _configure_traceability_dashboard(app: Sphinx, config: object) -> None:
-    """Propagate repo-level traceability settings to dashboard filters."""
-    from src.extensions.score_metamodel.checks.traceability_dashboard import (
-        set_default_include_external,
-    )
-
-    include_external = bool(
-        getattr(config, "score_metamodel_include_external_needs", False)
-    )
-    set_default_include_external(include_external)
-
-
-def _remove_prefix(word: str, prefixes: list[str]) -> str:
-    for prefix in prefixes or []:
-        if isinstance(word, str) and word.startswith(prefix):
-            return word.removeprefix(prefix)
-    return word
-
-
-def _get_need_type_for_need(app: Sphinx, need: NeedItem) -> ScoreNeedType:
-    for nt in app.config.needs_types:
-        if nt["directive"] == need["type"]:
-            return nt
-    raise ValueError(f"Need type {need['type']} not found in needs_types")
-
-
 def _resolve_linkable_types(
     link_name: str,
     link_value: str,
     current_need_type: ScoreNeedType,
-    needs_types: list[ScoreNeedType],
-) -> list[ScoreNeedType | str]:
-    needs_types_dict = {nt["directive"]: nt for nt in needs_types}
+    needs_types: dict[str, ScoreNeedType],
+) -> list[ScoreNeedType]:
+    # Anything is allowed if the value is "ANY". This allows to bypass the link type validation for specific links.
+    if link_value == "ANY":
+        return list(needs_types.values())
+
     link_values = [v.strip() for v in link_value.split(",")]
-    linkable_types: list[ScoreNeedType | str] = []
+    linkable_types: list[ScoreNeedType] = []
     for v in link_values:
-        if v.startswith("^"):
-            linkable_types.append(v)  # keep regex as-is
+        target_need_type = needs_types.get(v)
+        if target_need_type is None:
+            logger.error(
+                f"In metamodel.yaml: {current_need_type['directive']}, "
+                f"link '{link_name}' references unknown type '{v}'."
+            )
         else:
-            target_need_type = needs_types_dict.get(v)
-            if target_need_type is None:
-                logger.error(
-                    f"In metamodel.yaml: {current_need_type['directive']}, "
-                    f"link '{link_name}' references unknown type '{v}'."
-                )
-            else:
-                linkable_types.append(target_need_type)
+            linkable_types.append(target_need_type)
     return linkable_types
 
 
 def postprocess_need_links(needs_types_list: list[ScoreNeedType]):
     """Convert link option strings into lists of target need types.
 
-    If a link value starts with '^' it is treated as a regex and left
-    unchanged. Otherwise it is a comma-separated list of type names which
-    are resolved to the corresponding ScoreNeedTypes.
+    Parses comma-separated list of type names which are resolved to the corresponding
+    ScoreNeedTypes.
     """
-    for need_type in needs_types_list:
-        try:
-            link_dicts = (
-                need_type["mandatory_links"],
-                need_type["optional_links"],
+    # "mandatory_links_str" is used to keep only metamodel sourced types. That key is so
+    # specific, that noone but our metamodel should be using it.
+    all_need_types = {
+        nt["directive"]: nt for nt in needs_types_list if "mandatory_links_str" in nt
+    }
+
+    for need_type in all_need_types.values():
+        need_type["mandatory_links"] = {
+            link_name: _resolve_linkable_types(
+                link_name, link_value, need_type, all_need_types
             )
-        except KeyError:
-            # TODO: remove the Sphinx-Needs defaults from our metamodel
-            # Example: {'directive': 'issue', 'title': 'Issue', 'prefix': 'IS_'}
-            continue
+            for link_name, link_value in need_type["mandatory_links_str"].items()
+        }
 
-        for link_dict in link_dicts:
-            for link_name, link_value in link_dict.items():
-                assert isinstance(link_value, str)  # so far all of them are strings
+        need_type["optional_links"] = {
+            link_name: _resolve_linkable_types(
+                link_name, link_value, need_type, all_need_types
+            )
+            for link_name, link_value in need_type["optional_links_str"].items()
+        }
 
-                link_dict[link_name] = _resolve_linkable_types(  # pyright: ignore[reportArgumentType]
-                    link_name, link_value, need_type, needs_types_list
-                )
+
+def _clear_needs_defaults(app: Sphinx):
+    """Clear default need types, links and fields provided by sphinx-needs.
+
+    This ensures that only the need types defined in our metamodel are used,
+    and prevents issues where the defaults get merged with our types and cause
+    unexpected behavior.
+    """
+    default_directives = {"need", "req", "spec", "impl", "test"}
+    existing_directives = {nt["directive"] for nt in app.config.needs_types}
+    if existing_directives == default_directives:
+        app.config.needs_types.clear()
+        logger.info("Cleared default Sphinx-Needs types: %s", default_directives)
+    else:
+        logger.info(
+            f"Expected default need types {default_directives} not found. "
+            "Not clearing needs_types to avoid accidentally removing custom types. "
+            f"Existing directives: {existing_directives}"
+        )
 
 
 def setup(app: Sphinx) -> dict[str, str | bool]:
     app.add_config_value("external_needs_source", "", rebuild="env")
     app.add_config_value("score_metamodel_yaml", "", rebuild="env")
+    app.add_config_value("required_in_id", [], rebuild="env")
     config_setdefault(app.config, "needs_id_required", True)
     config_setdefault(app.config, "needs_id_regex", "^[A-Za-z0-9_-]{6,}")
 
@@ -303,9 +246,19 @@ def setup(app: Sphinx) -> dict[str, str | bool]:
     metamodel = load_metamodel_data(override_path)
 
     # Extend sphinx-needs config rather than overwriting
+    _clear_needs_defaults(app)
     app.config.needs_types += metamodel.needs_types
     app.config.needs_links.update(metamodel.needs_links)
     app.config.needs_fields.update(metamodel.needs_fields)
+    app.config.needs_string_links.setdefault(
+        "mitigation_issue_linker",
+        {
+            "regex": r"(?P<url>https://github\.com/[^/]+/(?P<repo>[^/]+)/issues/(?P<number>\d+))",
+            "link_url": "{{url}}",
+            "link_name": "{{repo}}#{{number}}",
+            "options": ["mitigation_issue"],
+        },
+    )
     app.config.graph_checks = metamodel.needs_graph_check
     app.config.prohibited_words_checks = metamodel.prohibited_words_checks
 
@@ -318,8 +271,10 @@ def setup(app: Sphinx) -> dict[str, str | bool]:
 
     # sphinx-collections runs on default prio 500.
     # We need to populate the sphinx-collections config before that happens.
-    # --> 499
-    _ = app.connect("config-inited", connect_external_needs, priority=499)
+    # If we put it anywhere higher it seems that other things already lock the needs
+    # To ensure that this runs first before locking happens priot is => 425
+    # The lower the number the higher priority it has (runs earlier)
+    _ = app.connect("config-inited", connect_external_needs, priority=425)
 
     discover_checks()
 
@@ -332,29 +287,6 @@ def setup(app: Sphinx) -> dict[str, str | bool]:
         ),
     )
 
-    app.add_config_value(
-        "score_metamodel_requirement_types",
-        "tool_req",
-        rebuild="env",
-        description=(
-            "Comma-separated list of need types treated as requirements for "
-            "traceability metrics (default: tool_req)."
-        ),
-    )
-
-    app.add_config_value(
-        "score_metamodel_include_external_needs",
-        False,
-        rebuild="env",
-        description=(
-            "When True, include external requirements in dashboard and CI metrics. "
-            "Default is False so each repo gates only its own needs."
-        ),
-    )
-
-    _ = app.connect("config-inited", _configure_traceability_dashboard, priority=498)
-
-    _ = app.connect("build-finished", _write_metrics_json)
     _ = app.connect("build-finished", _run_checks)
 
     return {
