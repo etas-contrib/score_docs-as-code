@@ -721,9 +721,7 @@ needs_types:
       # req-Id: tool_req__docs_saf_attrs_violates
       violates: feat_arc_sta
     optional_options:
-      # req-Id: tool_req__docs_saf_attrs_
-
-
+      # req-Id: tool_req__docs_saf_attrs_mitigation_issue
       # req-Id: tool_req__docs_saf_attrs_safety_relevant
       safety_relevant: ^(yes|no)$
       mitigation_issue: ^https://github\.com/[^/]+/[^/]+/issues/\d+$
@@ -817,7 +815,6 @@ needs_types:
       # req-Id: tool_req__docs_saf_attrs_root_cause
       root_cause: ^[\s\S]+$
       mitigation_issue: ^https://github\.com/[^/]+/[^/]+/issues/\d+$
-      # req-Id: tool_req__docs_saf_attrs_safety_relevant
     mandatory_links:
       # req-Id: tool_req__docs_saf_attrs_violates
       violates: comp_arc_dyn, comp_arc_sta
