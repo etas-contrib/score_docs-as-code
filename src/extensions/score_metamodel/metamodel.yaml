@@ -812,7 +812,6 @@ needs_types:
       # req-Id: tool_req__docs_saf_attrs_mitigation_issue
       # req-Id: tool_req__docs_saf_attrs_safety_relevant
       safety_relevant: ^(yes|no)$
-      # req-Id: tool_req__docs_saf_attrs_root_cause
       root_cause: ^[\s\S]+$
       mitigation_issue: ^https://github\.com/[^/]+/[^/]+/issues/\d+$
     mandatory_links:
