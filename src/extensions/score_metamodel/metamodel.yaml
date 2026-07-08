@@ -700,7 +700,6 @@ needs_types:
     optional_options:
       safety_relevant: ^(yes|no)$
       mitigation_issue: ^https://github\.com/[^/]+/[^/]+/issues/\d+$
-      safety_relevant: ^(yes|no)$
     optional_links:
       mitigated_by: stkh_req, aou_req
     parts: 3
@@ -723,13 +722,12 @@ needs_types:
       violates: feat_arc_sta
     optional_options:
       # req-Id: tool_req__docs_saf_attrs_
-      
-      
+
+
       # req-Id: tool_req__docs_saf_attrs_safety_relevant
       safety_relevant: ^(yes|no)$
       mitigation_issue: ^https://github\.com/[^/]+/[^/]+/issues/\d+$
-      # req-Id: tool_req__docs_saf_attrs_safety_relevant
-      safety_relevant: ^(yes|no)$
+
     optional_links:
       # req-Id: tool_req__docs_saf_attrs_mitigated_by
       # (only mandatory once valid status == valid)
@@ -756,8 +754,6 @@ needs_types:
       # req-Id: tool_req__docs_saf_attrs_safety_relevant
       safety_relevant: ^(yes|no)$
       mitigation_issue: ^https://github\.com/[^/]+/[^/]+/issues/\d+$
-      # req-Id: tool_req__docs_saf_attrs_safety_relevant
-      safety_relevant: ^(yes|no)$
     mandatory_links:
       # req-Id: tool_req__docs_saf_attrs_violates
       violates: comp_arc_sta
@@ -790,10 +786,6 @@ needs_types:
       # req-Id: tool_req__docs_saf_attrs_root_cause
       root_cause: ^[\s\S]+$
       mitigation_issue: ^https://github\.com/[^/]+/[^/]+/issues/\d+$
-      # req-Id: tool_req__docs_saf_attrs_safety_relevant
-      safety_relevant: ^(yes|no)$
-      # req-Id: tool_req__docs_saf_attrs_root_cause
-      root_cause: ^[\s\S]+$
     mandatory_links:
       # req-Id: tool_req__docs_saf_attrs_violates
       violates: feat_arc_dyn, feat_arc_sta
@@ -826,9 +818,6 @@ needs_types:
       root_cause: ^[\s\S]+$
       mitigation_issue: ^https://github\.com/[^/]+/[^/]+/issues/\d+$
       # req-Id: tool_req__docs_saf_attrs_safety_relevant
-      safety_relevant: ^(yes|no)$
-      # req-Id: tool_req__docs_saf_attrs_root_cause
-      root_cause: ^[\s\S]+$
     mandatory_links:
       # req-Id: tool_req__docs_saf_attrs_violates
       violates: comp_arc_dyn, comp_arc_sta
