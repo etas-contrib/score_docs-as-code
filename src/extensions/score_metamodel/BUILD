@@ -135,3 +135,32 @@ score_pytest(
     pytest_config = "//:pyproject.toml",
     deps = [":score_metamodel"],
 )
+
+score_pytest(
+    name = "file_based_tests_safety",
+    srcs = ["tests/test_rules_file_based.py"],
+    data = [
+        "tests/rst/safety/test_saf_types.rst",
+        "tests/rst/safety/test_saf_mandatory_attrs.rst",
+        "tests/rst/safety/test_saf_violates.rst",
+        "tests/rst/safety/test_saf_optional_attrs.rst",
+    ] + [
+        "tests/__init__.py",
+        "tests/rst/conf.py",
+        "tests/rst/needs.json",
+    ],
+    pytest_config = "//:pyproject.toml",
+    deps = [":score_metamodel"],
+)
+
+score_pytest(
+    name = "file_based_tests_security",
+    srcs = ["tests/test_rules_file_based.py"],
+    data = ["tests/rst/security/test_security_types.rst"] + [
+        "tests/__init__.py",
+        "tests/rst/conf.py",
+        "tests/rst/needs.json",
+    ],
+    pytest_config = "//:pyproject.toml",
+    deps = [":score_metamodel"],
+)
