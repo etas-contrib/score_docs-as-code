@@ -26,6 +26,28 @@
    * comp_saf_fmea -> comp_arc_dyn, comp_arc_sta
 
 
+.. feat_arc_sta:: Stub Feature Static Architecture
+   :id: feat_arc_sta__001
+
+.. feat_arc_dyn:: Stub Feature Dynamic Architecture
+   :id: feat_arc_dyn__001
+
+.. comp_arc_sta:: Stub Component Static Architecture
+   :id: comp_arc_sta__001
+
+.. comp_arc_dyn:: Stub Component Dynamic Architecture
+   :id: comp_arc_dyn__001
+
+.. feat_arc_sta:: Stub Feature Static Architecture (bad target)
+   :id: feat_arc_sta__bad_001
+
+.. comp_arc_sta:: Stub Component Static Architecture (bad target)
+   :id: comp_arc_sta__bad_001
+
+.. comp_arc_dyn:: Stub Component Dynamic Architecture (bad target)
+   :id: comp_arc_dyn__bad_001
+
+
 .. feat_saf_dfa:: feat DFA violates feat arc sta
    :id: feat_saf_dfa__viol__001
    :failure_id: df_001
@@ -59,7 +81,7 @@
    :failure_effect: sensor drift
    :sufficient: no
    :status: valid
-   :violates: feat_arc_sta__002
+   :violates: feat_arc_sta__001
 
 
 .. comp_saf_fmea:: comp FMEA violates comp arc dyn
@@ -77,7 +99,7 @@
    :failure_effect: encoder fault
    :sufficient: no
    :status: valid
-   :violates: comp_arc_sta__002
+   :violates: comp_arc_sta__001
 
 
 .. feat_saf_dfa:: feat DFA violates comp arc sta
