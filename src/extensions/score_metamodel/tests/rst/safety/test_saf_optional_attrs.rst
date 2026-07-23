@@ -14,7 +14,7 @@
 
 .. test_metadata::
    :id: test_metadata__saf_optional_attrs
-   :partially_verifies_list: tool_req__docs_saf_attrs_mitigation_issue, tool_req__docs_saf_attrs_safety_relevant, tool_req__docs_saf_attrs_root_cause
+   :partially_verifies_list: tool_req__docs_saf_attrs_mitigation_issue[version==1], tool_req__docs_saf_attrs_safety_relevant[version==1], tool_req__docs_saf_attrs_root_cause[version==1]
    :test_type: requirements_based
    :derivation_technique: requirements_based
 

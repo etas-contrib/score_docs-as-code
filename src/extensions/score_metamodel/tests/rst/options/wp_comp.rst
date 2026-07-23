@@ -15,7 +15,7 @@
 
 .. test_metadata::
    :id: test_metadata__wp_comp
-   :partially_verifies_list: tool_req__docs_stdwp_types, tool_req__docs_wp_types
+   :partially_verifies_list: tool_req__docs_stdwp_types[version==1], tool_req__docs_wp_types[version==1]
    :test_type: requirements_based
    :derivation_technique: requirements_based
 
