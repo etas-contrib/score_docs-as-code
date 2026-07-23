@@ -15,7 +15,8 @@
 
 .. test_metadata::
    :id: test_metadata__saf_mandatory_attrs
-   :partially_verifies_list: tool_req__docs_saf_attrs_mandatory[version==1], tool_req__docs_saf_attr_dfa_failure_id[version==1], tool_req__docs_saf_attr_fmea_fault_id[version==1], tool_req__docs_saf_attrs_sufficient[version==1], tool_req__docs_saf_attrs_content[version==1]
+   :fully_verifies_list: tool_req__docs_saf_attr_dfa_failure_id[version==1], tool_req__docs_saf_attr_fmea_fault_id[version==1], tool_req__docs_saf_attrs_sufficient[version==1], tool_req__docs_saf_attrs_content[version==1]
+   :partially_verifies_list: tool_req__docs_saf_attrs_mandatory[version==1]
    :test_type: requirements_based
    :derivation_technique: requirements_based
 

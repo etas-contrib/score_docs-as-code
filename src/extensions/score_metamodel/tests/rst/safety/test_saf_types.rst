@@ -14,7 +14,8 @@
 
 .. test_metadata::
    :id: test_metadata__saf_types
-   :partially_verifies_list: tool_req__docs_saf_types[version==1], tool_req__docs_saf_attrs_mandatory[version==1]
+   :fully_verifies_list: tool_req__docs_saf_types[version==1]
+   :partially_verifies_list: tool_req__docs_saf_attrs_mandatory[version==1]
    :test_type: requirements_based
    :derivation_technique: requirements_based
 
