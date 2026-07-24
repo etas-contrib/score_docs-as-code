@@ -322,6 +322,16 @@ def docs(source_dir = "docs", data = [], deps = [], scan_code = [], known_good =
     )
 
     native.genrule(
+        # In contrast to the "needs_json" target represents *only* the needs.json file,
+        # not the whole needs build output.
+        name = "needs_json.file",
+        srcs = [":needs_json"],
+        outs = ["needs.json"],
+        cmd = "cp $(location :needs_json)/needs.json $@",
+        visibility = ["//visibility:public"],
+    )
+
+    native.genrule(
         name = "metrics_json",
         srcs = [":needs_json"],
         outs = ["metrics.json"],
