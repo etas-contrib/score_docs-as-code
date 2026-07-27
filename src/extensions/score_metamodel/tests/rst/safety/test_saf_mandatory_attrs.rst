@@ -32,6 +32,7 @@
 
 .. feat_saf_dfa:: Missing failure_id
    :id: feat_saf_dfa__test__missing_fid
+   :version: 1
    :status: valid
    :failure_effect: signal lost
    :sufficient: yes
@@ -40,6 +41,7 @@
 
 .. comp_saf_dfa:: Valid failure_id
    :id: comp_saf_dfa__test__good_fid
+   :version: 1
    :status: valid
    :failure_id: df_good_001
    :failure_effect: communication lost
@@ -49,6 +51,7 @@
 
 .. feat_saf_fmea:: Missing fault_id
    :id: feat_saf_fmea__test__missing_fault
+   :version: 1
    :status: valid
    :failure_effect: valve stuck
    :sufficient: yes
@@ -57,6 +60,7 @@
 
 .. comp_saf_fmea:: Valid fault_id
    :id: comp_saf_fmea__test__good_fault
+   :version: 1
    :status: valid
    :fault_id: fault_good_001
    :failure_effect: valve stuck
@@ -66,6 +70,7 @@
 
 .. plat_saf_dfa:: Missing failure_effect
    :id: plat_saf_dfa__test__missing_fe
+   :version: 1
    :status: valid
    :failure_id: df_fe_bad
    :sufficient: yes
@@ -74,6 +79,7 @@
 
 .. feat_saf_dfa:: Missing sufficient
    :id: feat_saf_dfa__test__missing_suff
+   :version: 1
    :status: valid
    :failure_id: df_suff_bad
    :failure_effect: output wrong
@@ -82,6 +88,7 @@
 
 .. feat_saf_fmea:: Valid sufficient yes
    :id: feat_saf_fmea__test__suff_ok_1
+   :version: 1
    :status: valid
    :fault_id: fault_suff_ok_1
    :failure_effect: system error
@@ -91,6 +98,7 @@
 
 .. comp_saf_dfa:: Valid sufficient no
    :id: comp_saf_dfa__test__suff_ok_2
+   :version: 1
    :status: valid
    :failure_id: df_suff_ok_2
    :failure_effect: signal lost
@@ -100,6 +108,7 @@
 
 .. feat_saf_dfa:: Invalid sufficient value
    :id: feat_saf_dfa__test__suff_bad
+   :version: 1
    :status: valid
    :failure_id: df_suff_bad_2
    :failure_effect: bad output
@@ -109,16 +118,19 @@
 
 .. feat_saf_fmea:: Valid content
    :id: feat_saf_fmea__test__content_ok
+   :version: 1
    :status: valid
    :fault_id: fault_content_ok
    :failure_effect: crash
    :sufficient: yes
+   :expect_not: is missing required attribute: `content`.
 
    This is the content of the FMEA entry.
 
 
 .. comp_saf_dfa:: Missing content
    :id: comp_saf_dfa__test__content_bad
+   :version: 1
    :status: valid
    :failure_id: df_content_bad
    :failure_effect: no response

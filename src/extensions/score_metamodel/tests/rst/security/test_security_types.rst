@@ -24,60 +24,73 @@
 
 .. feat_sec_threat:: STRIDE threat feature
    :id: feat_sec_threat__test__001
+   :version: 1
    :threat_id: EX_01_01
    :status: valid
+   :expect_not: need_id
 
    Feature STRIDE threat analysis entry.
 
 
 .. comp_sec_threat:: STRIDE threat component
    :id: comp_sec_threat__test__001
+   :version: 1
    :threat_id: MT_01_01
    :status: valid
+   :expect_not: need_id
 
    Component STRIDE threat analysis entry.
 
 
 .. plat_sec_threat:: STRIDE threat platform
    :id: plat_sec_threat__test__001
+   :version: 1
    :threat_id: AU_01_01
    :status: valid
+   :expect_not: need_id
 
    Platform STRIDE threat analysis entry.
 
 
 .. feat_sec_ana:: Threat scenario feature
    :id: feat_sec_ana__test__001
+   :version: 1
    :threat_scenario_id: AS_01_01
    :status: valid
    :sufficient: no
    :threat_effect: unauthorized access
+   :expect_not: need_id
 
    Feature threat scenario analysis.
 
 
 .. comp_sec_ana:: Threat scenario component
    :id: comp_sec_ana__test__001
+   :version: 1
    :threat_scenario_id: CO_01_01
    :status: valid
    :sufficient: yes
    :threat_effect: denial of service
+   :expect_not: need_id
 
    Component threat scenario analysis.
 
 
 .. plat_sec_ana:: Threat scenario platform
    :id: plat_sec_ana__test__001
+   :version: 1
    :threat_scenario_id: SC_01_02
    :status: valid
    :sufficient: no
    :threat_effect: information disclosure
+   :expect_not: need_id
 
    Platform threat scenario analysis.
 
 
 .. feat_sec_ana:: Missing threat effect
    :id: feat_sec_ana__test__missing_effect
+   :version: 1
    :threat_scenario_id: AS_01_02
    :status: valid
    :sufficient: yes
@@ -88,6 +101,7 @@
 
 .. comp_sec_ana:: Missing sufficient
    :id: comp_sec_ana__test__missing_sufficient
+   :version: 1
    :threat_scenario_id: CO_01_02
    :status: valid
    :threat_effect: crash
@@ -98,6 +112,7 @@
 
 .. feat_sec_ana:: Invalid sufficient
    :id: feat_sec_ana__test__bad_sufficient
+   :version: 1
    :threat_scenario_id: AS_01_04
    :status: valid
    :sufficient: maybe
@@ -109,17 +124,20 @@
 
 .. feat_sec_ana:: With mitigation issue
    :id: feat_sec_ana__test__mitigation
+   :version: 1
    :threat_scenario_id: SI_01_02
    :status: valid
    :sufficient: no
    :threat_effect: data leak
    :mitigation_issue: https://github.com/eclipse-score/docs-as-code/issues/42
+   :expect_not: need_id
 
    Threat scenario with mitigation tracking.
 
 
 .. comp_sec_ana:: Invalid mitigation issue URL
    :id: comp_sec_ana__test__bad_mitigation
+   :version: 1
    :threat_scenario_id: UI_01_01
    :status: valid
    :sufficient: yes
