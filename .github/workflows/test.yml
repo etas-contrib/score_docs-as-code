@@ -26,6 +26,12 @@ jobs:
         with:
           egress-policy: audit
 
+      - name: Install Graphviz
+        uses: eclipse-score/apt-install@main
+        with:
+          packages: graphviz
+          cache: false
+
       - name: Checkout repository (Handle all events)
         uses: actions/checkout@v4.2.2
         with:
@@ -43,8 +49,11 @@ jobs:
       - name: Setup venv
         run: bazel run --lockfile_mode=error //:ide_support
 
-      - name: Run docs_bzl tests
-        run: .venv_docs/bin/python -m pytest -vv src/tests/docs_bzl
+      - name: Prepare test report directory
+        run: mkdir -p tests-report
+
+      - name: Run public docs.bzl integration tests
+        run: .venv_docs/bin/python -m pytest -vv src/tests/docs_bzl --junitxml=tests-report/docs_bzl.xml
 
       - name: Run bazel test targets
         run: bazel test --lockfile_mode=error //... --build_tests_only
@@ -55,12 +64,8 @@ jobs:
 
       - name: Prepare bundled test report
         if: ${{ !cancelled() }}
-        # Creating tests-report directory
         # Follow Symlinks via '-L' to copy correctly
-        # Copy everything inside the 'test-reports' folder
-        run: |
-          mkdir -p tests-report
-          rsync -amL --include='*/' --include='test.xml' --include='test.log' --exclude='*' bazel-testlogs/ tests-report/
+        run: rsync -amL --include='*/' --include='test.xml' --include='test.log' --exclude='*' bazel-testlogs/ tests-report/
 
       - name: Upload bundled test report
         # No need to upload something that doesn't exist.

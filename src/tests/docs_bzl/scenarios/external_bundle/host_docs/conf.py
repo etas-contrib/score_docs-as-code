@@ -11,9 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("//:docs.bzl", "docs")
-
-docs(
-    source_dir = "docs",
-    test_sources = ["src/tests/docs_bzl/fixtures/basic"],
-)
+project = "External mount fixture"
+project_url = "https://example.invalid/external-mount"
+extensions = ["score_sphinx_bundle"]
+suppress_warnings = ["score_source_code_linker"]

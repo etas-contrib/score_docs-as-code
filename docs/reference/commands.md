@@ -27,7 +27,6 @@
 | `bazel run //:docs_combo`                      | Builds combined documentation with all external dependencies included                             |
 | `bazel run //:traceability_gate -- --metrics-json bazel-bin/needs_json/_build/needs/metrics.json --min-req-code 70 --min-req-test 70 --min-req-fully-linked 60 --min-tests-linked 70` | Reads the pre-computed metrics.json and fails if coverage thresholds are not met                   |
 | `bazel run //:live_preview`                    | Creates a live_preview of the documentation viewable in a local server                            |
-| `bazel run //:live_preview_combo_experimental` | Creates a live_preview of the full documentation with all dependencies viewable in a local server |
 | `bazel run //:ide_support`                     | Sets up a Python venv for esbonio (Remember to restart VS Code!)                                  |
 
 ## Internal targets (do not use directly)
