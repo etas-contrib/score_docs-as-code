@@ -80,9 +80,9 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
         }.
       scan_code: Deprecated. Explicit source files or filegroups to scan for
                  source-code links. Use `code_targets` for implementation targets.
-      code_targets: Implementation targets to scan for source-code links. Their
-                    source files and the source files of their dependencies are
-                    collected recursively.
+      code_targets: Implementation targets or filegroups to scan for source-code
+                    links. Implementation target source files and their dependencies
+                    are collected recursively; filegroups expand to their files.
       tests: Executable Bazel test targets to run through the generated
              `<name>_tests` testonly target. Each target must write JUnit XML
              to the `XML_OUTPUT_FILE` environment variable.
@@ -180,7 +180,9 @@ def docs(
       deps: Additional dependencies for the documentation build.
       scan_code: Deprecated. Explicit source files or filegroups to scan for source
                  code links. Use `code_targets` for implementation targets.
-      code_targets: Implementation targets to scan recursively for source code links.
+      code_targets: Implementation targets or filegroups to scan for source code
+                    links. Implementation targets are scanned recursively; filegroups
+                    expand to their files.
       tests: Test targets that are executed through the generated
              `docs_bundle_tests` target.
       test_sources: Optional list of repo-relative directory paths which will be used to filter testcases for documentation generation.

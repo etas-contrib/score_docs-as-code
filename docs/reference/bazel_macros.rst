@@ -73,12 +73,13 @@ Minimal example (root ``BUILD``)
   this function adds its own (but checks for conflicts).
 
 - ``code_targets`` (list of Bazel labels)
-  Implementation targets to scan for traceability tags (``req-Id:`` annotations).
-  Their declared ``srcs``, ``hdrs``, and ``textual_hdrs`` are collected through
-  their ``deps`` recursively. Each documentation bundle produces one cache for
-  its declared targets; Bazel reuses that cache while its inputs are unchanged.
-  The generated JSON is supplied to ``live_preview`` just like a normal
-  documentation build.
+  Implementation targets or filegroups to scan for traceability tags
+  (``req-Id:`` annotations). Implementation target ``srcs``, ``hdrs``, and
+  ``textual_hdrs`` are collected through their ``deps`` recursively; filegroups
+  expand to their files. Each documentation bundle produces one cache for its
+  declared targets; Bazel reuses that cache while its inputs are unchanged. The
+  generated JSON is supplied to ``live_preview`` just like a normal documentation
+  build.
 
 - ``scan_code`` (list of Bazel labels, deprecated)
   Explicit source files or filegroups to scan. Use ``code_targets`` for
@@ -171,11 +172,11 @@ Signature: ``docs_bundle(name, source_dir = None, entry_doc = "index", bundles =
    changing its canonical entry page.
 
 - ``code_targets`` (list of Bazel labels, optional)
-   Implementation targets whose ``srcs``, ``hdrs``, and ``textual_hdrs`` are
-   scanned for requirement tags. Sources from their ``deps`` are included
-   recursively, so declaring a ``cc_executable`` also scans the libraries it
-   uses. The bundle owns one cached scan result; Bazel only regenerates it when
-   its collected source inputs change.
+   Implementation targets or filegroups to scan for requirement tags.
+   Implementation target ``srcs``, ``hdrs``, and ``textual_hdrs`` are collected
+   recursively from their ``deps``; filegroups expand to their files. The bundle
+   owns one cached scan result; Bazel only regenerates it when its collected source
+   inputs change.
 
 - ``scan_code`` (list of Bazel labels, deprecated)
    Explicit source files or filegroups to scan. Prefer ``code_targets`` for

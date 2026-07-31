@@ -23,11 +23,24 @@ docs_bundle(
     code_targets = [
         ":example_python",
         ":example_executable",
+        ":nested_filegroup_sources",
     ],
     tests = [
         ":example_test_one",
         ":example_test_two",
     ],
+)
+
+filegroup(
+    name = "filegroup_sources",
+    srcs = ["child/filegroup_source.py"],
+)
+
+# Intentionally reference the same file through a second filegroup to verify
+# that code_targets resolves nested filegroups without duplicate links.
+filegroup(
+    name = "nested_filegroup_sources",
+    srcs = [":filegroup_sources"],
 )
 
 py_binary(

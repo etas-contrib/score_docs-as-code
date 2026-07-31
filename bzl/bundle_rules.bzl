@@ -82,7 +82,7 @@ CodeTargetSourcesInfo = provider(
 )
 
 def _source_files_from_attributes(ctx):
-    """Return files explicitly declared as source or header inputs by one rule."""
+    """Return files explicitly declared through source or header attributes."""
     source_files = []
     for attribute_name in ["srcs", "hdrs", "textual_hdrs"]:
         if not hasattr(ctx.rule.attr, attribute_name):
@@ -465,7 +465,7 @@ def _code_targets_sourcelinks_impl(ctx):
         for target in ctx.attr.code_targets
     ])
     if not source_files.to_list():
-        fail("code_targets must declare source files through srcs, hdrs, or textual_hdrs")
+        fail("code_targets must declare source files through filegroups, srcs, hdrs, or textual_hdrs")
 
     output = ctx.actions.declare_file(ctx.label.name + ".json")
     arguments = ctx.actions.args()

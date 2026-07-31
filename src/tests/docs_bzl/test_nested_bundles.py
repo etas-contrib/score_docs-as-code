@@ -53,6 +53,7 @@ def test_nested_bundles_render_and_preserve_metadata():
     assert {link["file"] for link in sourcelinks} == {
         "src/tests/docs_bzl/scenarios/nested_bundles/child/example.py",
         "src/tests/docs_bzl/scenarios/nested_bundles/child/example.cc",
+        "src/tests/docs_bzl/scenarios/nested_bundles/child/filegroup_source.py",
     }
     assert (result.build_dir / "concepts" / "example_bundle" / "index.html").is_file()
     assert (
