@@ -68,27 +68,45 @@ DocsBundleInfo = provider(
 )
 
 CodeTargetSourcesInfo = provider(
-    doc = "Source files declared directly by a code target.",
+    doc = "Source files collected from an implementation target and its dependencies.",
     fields = {
-        "sources": "Depset of source and header files declared by the target.",
+        "sources": "Depset of direct and transitive source files.",
     },
 )
 
-def _collect_code_target_sources_impl(target, ctx):
-    """Collect direct source attributes without mistaking build outputs for sources."""
+def _source_files_from_attributes(ctx):
+    """Return files explicitly declared as source or header inputs by one rule."""
     source_files = []
-    for attribute in ["srcs", "hdrs", "textual_hdrs"]:
-        if hasattr(ctx.rule.attr, attribute):
-            for source in getattr(ctx.rule.attr, attribute):
-                if type(source) == "File":
-                    source_files.append(source)
-                else:
-                    source_files.extend(source[DefaultInfo].files.to_list())
-    return [CodeTargetSourcesInfo(sources = depset(source_files))]
+    for attribute_name in ["srcs", "hdrs", "textual_hdrs"]:
+        if not hasattr(ctx.rule.attr, attribute_name):
+            continue
+        for source in getattr(ctx.rule.attr, attribute_name):
+            if type(source) == "File":
+                source_files.append(source)
+            else:
+                source_files.extend(source[DefaultInfo].files.to_list())
+    return source_files
+
+def _collect_code_target_sources_impl(target, ctx):
+    """Collect source files from an implementation target and its ``deps`` tree."""
+    dependency_sources = []
+    if hasattr(ctx.rule.attr, "deps"):
+        dependency_sources = [
+            dependency[CodeTargetSourcesInfo].sources
+            for dependency in ctx.rule.attr.deps
+        ]
+    return [CodeTargetSourcesInfo(
+        sources = depset(
+            direct = _source_files_from_attributes(ctx),
+            transitive = dependency_sources,
+        ),
+    )]
 
 _collect_code_target_sources = aspect(
     implementation = _collect_code_target_sources_impl,
+    attr_aspects = ["deps"],
     provides = [CodeTargetSourcesInfo],
+    doc = "Collects sources recursively through standard implementation dependencies.",
 )
 
 def _parent_index_docname(mount_at):
@@ -347,7 +365,7 @@ def merge_bundle_sourcelinks(name, bundle, known_good = None, visibility = None)
     )
 
 def _code_targets_sourcelinks_impl(ctx):
-    """Generate source links from source files declared by code targets."""
+    """Generate one source-link cache for the implementation targets of a bundle."""
     source_files = depset(transitive = [
         target[CodeTargetSourcesInfo].sources
         for target in ctx.attr.code_targets
@@ -355,18 +373,18 @@ def _code_targets_sourcelinks_impl(ctx):
     if not source_files.to_list():
         fail("code_targets must declare source files through srcs, hdrs, or textual_hdrs")
 
-    out = ctx.actions.declare_file(ctx.label.name + ".json")
-    args = ctx.actions.args()
-    args.add("--output", out.path)
-    args.add_all(source_files)
+    output = ctx.actions.declare_file(ctx.label.name + ".json")
+    arguments = ctx.actions.args()
+    arguments.add("--output", output.path)
+    arguments.add_all(source_files)
     ctx.actions.run(
         executable = ctx.executable._generate_sourcelinks,
-        arguments = [args],
+        arguments = [arguments],
         inputs = source_files,
-        outputs = [out],
+        outputs = [output],
         mnemonic = "GenerateCodeTargetSourcelinks",
     )
-    return [DefaultInfo(files = depset([out]))]
+    return [DefaultInfo(files = depset([output]))]
 
 _code_targets_sourcelinks = rule(
     implementation = _code_targets_sourcelinks_impl,
@@ -378,11 +396,11 @@ _code_targets_sourcelinks = rule(
             executable = True,
         ),
     },
-    doc = "Generates source-code links from source files owned by code targets.",
+    doc = "Generates source-code links from implementation target source files.",
 )
 
 def generate_code_target_sourcelinks(name, code_targets, visibility = None):
-    """Create source-code links for source files declared by code targets."""
+    """Create a cached source-link JSON file for one documentation bundle."""
     _code_targets_sourcelinks(
         name = name,
         code_targets = code_targets,

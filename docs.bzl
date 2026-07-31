@@ -77,11 +77,11 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
             "mount_at": <where it shall me mounted>,
             "attach_to": <optional document to attach the bundle to; for a bundle root it defaults to the mount_at parent's index>
         }.
-      scan_code: Source-code targets to scan for source-code links owned by this
-                 bundle.
-      code_targets: Implementation targets whose directly declared source files
-                    are scanned for source-code links. This is intended for
-                    targets such as `cc_library` and `py_binary`.
+      scan_code: Deprecated. Explicit source files or filegroups to scan for
+                 source-code links. Use `code_targets` for implementation targets.
+      code_targets: Implementation targets to scan for source-code links. Their
+                    source files and the source files of their dependencies are
+                    collected recursively.
       visibility: Target visibility.
       **kwargs: Additional attributes forwarded to the underlying rule.
     """
@@ -167,9 +167,9 @@ def docs(
       source_dir: The source directory containing documentation files. Defaults to "docs".
       data: Additional data files to include in the documentation build.
       deps: Additional dependencies for the documentation build.
-      scan_code: List of code targets to scan for source code links.
-      code_targets: Implementation targets whose directly declared source files
-                    are scanned for source-code links.
+      scan_code: Deprecated. Explicit source files or filegroups to scan for source
+                 code links. Use `code_targets` for implementation targets.
+      code_targets: Implementation targets to scan recursively for source code links.
       test_sources: Optional list of repo-relative directory paths which will be used to filter testcases for documentation generation.
                     When empty (default), all testcases found in `bazel-testlogs` will be used.
       known_good: Optional label to a "known good" JSON file for source links.

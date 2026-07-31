@@ -21,7 +21,7 @@ docs_bundle(
     entry_doc = "landing",
     code_targets = [
         ":example_binary",
-        ":example_library",
+        ":example_executable",
     ],
 )
 
@@ -34,6 +34,12 @@ py_binary(
 cc_library(
     name = "example_library",
     srcs = ["child/example.cc"],
+)
+
+cc_binary(
+    name = "example_executable",
+    srcs = ["child/example_main.cc"],
+    deps = [":example_library"],
 )
 
 # The child is nested below the parent bundle before the parent itself is

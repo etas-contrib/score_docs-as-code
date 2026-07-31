@@ -72,9 +72,17 @@ Minimal example (root ``BUILD``)
   If you don't provide the necessary Sphinx packages,
   this function adds its own (but checks for conflicts).
 
-- ``scan_code`` (list of bazel labels)
-  Source code targets to scan for traceability tags (``req-Id:`` annotations).
-  Used to generate the source-code-link JSON that maps tags back to source files.
+- ``code_targets`` (list of Bazel labels)
+  Implementation targets to scan for traceability tags (``req-Id:`` annotations).
+  Their declared ``srcs``, ``hdrs``, and ``textual_hdrs`` are collected through
+  their ``deps`` recursively. Each documentation bundle produces one cache for
+  its declared targets; Bazel reuses that cache while its inputs are unchanged.
+  The generated JSON is supplied to ``live_preview`` just like a normal
+  documentation build.
+
+- ``scan_code`` (list of Bazel labels, deprecated)
+  Explicit source files or filegroups to scan. Use ``code_targets`` for
+  implementation targets; it follows their dependencies automatically.
 
 - ``metamodel`` (bazel label, optional)
   Path to a custom ``metamodel.yaml`` file.
@@ -163,12 +171,15 @@ Signature: ``docs_bundle(name, source_dir = None, entry_doc = "index", bundles =
    changing its canonical entry page.
 
 - ``code_targets`` (list of Bazel labels, optional)
-   Implementation targets whose directly declared ``srcs``, ``hdrs``, and
-   ``textual_hdrs`` are scanned for requirement tags. This describes the code
-   documented by the bundle (for example a ``cc_library`` or ``py_binary``);
-   it is distinct from ``source_dir``, which holds the documentation files.
-   Existing ``scan_code`` remains supported for callers that already provide
-   files or filegroups explicitly.
+   Implementation targets whose ``srcs``, ``hdrs``, and ``textual_hdrs`` are
+   scanned for requirement tags. Sources from their ``deps`` are included
+   recursively, so declaring a ``cc_executable`` also scans the libraries it
+   uses. The bundle owns one cached scan result; Bazel only regenerates it when
+   its collected source inputs change.
+
+- ``scan_code`` (list of Bazel labels, deprecated)
+   Explicit source files or filegroups to scan. Prefer ``code_targets`` for
+   implementation targets.
 
 Edge cases
 ----------
