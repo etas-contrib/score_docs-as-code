@@ -94,11 +94,11 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
         sourcelinks = [":" + sourcelinks_name]
     if code_targets:
         code_targets_sourcelinks_name = name + "_code_targets_sourcelinks_json"
-        generate_code_target_sourcelinks(
+        code_targets_sourcelinks = generate_code_target_sourcelinks(
             name = code_targets_sourcelinks_name,
             code_targets = code_targets,
         )
-        sourcelinks.append(":" + code_targets_sourcelinks_name)
+        sourcelinks.append(code_targets_sourcelinks)
 
     # Store the source directory relative to the workspace so bundle consumers
     # can locate the original files without copying them.
