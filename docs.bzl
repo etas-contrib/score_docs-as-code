@@ -93,9 +93,8 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
         _sourcelinks_json(name = sourcelinks_name, srcs = scan_code)
         sourcelinks = [":" + sourcelinks_name]
     if code_targets:
-        code_targets_sourcelinks_name = name + "_code_targets_sourcelinks_json"
         code_targets_sourcelinks = generate_code_target_sourcelinks(
-            name = code_targets_sourcelinks_name,
+            name = name + "_code_targets_sourcelinks_json",
             code_targets = code_targets,
         )
         sourcelinks.append(code_targets_sourcelinks)
