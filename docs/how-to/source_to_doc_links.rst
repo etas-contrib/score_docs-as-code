@@ -43,7 +43,7 @@ In your ``BUILD`` files, pass the implementation targets to the ``docs`` rule
 as ``code_targets``. Their ``srcs``, ``hdrs``, and ``textual_hdrs`` are scanned,
 including those of their ``deps`` recursively. This means that a
 ``cc_executable`` also covers source files from the ``cc_library`` targets it
-uses.
+uses. You may also pass filegroups; their files are scanned directly.
 
 .. code-block:: starlark
    :emphasize-lines: 14
