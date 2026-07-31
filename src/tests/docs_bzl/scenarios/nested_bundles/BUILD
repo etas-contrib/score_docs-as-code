@@ -13,22 +13,38 @@
 
 load("//:bzl/mount_rules.bzl", "create_mounts_manifest")
 load("//:docs.bzl", "docs", "docs_bundle")
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
 load("//:score_pytest.bzl", "score_pytest")
 
 docs_bundle(
     name = "child",
     source_dir = "child",
     entry_doc = "landing",
-    scan_code = [":scan_code"],
+    code_targets = [
+        ":example_python",
+        ":example_executable",
+    ],
     tests = [
         ":example_test_one",
         ":example_test_two",
     ],
 )
 
-filegroup(
-    name = "scan_code",
+py_binary(
+    name = "example_python",
     srcs = ["child/example.py"],
+    main = "child/example.py",
+)
+
+cc_library(
+    name = "example_library",
+    srcs = ["child/example.cc"],
+)
+
+cc_binary(
+    name = "example_executable",
+    srcs = ["child/example_main.cc"],
+    deps = [":example_library"],
 )
 
 score_pytest(

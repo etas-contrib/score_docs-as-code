@@ -72,9 +72,17 @@ Minimal example (root ``BUILD``)
   If you don't provide the necessary Sphinx packages,
   this function adds its own (but checks for conflicts).
 
-- ``scan_code`` (list of bazel labels)
-  Source code targets to scan for traceability tags (``req-Id:`` annotations).
-  Used to generate the source-code-link JSON that maps tags back to source files.
+- ``code_targets`` (list of Bazel labels)
+  Implementation targets to scan for traceability tags (``req-Id:`` annotations).
+  Their declared ``srcs``, ``hdrs``, and ``textual_hdrs`` are collected through
+  their ``deps`` recursively. Each documentation bundle produces one cache for
+  its declared targets; Bazel reuses that cache while its inputs are unchanged.
+  The generated JSON is supplied to ``live_preview`` just like a normal
+  documentation build.
+
+- ``scan_code`` (list of Bazel labels, deprecated)
+  Explicit source files or filegroups to scan. Use ``code_targets`` for
+  implementation targets; it follows their dependencies automatically.
 
 - ``metamodel`` (bazel label, optional)
   Path to a custom ``metamodel.yaml`` file.
@@ -121,7 +129,7 @@ site).
        visibility = ["//visibility:public"],
    )
 
-Signature: ``docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], tests = [], visibility = None)``.
+Signature: ``docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], code_targets = [], tests = [], visibility = None)``.
 
 - ``source_dir`` (string, optional)
   Directory holding the bundle's own doc sources. It is globbed the same way as
@@ -161,6 +169,17 @@ Signature: ``docs_bundle(name, source_dir = None, entry_doc = "index", bundles =
    by the mounter, while its ``entry_doc`` belongs to the bundle. This lets the
    same bundle be mounted at different locations by different consumers without
    changing its canonical entry page.
+
+- ``code_targets`` (list of Bazel labels, optional)
+   Implementation targets whose ``srcs``, ``hdrs``, and ``textual_hdrs`` are
+   scanned for requirement tags. Sources from their ``deps`` are included
+   recursively, so declaring a ``cc_executable`` also scans the libraries it
+   uses. The bundle owns one cached scan result; Bazel only regenerates it when
+   its collected source inputs change.
+
+- ``scan_code`` (list of Bazel labels, deprecated)
+   Explicit source files or filegroups to scan. Prefer ``code_targets`` for
+   implementation targets.
 
 - ``tests`` (list of Bazel labels, optional)
    Executable test targets verified by the automatically created

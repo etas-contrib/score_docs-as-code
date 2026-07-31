@@ -55,13 +55,14 @@ load(
     "create_bundle_tests",
     "merge_bundle_sourcelinks",
     "external_docs_runfiles",
+    "generate_code_target_sourcelinks",
 )
 load(
     "@score_docs_as_code//:bzl/mount_rules.bzl",
     "create_mounts_manifest",
 )
 
-def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], tests = [], visibility = None, **kwargs):
+def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], code_targets = [], tests = [], visibility = None, **kwargs):
     """A docs bundle, optionally composed of others.
 
     Args:
@@ -77,8 +78,11 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
             "mount_at": <where it shall me mounted>,
             "attach_to": <optional document to attach the bundle to; for a bundle root it defaults to the mount_at parent's index>
         }.
-      scan_code: Source-code targets to scan for source-code links owned by this
-                 bundle.
+      scan_code: Deprecated. Explicit source files or filegroups to scan for
+                 source-code links. Use `code_targets` for implementation targets.
+      code_targets: Implementation targets to scan for source-code links. Their
+                    source files and the source files of their dependencies are
+                    collected recursively.
       tests: Executable Bazel test targets to run through the generated
              `<name>_tests` testonly target. Each target must write JUnit XML
              to the `XML_OUTPUT_FILE` environment variable.
@@ -92,6 +96,13 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
         sourcelinks_name = name + "_sourcelinks_json"
         _sourcelinks_json(name = sourcelinks_name, srcs = scan_code)
         sourcelinks = [":" + sourcelinks_name]
+    if code_targets:
+        sourcelinks_name = name + "_code_targets_sourcelinks_json"
+        generate_code_target_sourcelinks(
+            name = sourcelinks_name,
+            code_targets = code_targets,
+        )
+        sourcelinks.append(":" + sourcelinks_name)
 
     # Store the source directory relative to the workspace so bundle consumers
     # can locate the original files without copying them.
@@ -152,6 +163,7 @@ def docs(
         data = [],
         deps = [],
         scan_code = [],
+        code_targets = [],
         tests = [],
         test_sources = [],
         known_good = None,
@@ -166,7 +178,9 @@ def docs(
       source_dir: The source directory containing documentation files. Defaults to "docs".
       data: Additional data files to include in the documentation build.
       deps: Additional dependencies for the documentation build.
-      scan_code: List of code targets to scan for source code links.
+      scan_code: Deprecated. Explicit source files or filegroups to scan for source
+                 code links. Use `code_targets` for implementation targets.
+      code_targets: Implementation targets to scan recursively for source code links.
       tests: Test targets that are executed through the generated
              `docs_bundle_tests` target.
       test_sources: Optional list of repo-relative directory paths which will be used to filter testcases for documentation generation.
@@ -231,6 +245,7 @@ def docs(
         entry_doc = "index",
         bundles = bundles,
         scan_code = scan_code,
+        code_targets = code_targets,
         tests = tests,
         visibility = ["//visibility:public"],
     )

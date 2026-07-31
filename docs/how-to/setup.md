@@ -83,7 +83,8 @@ The `docs()` macro accepts the following arguments:
 | `source_dir` | Directory of documentation source files (RST, MD) | Yes |
 | `data` | List of `needs_json` targets that should be included in the documentation | No |
 | `deps` | Additional Bazel Python dependencies | No |
-| `scan_code` | Source code targets to scan for traceability tags | No |
+| `code_targets` | Implementation targets to scan recursively for traceability tags | No |
+| `scan_code` | Deprecated: explicit source files or filegroups to scan | No |
 | `known_good` | Label to a "known good" JSON file for source links | No |
 | `metamodel` | Label to a custom `metamodel.yaml` that replaces the default metamodel | No |
 
