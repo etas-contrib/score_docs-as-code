@@ -13,17 +13,27 @@
 
 load("//:bzl/mount_rules.bzl", "create_mounts_manifest")
 load("//:docs.bzl", "docs", "docs_bundle")
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
 
 docs_bundle(
     name = "child",
     source_dir = "child",
     entry_doc = "landing",
-    scan_code = [":scan_code"],
+    code_targets = [
+        ":example_binary",
+        ":example_library",
+    ],
 )
 
-filegroup(
-    name = "scan_code",
+py_binary(
+    name = "example_binary",
     srcs = ["child/example.py"],
+    main = "child/example.py",
+)
+
+cc_library(
+    name = "example_library",
+    srcs = ["child/example.cc"],
 )
 
 # The child is nested below the parent bundle before the parent itself is

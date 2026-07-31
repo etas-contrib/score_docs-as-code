@@ -30,8 +30,10 @@ from src.extensions.score_source_code_linker.needlinks import (
 LOGGER = get_logger(__name__)
 
 TAGS = [
-    "# " + "req-traceability:",
-    "# " + "req-Id:",
+    "# req-traceability:",
+    "# req-Id:",
+    "// req-traceability:",
+    "// req-Id:",
 ]
 
 

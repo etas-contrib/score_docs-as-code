@@ -121,7 +121,7 @@ site).
        visibility = ["//visibility:public"],
    )
 
-Signature: ``docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], visibility = None)``.
+Signature: ``docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], code_targets = [], visibility = None)``.
 
 - ``source_dir`` (string, optional)
   Directory holding the bundle's own doc sources. It is globbed the same way as
@@ -161,6 +161,14 @@ Signature: ``docs_bundle(name, source_dir = None, entry_doc = "index", bundles =
    by the mounter, while its ``entry_doc`` belongs to the bundle. This lets the
    same bundle be mounted at different locations by different consumers without
    changing its canonical entry page.
+
+- ``code_targets`` (list of Bazel labels, optional)
+   Implementation targets whose directly declared ``srcs``, ``hdrs``, and
+   ``textual_hdrs`` are scanned for requirement tags. This describes the code
+   documented by the bundle (for example a ``cc_library`` or ``py_binary``);
+   it is distinct from ``source_dir``, which holds the documentation files.
+   Existing ``scan_code`` remains supported for callers that already provide
+   files or filegroups explicitly.
 
 Edge cases
 ----------

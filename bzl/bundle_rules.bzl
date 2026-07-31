@@ -67,6 +67,30 @@ DocsBundleInfo = provider(
     },
 )
 
+CodeTargetSourcesInfo = provider(
+    doc = "Source files declared directly by a code target.",
+    fields = {
+        "sources": "Depset of source and header files declared by the target.",
+    },
+)
+
+def _collect_code_target_sources_impl(target, ctx):
+    """Collect direct source attributes without mistaking build outputs for sources."""
+    source_files = []
+    for attribute in ["srcs", "hdrs", "textual_hdrs"]:
+        if hasattr(ctx.rule.attr, attribute):
+            for source in getattr(ctx.rule.attr, attribute):
+                if type(source) == "File":
+                    source_files.append(source)
+                else:
+                    source_files.extend(source[DefaultInfo].files.to_list())
+    return [CodeTargetSourcesInfo(sources = depset(source_files))]
+
+_collect_code_target_sources = aspect(
+    implementation = _collect_code_target_sources_impl,
+    provides = [CodeTargetSourcesInfo],
+)
+
 def _parent_index_docname(mount_at):
     """Choose the page that links to a bundled subtree by default."""
     parent = mount_at.rsplit("/", 1)[0] if "/" in mount_at else ""
@@ -321,3 +345,47 @@ def merge_bundle_sourcelinks(name, bundle, known_good = None, visibility = None)
         known_good = known_good,
         visibility = visibility,
     )
+
+def _code_targets_sourcelinks_impl(ctx):
+    """Generate source links from source files declared by code targets."""
+    source_files = depset(transitive = [
+        target[CodeTargetSourcesInfo].sources
+        for target in ctx.attr.code_targets
+    ])
+    if not source_files.to_list():
+        fail("code_targets must declare source files through srcs, hdrs, or textual_hdrs")
+
+    out = ctx.actions.declare_file(ctx.label.name + ".json")
+    args = ctx.actions.args()
+    args.add("--output", out.path)
+    args.add_all(source_files)
+    ctx.actions.run(
+        executable = ctx.executable._generate_sourcelinks,
+        arguments = [args],
+        inputs = source_files,
+        outputs = [out],
+        mnemonic = "GenerateCodeTargetSourcelinks",
+    )
+    return [DefaultInfo(files = depset([out]))]
+
+_code_targets_sourcelinks = rule(
+    implementation = _code_targets_sourcelinks_impl,
+    attrs = {
+        "code_targets": attr.label_list(aspects = [_collect_code_target_sources]),
+        "_generate_sourcelinks": attr.label(
+            default = Label("//scripts_bazel:generate_sourcelinks"),
+            cfg = "exec",
+            executable = True,
+        ),
+    },
+    doc = "Generates source-code links from source files owned by code targets.",
+)
+
+def generate_code_target_sourcelinks(name, code_targets, visibility = None):
+    """Create source-code links for source files declared by code targets."""
+    _code_targets_sourcelinks(
+        name = name,
+        code_targets = code_targets,
+        visibility = visibility,
+    )
+    return ":" + name

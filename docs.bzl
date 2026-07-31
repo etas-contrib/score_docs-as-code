@@ -54,13 +54,14 @@ load(
     "create_bundle",
     "merge_bundle_sourcelinks",
     "external_docs_runfiles",
+    "generate_code_target_sourcelinks",
 )
 load(
     "@score_docs_as_code//:bzl/mount_rules.bzl",
     "create_mounts_manifest",
 )
 
-def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], visibility = None, **kwargs):
+def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], code_targets = [], visibility = None, **kwargs):
     """A docs bundle, optionally composed of others.
 
     Args:
@@ -78,6 +79,9 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
         }.
       scan_code: Source-code targets to scan for source-code links owned by this
                  bundle.
+      code_targets: Implementation targets whose directly declared source files
+                    are scanned for source-code links. This is intended for
+                    targets such as `cc_library` and `py_binary`.
       visibility: Target visibility.
       **kwargs: Additional attributes forwarded to the underlying rule.
     """
@@ -88,6 +92,13 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
         sourcelinks_name = name + "_sourcelinks_json"
         _sourcelinks_json(name = sourcelinks_name, srcs = scan_code)
         sourcelinks = [":" + sourcelinks_name]
+    if code_targets:
+        code_targets_sourcelinks_name = name + "_code_targets_sourcelinks_json"
+        generate_code_target_sourcelinks(
+            name = code_targets_sourcelinks_name,
+            code_targets = code_targets,
+        )
+        sourcelinks.append(":" + code_targets_sourcelinks_name)
 
     # Store the source directory relative to the workspace so bundle consumers
     # can locate the original files without copying them.
@@ -142,6 +153,7 @@ def docs(
         data = [],
         deps = [],
         scan_code = [],
+        code_targets = [],
         test_sources = [],
         known_good = None,
         metamodel = None,
@@ -156,6 +168,8 @@ def docs(
       data: Additional data files to include in the documentation build.
       deps: Additional dependencies for the documentation build.
       scan_code: List of code targets to scan for source code links.
+      code_targets: Implementation targets whose directly declared source files
+                    are scanned for source-code links.
       test_sources: Optional list of repo-relative directory paths which will be used to filter testcases for documentation generation.
                     When empty (default), all testcases found in `bazel-testlogs` will be used.
       known_good: Optional label to a "known good" JSON file for source links.
@@ -218,6 +232,7 @@ def docs(
         entry_doc = "index",
         bundles = bundles,
         scan_code = scan_code,
+        code_targets = code_targets,
         visibility = ["//visibility:public"],
     )
     merge_bundle_sourcelinks(

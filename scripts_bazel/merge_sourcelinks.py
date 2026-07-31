@@ -52,6 +52,7 @@ def main():
     all_files = [x for x in args.files if "known_good.json" not in str(x)]
 
     merged = []
+    seen = set()
     for json_file in all_files:
         with open(json_file) as f:
             data = json.load(f)
@@ -87,7 +88,11 @@ def main():
             for d in data[1:]:
                 d.update(metadata)
             assert isinstance(data, list), repr(data)
-            merged.extend(data[1:])
+            for reference in data[1:]:
+                key = json.dumps(reference, sort_keys=True)
+                if key not in seen:
+                    seen.add(key)
+                    merged.append(reference)
     with open(args.output, "w") as f:
         json.dump(merged, f, indent=2, ensure_ascii=False)
 
