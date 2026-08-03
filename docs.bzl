@@ -52,6 +52,7 @@ load(
 load(
     "@score_docs_as_code//:bzl/bundle_rules.bzl",
     "create_bundle",
+    "create_bundle_tests",
     "merge_bundle_sourcelinks",
     "external_docs_runfiles",
     "generate_code_target_sourcelinks",
@@ -61,7 +62,7 @@ load(
     "create_mounts_manifest",
 )
 
-def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], code_targets = [], visibility = None, **kwargs):
+def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan_code = [], code_targets = [], tests = [], visibility = None, **kwargs):
     """A docs bundle, optionally composed of others.
 
     Args:
@@ -82,6 +83,9 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
       code_targets: Implementation targets or filegroups to scan for source-code
                     links. Implementation target source files and their dependencies
                     are collected recursively; filegroups expand to their files.
+      tests: Executable Bazel test targets to run through the generated
+             `<name>_tests` testonly target. Each target must write JUnit XML
+             to the `XML_OUTPUT_FILE` environment variable.
       visibility: Target visibility.
       **kwargs: Additional attributes forwarded to the underlying rule.
     """
@@ -115,6 +119,12 @@ def docs_bundle(name, source_dir = None, entry_doc = "index", bundles = [], scan
         bundles = bundles,
         visibility = visibility,
         **kwargs
+    )
+    create_bundle_tests(
+        name = name + "_tests",
+        tests = tests,
+        bundles = bundles,
+        visibility = visibility,
     )
 
 def _missing_requirements(deps):
@@ -154,6 +164,7 @@ def docs(
         deps = [],
         scan_code = [],
         code_targets = [],
+        tests = [],
         test_sources = [],
         known_good = None,
         metamodel = None,
@@ -172,6 +183,8 @@ def docs(
       code_targets: Implementation targets or filegroups to scan for source code
                     links. Implementation targets are scanned recursively; filegroups
                     expand to their files.
+      tests: Test targets that are executed through the generated
+             `docs_bundle_tests` target.
       test_sources: Optional list of repo-relative directory paths which will be used to filter testcases for documentation generation.
                     When empty (default), all testcases found in `bazel-testlogs` will be used.
       known_good: Optional label to a "known good" JSON file for source links.
@@ -235,6 +248,7 @@ def docs(
         bundles = bundles,
         scan_code = scan_code,
         code_targets = code_targets,
+        tests = tests,
         visibility = ["//visibility:public"],
     )
     merge_bundle_sourcelinks(

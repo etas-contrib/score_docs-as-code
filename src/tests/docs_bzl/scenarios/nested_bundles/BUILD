@@ -14,6 +14,7 @@
 load("//:bzl/mount_rules.bzl", "create_mounts_manifest")
 load("//:docs.bzl", "docs", "docs_bundle")
 load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("//:score_pytest.bzl", "score_pytest")
 
 docs_bundle(
     name = "child",
@@ -23,6 +24,10 @@ docs_bundle(
         ":example_binary",
         ":example_executable",
         ":nested_filegroup_sources",
+    ],
+    tests = [
+        ":example_test_one",
+        ":example_test_two",
     ],
 )
 
@@ -53,6 +58,16 @@ cc_binary(
     name = "example_executable",
     srcs = ["child/example_main.cc"],
     deps = [":example_library"],
+)
+
+score_pytest(
+    name = "example_test_one",
+    srcs = ["child/test_one.py"],
+)
+
+score_pytest(
+    name = "example_test_two",
+    srcs = ["child/test_two.py"],
 )
 
 # The child is nested below the parent bundle before the parent itself is

@@ -163,7 +163,6 @@ def test_merge_sourcelinks_deduplicates_identical_references(
     create_local_json_files: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch
 ):
     file1, _, output_file = create_local_json_files
-
     monkeypatch.setattr(
         sys,
         "argv",
