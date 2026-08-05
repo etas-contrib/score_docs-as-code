@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2025 Contributors to the Eclipse Foundation
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,13 +10,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-import matplotlib
+# Default Sphinx configuration emitted by the ``docs()`` macro.
+# SCORE Docs-as-Code owns these baseline settings.  Projects needing further
+# Sphinx configuration can provide their own conf.py instead.
 
-project = "Score Docs-as-Code"
-project_url = "https://eclipse-score.github.io/docs-as-code/"
-version = "0.1"
+project = {PROJECT}
+project_url = {PROJECT_URL}
 
-extensions = [
-    "score_sphinx_bundle",
-]
-matplotlib.rcParamsDefault["savefig.bbox"] = "tight"
+extensions = ["score_sphinx_bundle"]
