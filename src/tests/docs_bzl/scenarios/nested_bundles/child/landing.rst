@@ -15,6 +15,11 @@
 Child landing page
 ==================
 
+.. doc_concept:: Child implementation trace
+   :id: doc_concept__child
+   :status: valid
+   :version: 1
+
 .. toctree::
 
    index

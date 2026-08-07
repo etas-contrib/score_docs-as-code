@@ -151,6 +151,10 @@ def setup_source_code_linker(app: Sphinx, ws_root: Path | None):
             "options": ["source_code_link", "testlink"],
         },
     )
+    for option in ("bazel_target", "bazel_type"):
+        app.config.needs_fields.setdefault(
+            option, {"schema": {"type": "string"}, "default": ""}
+        )
 
     score_sourcelinks_json = os.environ.get("SCORE_SOURCELINKS")
     if not score_sourcelinks_json:
@@ -498,6 +502,16 @@ def _apply_links_to_need(
         _render_test_link(plain_links, metadata, test_link)
         for test_link in links.TestLinks
     )
+    bazel_targets = sorted(
+        {link.bazel_target for link in links.CodeLinks if link.bazel_target}
+    )
+    bazel_types = sorted(
+        {link.bazel_type for link in links.CodeLinks if link.bazel_type}
+    )
+    if bazel_targets:
+        need_as_dict["bazel_target"] = ", ".join(bazel_targets)
+    if bazel_types:
+        need_as_dict["bazel_type"] = ", ".join(bazel_types)
 
     # NOTE: Removing & adding the need is important to make sure
     # the needs gets 're-evaluated'.

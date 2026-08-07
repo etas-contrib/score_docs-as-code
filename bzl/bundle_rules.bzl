@@ -72,6 +72,7 @@ CodeTargetSourcesInfo = provider(
     doc = "Source files collected from an implementation target and its dependencies.",
     fields = {
         "sources": "Depset of direct and transitive source files.",
+        "kind": "Bazel rule kind of the target selected by code_targets.",
     },
 )
 
@@ -101,6 +102,7 @@ def _collect_code_target_sources_impl(target, ctx):
             direct = _source_files_from_attributes(ctx),
             transitive = dependency_sources,
         ),
+        kind = ctx.rule.kind,
     )]
 
 _collect_code_target_sources = aspect(
@@ -404,13 +406,30 @@ def _code_targets_sourcelinks_impl(ctx):
         fail("code_targets must declare source files through filegroups, srcs, hdrs, or textual_hdrs")
 
     output = ctx.actions.declare_file(ctx.label.name + ".json")
+    target_map = ctx.actions.declare_file(ctx.label.name + "_targets.json")
+    target_map_entries = []
+    for target in ctx.attr.code_targets:
+        target_info = target[CodeTargetSourcesInfo]
+        label = target.label
+        target_label = "//" + label.package + ":" + label.name
+        if label.workspace_name:
+            target_label = "@" + label.workspace_name + target_label
+        for source in target_info.sources.to_list():
+            target_map_entries.append({
+                "file": source.path,
+                "bazel_target": target_label,
+                "bazel_type": target_info.kind,
+            })
+    ctx.actions.write(target_map, json.encode(target_map_entries))
+
     arguments = ctx.actions.args()
     arguments.add("--output", output.path)
+    arguments.add("--target-map", target_map.path)
     arguments.add_all(source_files)
     ctx.actions.run(
         executable = ctx.executable._generate_sourcelinks,
         arguments = [arguments],
-        inputs = source_files,
+        inputs = depset(direct = [target_map], transitive = [source_files]),
         outputs = [output],
         mnemonic = "GenerateCodeTargetSourcelinks",
     )
