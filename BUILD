@@ -39,6 +39,10 @@ docs(
             "mount_at": "internals/extensions/mounts",
         },
         {
+            "bundle": "//src/extensions/docs:extensions",
+            "mount_at": "internals/extensions",
+        },
+        {
             "bundle": "//src/extensions/score_metamodel/docs:metamodel",
             "mount_at": "reference/metamodel",
             "attach_to": "reference/index",
