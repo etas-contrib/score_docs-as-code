@@ -20,6 +20,11 @@ Child landing page
    :status: valid
    :version: 1
 
+.. doc_concept:: Child bundle trace without source tag
+   :id: doc_concept__unlinked
+   :status: valid
+   :version: 1
+
 .. toctree::
 
    index

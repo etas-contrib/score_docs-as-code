@@ -186,10 +186,13 @@ Signature: ``docs_bundle(name, source_dir = None, entry_doc = "index", bundles =
 
 - ``code_targets`` (list of Bazel labels, optional). For every source-code link
   found in these targets, the corresponding need receives ``bazel_target`` (the
-  target label) and ``bazel_type`` (for example ``cc_library``).
+   target label) and ``bazel_type`` (for example ``cc_library``).
    Implementation targets or filegroups to scan for requirement tags.
    Implementation target ``srcs``, ``hdrs``, and ``textual_hdrs`` are collected
    recursively from their ``deps``; filegroups expand to their files. The bundle
+   may also reference an empty target (for example a component template before
+   implementation starts); its documentation needs still receive the target
+   metadata.
    owns one cached scan result; Bazel only regenerates it when its collected source
    inputs change.
 

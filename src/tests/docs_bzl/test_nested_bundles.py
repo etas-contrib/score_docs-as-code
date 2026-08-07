@@ -91,9 +91,13 @@ def test_nested_bundles_render_and_preserve_metadata():
     need = needs["needs"]["doc_concept__child"]
     assert need["bazel_target"] == (
         "//src/tests/docs_bzl/scenarios/nested_bundles:example_binary, "
-        "//src/tests/docs_bzl/scenarios/nested_bundles:example_executable"
+        "//src/tests/docs_bzl/scenarios/nested_bundles:example_executable, "
+        "//src/tests/docs_bzl/scenarios/nested_bundles:nested_filegroup_sources"
     )
-    assert need["bazel_type"] == "cc_binary, py_binary"
+    assert need["bazel_type"] == "cc_binary, filegroup, py_binary"
+    unlinked_need = needs["needs"]["doc_concept__unlinked"]
+    assert unlinked_need["bazel_target"] == need["bazel_target"]
+    assert unlinked_need["bazel_type"] == need["bazel_type"]
     assert (result.build_dir / "concepts" / "example_bundle" / "index.html").is_file()
     assert (
         result.build_dir / "concepts" / "example_bundle" / "child" / "landing.html"
