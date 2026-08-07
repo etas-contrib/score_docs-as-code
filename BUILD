@@ -48,7 +48,7 @@ docs(
             "attach_to": "reference/index",
         },
     ],
-    scan_code = [
+    code_targets = [
         "//scripts_bazel:sources",
         "//src:all_sources",
     ],
