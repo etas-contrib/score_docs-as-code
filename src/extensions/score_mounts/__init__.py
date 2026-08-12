@@ -103,10 +103,71 @@ def _resolve_data_mounts(
     return data_mounts
 
 
+def _canonical_mount_dir(walk_dir: Path, spec: MountSpec) -> Path:
+    """Resolve a mount root through Bazel's sandboxed symlinks.
+
+    ``sphinx-mounts`` checks whether assets referenced by a mounted document
+    stay below the mount root. It resolves both paths before comparing them.
+    That is normally exactly what we want, but Bazel can give the mount root
+    and the files below it different physical spellings in a sandbox:
+
+    - for external repositories, the repository directory exists in the action
+      sandbox, for example
+      ``.../sandbox/.../execroot/_main/external/score_process+/process``;
+      files inside that directory can be symlinks to Bazel's repository
+      cache, for example
+      ``~/.cache/bazel/.../external/score_process+/process/index.rst``.
+    - for generated data bundles, the mount root may be the sandbox copy of a
+      ``bazel-out`` directory, for example
+      ``.../sandbox/.../execroot/_main/bazel-out/.../docs/generated``;
+      generated files below it can resolve to the action execroot spelling,
+      for example
+      ``~/.cache/bazel/.../execroot/_main/bazel-out/.../docs/generated/index.rst``.
+
+    Resolving only ``walk_dir`` therefore keeps the sandbox spelling, while
+    resolving a referenced image/include from Sphinx follows the file symlink.
+    The paths then look unrelated even though they describe the same Bazel
+    bundle.
+
+    To make the confinement check compare like with like, resolve one mounted
+    source file first and then walk back by its bundle-relative suffix. Example:
+
+    ``walk_dir``:
+      ``.../sandbox/.../external/score_process+/process``
+    ``source_file``:
+      ``.../sandbox/.../external/score_process+/process/index.rst``
+    ``source_file.resolve()``:
+      ``~/.cache/bazel/.../external/score_process+/process/index.rst``
+
+    Since ``index.rst`` is one path component below ``walk_dir``, its parent is
+    the canonical mount root. For ``subdir/page.rst`` we walk back two
+    components, yielding the same canonical root.
+    """
+    if not spec.external and not spec.data:
+        return walk_dir.resolve()
+
+    # Bazel materializes the mount directory structure in the sandbox but may
+    # symlink the individual files either to the external repository cache or to
+    # the action execroot's bazel-out tree. A mounted documentation source gives
+    # us the same canonical spelling that Sphinx will later see for dependency
+    # files. Walking back by the source file's path relative to the mount
+    # reconstructs the canonical mount root:
+    #
+    #   source_file = walk_dir / "subdir/page.rst"
+    #   relative_path.parts = ("subdir", "page.rst")
+    #   source_file.resolve().parents[1] == canonical walk_dir
+    for source_file in walk_dir.rglob("*"):
+        if not source_file.is_file() or source_file.suffix not in {".md", ".rst"}:
+            continue
+        relative_path = source_file.relative_to(walk_dir)
+        return source_file.resolve().parents[len(relative_path.parts) - 1]
+    return walk_dir.resolve()
+
+
 def _make_mount_entry(walk_dir: Path, spec: MountSpec) -> dict[str, object]:
-    """Build a mount entry dict from a resolved directory and spec."""
+    """Build a mount entry dict from a canonical directory and spec."""
     return {
-        "dir": str(walk_dir),
+        "dir": str(_canonical_mount_dir(walk_dir, spec)),
         "mount_at": spec.mount_at,
         "attach_to": spec.attach_to,
         "entry_doc": spec.entry_doc,
