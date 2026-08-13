@@ -14,7 +14,7 @@
 
 .. test_metadata::
    :id: test_metadata__metamodel_graph_checks
-   :partially_verifies_list: tool_req__docs_common_attr_safety_link_check
+   :partially_verifies_list: tool_req__docs_safety_security_relation
    :test_type: requirements_based
    :derivation_technique: requirements_based
 

@@ -15,7 +15,7 @@
 
 .. test_metadata::
    :id: test_metadata__valid_links_to_valid
-   :partially_verifies_list: tool_req__docs_req_arch_link_safety_to_arch
+   :partially_verifies_list: tool_req__docs_safety_security_relation
    :test_type: requirements_based
    :derivation_technique: requirements_based
 

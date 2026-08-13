@@ -471,13 +471,51 @@ Versioning
      ================================ ========================================================
 
 
+.. tool_req:: Safety/security classification consistency across relations
+  :id: tool_req__docs_safety_security_relation
+  :tags: Common Attributes
+  :version: 1
+  :implemented: NO
+  :parent_covered: YES
+  :satisfies:
+    gd_req__req_linkage_safety[version==1],
+    gd_req__arch_linkage_requirement[version==1],
+    gd_req__arch_linkage_safety_trace[version==1],
+    gd_req__arch_linkage_security_trace[version==1]
+
+  Docs-as-Code shall flag any ``status == valid`` need that is linked via a checked relation to a need
+  whose ``safety`` or ``security`` value violates the relation's safety-flow constraint.
+  Each relation enforces a specific direction: the *safety owner* end determines the constraint, and the other end must match (same safety/security value).
+
+  The following table specifies the safety-flow direction and flagged mismatch per relation:
+
+  .. list-table::
+     :header-rows: 1
+
+     * - Relation
+       - Safety Owner
+       - Flagged Mismatch
+     * - ``implements``, ``covers``, ``includes``, ``consists_of``, ``uses``, ``provides``, ``mitigated_by``
+       - Source
+       - ASIL source + QM target
+     * - ``satisfied_by``, ``derived_from``, ``fulfils``, ``belongs_to``, ``included_by``
+       - Target
+       - QM source + ASIL target
+     * - ``contains``, ``has``, ``input``, ``output``, ``responsible``, ``approved_by``, ``supported_by``, ``complies``, ``realizes``, ``satisfies``, ``violates``, ``fully_verifies``, ``partially_verifies``, ``evidence``
+       - Not checked
+       - —
+
+
 .. tool_req:: Safety: enforce safe linking
    :id: tool_req__docs_common_attr_safety_link_check
    :tags: Common Attributes
    :version: 1
    :implemented: YES
    :parent_covered: YES
+   :status: invalid
    :satisfies: gd_req__req_linkage_safety[version==1]
+
+   OBSOLETE: Superseded by :need:`tool_req__docs_safety_security_relation`.
 
    QM requirements (safety == QM) shall not be linked to safety requirements (safety != QM) via the ``derived_from`` attribute.
 
@@ -618,8 +656,11 @@ Architecture Attributes
   :tags: Architecture
   :implemented: PARTIAL
   :version: 2
+  :status: invalid
   :satisfies: gd_req__arch_linkage_requirement[version==1]
   :parent_covered: YES
+
+  OBSOLETE: Superseded by :need:`tool_req__docs_safety_security_relation`.
 
   Docs-as-Code shall enforce that architecture elements of type
   :need:`tool_req__docs_arch_types` with ``safety == QM`` are not linked to requirements
@@ -631,10 +672,13 @@ Architecture Attributes
   :tags: Architecture
   :implemented: YES
   :version: 2
+  :status: invalid
   :satisfies:
     gd_req__arch_linkage_safety_trace[version==1],
     gd_req__req_linkage_safety[version==1]
   :parent_covered: YES
+
+  OBSOLETE: Superseded by :need:`tool_req__docs_safety_security_relation`.
 
   Docs-as-Code shall enforce that valid safety architectural elements (Safety != QM) can
   only be linked against valid safety architectural elements.
@@ -644,8 +688,11 @@ Architecture Attributes
   :tags: Architecture
   :implemented: YES
   :version: 1
+  :status: invalid
   :parent_covered: YES
   :satisfies: gd_req__arch_linkage_security_trace[version==1]
+
+  OBSOLETE: Superseded by :need:`tool_req__docs_safety_security_relation`.
 
   Docs-as-Code shall enforce that security relevant :need:`tool_req__docs_arch_types` (Security ==
   YES) can only be linked against security relevant :need:`tool_req__docs_arch_types`.

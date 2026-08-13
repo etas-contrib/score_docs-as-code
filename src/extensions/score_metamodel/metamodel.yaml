@@ -1133,7 +1133,7 @@ needs_extra_links:
 ##############################################################
 
 graph_checks:
-  # req-Id: tool_req__docs_common_attr_safety_link_check
+  # req-Id: tool_req__docs_safety_security_relation
   tool_req__docs_common_attr_safety_link_check:
     needs:
       include: stkh_req, feat_req, comp_req, aou_req, gd_req, tool_req
@@ -1142,7 +1142,7 @@ graph_checks:
       derived_from: safety == QM
     explanation: QM requirements cannot be derived from ASIL requirements.
 
-  # req-Id: tool_req__docs_arch_link_qm_to_safety_req
+  # req-Id: tool_req__docs_safety_security_relation
   tool_req__docs_arch_link_qm_to_safety_req:
     needs:
       include: feat_arc_sta, logic_arc_int, logic_arc_int_op, comp_arc_sta, real_arc_int, real_arc_int_op
@@ -1151,7 +1151,7 @@ graph_checks:
       fulfils: safety != QM
     explanation: An QM architecture element cannot implement ASIL requirements.
 
-  # req-Id: tool_req__docs_req_arch_link_safety_to_arch
+  # req-Id: tool_req__docs_safety_security_relation
   tool_req__docs_req_arch_link_safety_to_arch:
     needs:
       include: feat_arc_sta, logic_arc_int, logic_arc_int_op, comp_arc_sta, real_arc_int, real_arc_int_op
@@ -1166,7 +1166,7 @@ graph_checks:
           - status == valid
     explanation: An safety architecture element can only link other safety architecture elements.
 
-  # req-Id: tool_req__docs_arch_link_security
+  # req-Id: tool_req__docs_safety_security_relation
   tool_req__docs_arch_link_security:
     needs:
       include: feat_arc_sta, logic_arc_int, logic_arc_int_op, comp_arc_sta, real_arc_int, real_arc_int_op
