@@ -21,6 +21,7 @@ import pytest
 import score_metamodel.checks.graph_checks as graph_checks
 from score_metamodel.tests import fake_check_logger, need as test_need
 from sphinx_needs.config import NeedType
+from sphinx_needs.need_item import NeedItem, NeedLink
 
 
 class DummyNeedsView:
@@ -180,3 +181,165 @@ def test_filter_needs_by_criteria_unknown_type_logs_warning() -> None:
     log.assert_warning(
         "Unknown need type `unknown` in graph check.", expect_location=False
     )
+
+
+# ---------------------------------------------------------------------------
+# check_safety_security_relation
+#
+# These tests are written FIRST (TDD). The function does not exist yet, so
+# each test fails at call-time with AttributeError — that is the expected
+# failure. Once implemented, they should pass.
+# ---------------------------------------------------------------------------
+
+
+class NeedItemView:
+    """Minimal NeedsView-like test double backed by real NeedItem objects."""
+
+    def __init__(self, needs: list[NeedItem]) -> None:
+        self._needs = needs
+
+    def values(self) -> list[NeedItem]:
+        return self._needs
+
+    def filter_is_external(self, is_external: bool) -> NeedItemView:
+        return NeedItemView(
+            [n for n in self._needs if n.get("is_external", False) == is_external]
+        )
+
+
+def _link(need_item: NeedItem, **links: list[str]) -> NeedItem:
+    """Set ``_links`` on a need built by ``test_need`` (the helper's ``links``
+    kwarg is re-wrapped and unusable, so assign the real structure directly)."""
+    need_item._links = {  # type: ignore[attr-defined]
+        relation: [NeedLink(id=target_id) for target_id in target_ids]
+        for relation, target_ids in links.items()
+    }
+    return need_item
+
+
+def _run_safety_security_relation(needs: list[NeedItem]):
+    """Run the new check against a list of NeedItems and return the logger."""
+    log = fake_check_logger()
+    graph_checks.check_safety_security_relation(  # type: ignore[attr-defined]
+        app=None,  # type: ignore[arg-type]
+        all_needs=NeedItemView(needs),
+        log=log,
+    )
+    return log
+
+
+def test_safety_security_asil_source_to_qm_target_via_includes_flags() -> None:
+    """ASIL source including a QM target is flagged (source-owned relation)."""
+    target = test_need(id="tgt", type="comp", status="valid", safety="QM")
+    source = _link(
+        test_need(
+            id="src",
+            type="feat",
+            status="valid",
+            safety="ASIL_B",
+        ),
+        includes=["tgt"],
+    )
+    log = _run_safety_security_relation([source, target])
+    log.assert_warning("safety classification mismatch via `includes`")
+
+
+def test_safety_security_qm_source_to_asil_target_via_derived_from_flags() -> None:
+    """QM source derived-from an ASIL target is flagged (target-owned, reverse)."""
+    target = test_need(id="parent", type="stkh_req", status="valid", safety="ASIL_B")
+    source = _link(
+        test_need(
+            id="child",
+            type="feat_req",
+            status="valid",
+            safety="QM",
+        ),
+        derived_from=["parent"],
+    )
+    log = _run_safety_security_relation([source, target])
+    log.assert_warning("safety classification mismatch via `derived_from`")
+
+
+def test_safety_security_matching_classifications_no_flag() -> None:
+    """Matching safety classifications across a relation are not flagged."""
+    target = test_need(id="parent", type="stkh_req", status="valid", safety="ASIL_B")
+    source = _link(
+        test_need(
+            id="child",
+            type="feat_req",
+            status="valid",
+            safety="ASIL_B",
+        ),
+        derived_from=["parent"],
+    )
+    log = _run_safety_security_relation([source, target])
+    log.assert_no_warnings()
+
+
+def test_safety_security_invalid_source_ignored() -> None:
+    """An invalid source is not checked even if it links a mismatched target."""
+    target = test_need(id="parent", type="stkh_req", status="valid", safety="ASIL_B")
+    source = _link(
+        test_need(
+            id="child",
+            type="feat_req",
+            status="invalid",
+            safety="QM",
+        ),
+        derived_from=["parent"],
+    )
+    log = _run_safety_security_relation([source, target])
+    log.assert_no_warnings()
+
+
+def test_safety_security_target_lacking_safety_no_flag() -> None:
+    """A target without a safety attribute is not flagged (no false positive)."""
+    target = test_need(id="tc", type="testcase", status="valid")
+    source = _link(
+        test_need(
+            id="src",
+            type="feat",
+            status="valid",
+            safety="ASIL_B",
+        ),
+        includes=["tc"],
+    )
+    log = _run_safety_security_relation([source, target])
+    log.assert_no_warnings()
+
+
+def test_safety_security_security_mismatch_flags() -> None:
+    """A security YES/NO mismatch across a relation is flagged."""
+    target = test_need(id="iface", type="logic_arc_int", status="valid", security="NO")
+    source = _link(
+        test_need(
+            id="comp",
+            type="comp",
+            status="valid",
+            security="YES",
+        ),
+        implements=["iface"],
+    )
+    log = _run_safety_security_relation([source, target])
+    log.assert_warning("security classification mismatch via `implements`")
+
+
+def test_safety_security_not_checked_relation_no_flag() -> None:
+    """A mismatch via a "Not checked" relation (e.g. fully_verifies) is NOT flagged.
+
+    The requirement carves out a "Not checked" group (traceability/evidence
+    links). A naive check-all implementation would flag this; the correct
+    implementation must skip it.
+    """
+    target = test_need(id="verified", type="feat_req", status="valid", safety="QM")
+    source = _link(
+        test_need(
+            id="tm",
+            type="test_metadata",
+            status="valid",
+            safety="ASIL_B",
+        ),
+        fully_verifies=["verified"],
+    )
+    log = _run_safety_security_relation([source, target])
+    log.assert_no_warnings()

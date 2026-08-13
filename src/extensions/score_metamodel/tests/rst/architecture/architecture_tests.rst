@@ -147,6 +147,7 @@ Component 1
    :safety: ASIL_B
    :status: valid
    :includes: comp__test_component_1, comp__test_component_2
+   :expect: safety classification mismatch via `includes`
 
 .. mod_view_sta:: Feature Test Module 1 Static View
    :id: mod_view_sta__test_feature_1_module_1__test_static_view_1

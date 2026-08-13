@@ -254,3 +254,93 @@ def check_valid_only_links_to_valid(
         if invalid_needs:
             msg = f"is valid but links to invalid need(s): {invalid_needs}"
             log.warning_for_need(need, msg, is_new_check=True)
+
+
+# Relations whose safety/security classification must match across the link.
+# Source-owned (the source determines the constraint):
+#   implements, covers, includes, consists_of, uses, provides, mitigated_by
+# Target-owned (the target determines the constraint):
+#   satisfied_by, derived_from, fulfils, belongs_to, included_by
+# All other relations (e.g. complies, satisfies, fully_verifies, evidence, ...)
+# are "Not checked" per tool_req__docs_safety_security_relation and skipped.
+CHECKED_RELATIONS: frozenset[str] = frozenset(
+    {
+        "implements",
+        "covers",
+        "includes",
+        "consists_of",
+        "uses",
+        "provides",
+        "mitigated_by",
+        "satisfied_by",
+        "derived_from",
+        "fulfils",
+        "belongs_to",
+        "included_by",
+    }
+)
+
+
+# req-Id: tool_req__docs_safety_security_relation
+@graph_check
+def check_safety_security_relation(
+    app: Sphinx,
+    all_needs: NeedsView,
+    log: CheckLogger,
+):
+    """Flag safety/security classification mismatches across checked relations.
+
+    A ``status == valid`` need linked via a checked relation to a need whose
+    ``safety`` (or ``security``) value differs is flagged. Both directions are
+    covered: source-owned relations flag an ASIL source linking a QM target, and
+    target-owned relations flag a QM source linking an ASIL target — together any
+    ASIL/QM (or YES/NO) mismatch across a checked relation is flagged.
+
+    Only valid *sources* are checked; invalid/draft sources are ignored. Targets
+    lacking the attribute are skipped (no false positive).
+    """
+    needs_dict_all = {need["id"]: need for need in all_needs.values()}
+
+    for need in all_needs.filter_is_external(False).values():
+        if need.get("status") != "valid":
+            continue
+        src_safety = need.get("safety")
+        src_security = need.get("security")
+        if src_safety is None and src_security is None:
+            continue
+
+        # need._links: relation name -> iterable of NeedLink (each has .id)
+        for relation, targets in need._links.items():  # type: ignore[attr-defined]
+            if relation not in CHECKED_RELATIONS:
+                continue
+            for target in targets:
+                parent = needs_dict_all.get(target.id)
+                if parent is None:
+                    continue
+                _check_attr_mismatch(need, parent, relation, "safety", src_safety, log)
+                _check_attr_mismatch(
+                    need, parent, relation, "security", src_security, log
+                )
+
+
+def _check_attr_mismatch(
+    need: NeedItem,
+    parent: NeedItem,
+    relation: str,
+    attr: str,
+    src_value: str | None,
+    log: CheckLogger,
+) -> None:
+    """Flag a classification mismatch for one attribute of one linked target."""
+    if src_value is None:
+        return
+    target_value = parent.get(attr)
+    if target_value is None or target_value == src_value:
+        return
+    log.warning_for_need(
+        need,
+        f"{attr} classification mismatch via `{relation}`: "
+        f"source is `{src_value}` but `{parent['id']}` is "
+        f"`{target_value}`. {attr.capitalize()}-relevant and "
+        f"non-{attr} elements must not be linked.",
+    )
