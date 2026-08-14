@@ -165,6 +165,10 @@ if __name__ == "__main__":
         f"--define=mounts_manifest={os.environ.get('MOUNTS_MANIFEST', '')}",
     ]
 
+    required_in_id = os.environ.get("REQUIRED_IN_ID", "")
+    if required_in_id:
+        base_arguments.append(f"--define=required_in_id={required_in_id}")
+
     generated_config = os.environ.get("SPHINX_CONFIG_FILE", "")
     if generated_config:
         # Under ``bazel run`` this is a runfiles-relative path.  Sphinx wants

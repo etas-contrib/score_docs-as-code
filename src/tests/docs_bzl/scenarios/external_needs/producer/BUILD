@@ -18,5 +18,6 @@ load("//:docs.bzl", "docs")
 # rather than docs(metamodel=...), because the metamodel= wiring does not reach
 # the :needs_json target in the current docs.bzl (regression from #484).
 docs(
+    module = "producer",
     source_dir = "docs",
 )

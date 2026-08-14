@@ -58,11 +58,9 @@ def id_contains_feature(app: Sphinx, need: NeedItem, log: CheckLogger):
         for featurepart in featureparts
         if featureparts and featurepart and docname
     )
-    allowed_parts_from_config = app.config.required_in_id
-    found_part_from_config = any(
-        part_from_config.lower() in feature.lower()
-        for part_from_config in allowed_parts_from_config
-        if allowed_parts_from_config
+    required_in_id = app.config.required_in_id
+    found_part_from_config = bool(
+        required_in_id and required_in_id.lower() in feature.lower()
     )
 
     # allow abbreviation of the feature
@@ -72,17 +70,13 @@ def id_contains_feature(app: Sphinx, need: NeedItem, log: CheckLogger):
     foundinitials = bool(initials) and docname and initials in docname.lower()
     if not (foundfeatpart or foundinitials or found_part_from_config):
         parts_display = ", ".join(f"'{p}'" for p in featureparts)
-        config_display = (
-            ", ".join(f"'{p}'" for p in allowed_parts_from_config)
-            if allowed_parts_from_config
-            else "[]"
-        )
+        config_display = f"'{required_in_id}'" if required_in_id else "not set"
 
         fix_options = [f"rename the feature part to match a segment of '{docname}'"]
         if initials:
             fix_options.append(f"use correct abbreviation '{initials}'")
         fix_options.append(
-            f"Add an allowed part to `required_in_id` in conf.py (currently: {config_display})"
+            f"Set `module` in docs() to an allowed part (currently: {config_display})"
         )
 
         combined_msg = (

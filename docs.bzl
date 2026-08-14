@@ -181,6 +181,7 @@ def docs(
         source_dir = "docs",
         project = None,
         project_url = None,
+        module = "",
         data = [],
         deps = [],
         external_needs = [],
@@ -199,6 +200,7 @@ def docs(
       source_dir: The source directory containing documentation files. Defaults to "docs".
       project: optional project name, prefer setting this here if you can avoid having a conf.py
       project_url: Optional project URL, prefer setting this here if you can avoid having a conf.py
+      module: Optional module name that is allowed in the feature part of requirement IDs.
       data: Additional data files to include in the documentation build.
       deps: Additional dependencies for the documentation build.
       external_needs: List of external needs targets to include in the documentation build.
@@ -320,6 +322,7 @@ def docs(
         "TEST_SOURCES": str(test_sources),
         "DATA": str(data),
         "EXTERNAL_NEEDS_FILES": str(external_needs),
+        "REQUIRED_IN_ID": module,
         # `bazel run` starts from a runfiles tree, so this logical path is
         # resolved by score_mounts through ``RUNFILES_DIR``.
         "MOUNTS_MANIFEST": "$(rlocationpath :_mounts_manifest)" if bundles else "",
@@ -409,7 +412,7 @@ def docs(
             "--define=external_needs_source=" + str(data + external_needs),
             "--define=score_sourcelinks_json=$(location :sourcelinks_json)",
             "--define=score_source_code_linker_plain_links=1",
-        ] + (
+        ] + (["--define=required_in_id=" + module] if module else []) + (
             # ``sphinx_docs`` is a sandboxed build action, so it needs the
             # action-input path rather than the runfiles-relative spelling.
             ["--define=mounts_manifest=$(location :_mounts_manifest)"] if bundles else []

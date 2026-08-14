@@ -34,7 +34,7 @@ local_path_override(module_name = "score_docs_compatibility_fixture", path = "{f
     )
     workspace.joinpath("BUILD").write_text(
         """load("@score_docs_as_code//:docs.bzl", "docs")
-docs(source_dir = "docs", bundles = [{"bundle": "@score_docs_compatibility_fixture//:docs_bundle", "mount_at": "fixture"}])
+docs(source_dir = "docs", module = "host", bundles = [{"bundle": "@score_docs_compatibility_fixture//:docs_bundle", "mount_at": "fixture"}])
 """,
         encoding="utf-8",
     )
@@ -47,7 +47,6 @@ project = "Cross module compatibility consumer"
 project_url = "https://example.invalid/cross-module-consumer"
 extensions = ["score_sphinx_bundle"]
 score_metamodel_yaml = os.path.join(os.path.dirname(__file__), "metamodel.yaml")
-required_in_id = ["host", "fixture"]
 {compatibility_config}
 """,
         encoding="utf-8",

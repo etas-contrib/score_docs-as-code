@@ -17,4 +17,3 @@ project = "Local version mismatch"
 project_url = "https://example.invalid/local-version-mismatch"
 extensions = ["score_sphinx_bundle"]
 score_metamodel_yaml = os.path.join(os.path.dirname(__file__), "metamodel.yaml")
-required_in_id = ["local"]

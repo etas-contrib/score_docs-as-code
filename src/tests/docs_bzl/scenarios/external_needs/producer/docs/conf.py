@@ -30,9 +30,3 @@ version = "main"
 score_metamodel_yaml = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "metamodel.yaml"
 )
-
-# The producer need id `test_req__producer__demo` has three "__"-parts. The
-# id_contains_feature check requires the feature part ("producer") to appear in
-# the docname or in required_in_id; the fixture lives in index.rst, so we declare
-# it here.
-required_in_id = ["producer"]

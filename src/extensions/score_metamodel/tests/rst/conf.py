@@ -25,8 +25,8 @@ extensions = [
     "sphinx_needs",
     "score_metamodel",
 ]
-# Required to test this for the check in id_contains_feature
-required_in_id = ["blabla"]
+# Required to test this for the check in id_contains_feature.
+required_in_id = "blabla"
 needs_external_needs = [
     {
         "base_url": "https://eclipse-score.github.io/process_description/main/",

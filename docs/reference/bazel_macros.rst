@@ -59,6 +59,10 @@ Minimal example (root ``BUILD``)
   and supplies the Docs-as-Code baseline version and extensions. If a ``conf.py``
   exists, it remains authoritative and these values are not used.
 
+- ``module`` (string, optional)
+  The module name allowed in the feature part of requirement IDs when it
+  intentionally does not match the document path.
+
 - ``data`` (list of bazel labels)
   Extra runfiles / data targets that should be made available to the documentation targets.
   The items in ``data`` are added to the py_binaries and to the Sphinx tooling so they are

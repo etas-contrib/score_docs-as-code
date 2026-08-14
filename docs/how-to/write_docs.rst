@@ -83,7 +83,7 @@ The feature part is validated by checking that at least one of the following is 
 
 * A segment of the feature part (split on ``_`` and ``-``) appears in the document's directory path
 * The initials of the feature part's segments appear in the document's directory path
-* The feature part contains a string explicitly allowed via ``required_in_id`` in ``conf.py``
+* The feature part contains the module name configured via ``module`` in ``docs()``
 
 **Examples** — given a requirement in ``internals/safety/fmea/requirements.rst``:
 
@@ -108,9 +108,10 @@ The feature part is validated by checking that at least one of the following is 
      - ``blabla`` has no relation to the path ``internals/safety/fmea``
 
 To explicitly allow a feature part that intentionally doesn't match the path
-(e.g. in a single module repository), add a matching string to ``required_in_id`` in ``conf.py``:
+(e.g. in a single module repository), pass the matching module name:
 
-.. code-block:: python
+.. code-block:: starlark
 
-   # conf.py
-   required_in_id = ["persistenc"]
+   docs(
+       module = "persistenc",
+   )

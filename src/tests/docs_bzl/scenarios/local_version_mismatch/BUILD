@@ -14,5 +14,6 @@
 load("//:docs.bzl", "docs")
 
 docs(
+    module = "local",
     source_dir = "docs",
 )
