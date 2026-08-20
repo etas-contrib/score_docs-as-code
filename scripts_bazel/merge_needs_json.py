@@ -130,6 +130,11 @@ def _load_needs_json(path: Path) -> JsonObject:
     return data
 
 
+def _json_values_equal(left: object, right: object) -> bool:
+    """Compare values using JSON's types instead of Python's equality rules."""
+    return json.dumps(left, sort_keys=True) == json.dumps(right, sort_keys=True)
+
+
 def _merge_needs(
     destination_version: JsonObject,
     source_version: JsonObject,
@@ -142,7 +147,7 @@ def _merge_needs(
 
     for need_id, need in source_needs.items():
         existing = destination_needs.get(need_id, _MISSING)
-        if existing is not _MISSING and existing != need:
+        if existing is not _MISSING and not _json_values_equal(existing, need):
             raise ValueError(
                 f"conflicting Need {need_id!r} between "
                 f"{need_sources[need_id]} and {source_path}"

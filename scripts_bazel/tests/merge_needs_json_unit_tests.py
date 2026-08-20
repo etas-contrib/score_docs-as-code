@@ -162,6 +162,17 @@ def test_conflicting_need_returns_error_without_writing_output(
     assert "second.json" in captured.err
 
 
+@pytest.mark.parametrize(("boolean", "number"), [(True, 1), (False, 0)])
+def test_json_comparison_distinguishes_booleans_from_numbers(
+    boolean: bool,
+    number: int,
+) -> None:
+    assert not merge_needs_json._json_values_equal(  # pyright: ignore[reportPrivateUsage]
+        {"nested": [boolean]},
+        {"nested": [number]},
+    )
+
+
 def test_ignores_version_metadata_and_recalculates_needs_amount(fs: FFS) -> None:
     first = _write_json(
         fs,
