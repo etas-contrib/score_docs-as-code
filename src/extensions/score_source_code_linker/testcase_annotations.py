@@ -15,8 +15,8 @@
 Testcase needs are external needs. Their ``external_url`` is therefore also
 the URL used by the ``testlink`` metadata rendered on requirements. The same
 URL is used for incoming ``fully_verified_by``/``partially_verified_by`` links.
-This hook matches both forms to the testcase need and appends a theme-compatible
-result annotation to the rendered reference.
+This hook matches both forms to the testcase need and appends a coloured,
+theme-compatible result annotation to the rendered reference.
 """
 
 from __future__ import annotations
@@ -27,7 +27,63 @@ from typing import Any
 from docutils import nodes
 from sphinx_needs.data import SphinxNeedsData
 
+RESULT_CLASSES = {
+    "passed": "score-testcase-result--passed",
+    "failed": "score-testcase-result--failed",
+    "skipped": "score-testcase-result--skipped",
+    "disabled": "score-testcase-result--disabled",
+}
+_FALLBACK_CLASS = "score-testcase-result--unknown"
 _ANNOTATED_ATTR = "score_source_code_linker_testcase_result_annotated"
+
+_TESTCASE_STATUS_CSS = """
+<style>
+.score-testcase-result {
+  font-weight: bold;
+}
+.score-testcase-result--passed {
+  color: #146c2e;
+}
+.score-testcase-result--failed {
+  color: #b42318;
+}
+.score-testcase-result--skipped {
+  color: #8a5300;
+}
+.score-testcase-result--disabled,
+.score-testcase-result--unknown {
+  color: #5f6368;
+}
+html[data-theme="dark"] .score-testcase-result--passed {
+  color: #7ee787;
+}
+html[data-theme="dark"] .score-testcase-result--failed {
+  color: #ff7b72;
+}
+html[data-theme="dark"] .score-testcase-result--skipped {
+  color: #d29922;
+}
+html[data-theme="dark"] .score-testcase-result--disabled,
+html[data-theme="dark"] .score-testcase-result--unknown {
+  color: #c4cad2;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .score-testcase-result--passed {
+    color: #7ee787;
+  }
+  html:not([data-theme="light"]) .score-testcase-result--failed {
+    color: #ff7b72;
+  }
+  html:not([data-theme="light"]) .score-testcase-result--skipped {
+    color: #d29922;
+  }
+  html:not([data-theme="light"]) .score-testcase-result--disabled,
+  html:not([data-theme="light"]) .score-testcase-result--unknown {
+    color: #c4cad2;
+  }
+}
+</style>
+"""
 
 
 def _resolved_target_need_id(ref: nodes.reference) -> str | None:
@@ -77,7 +133,7 @@ def _testcase_for_reference(
 
 
 def annotate_testcase_results(app, doctree, docname):
-    """Append a theme-compatible result annotation to testcase references.
+    """Append a coloured, theme-compatible result annotation to testcase refs.
 
     The handler runs after sphinx-needs' own ``doctree-resolved`` handlers.
     It therefore sees both regular resolved references and the external
@@ -85,6 +141,7 @@ def annotate_testcase_results(app, doctree, docname):
     """
     needs = SphinxNeedsData(app.env).get_needs_view()
     testcases_by_url = _testcases_by_external_url(needs)
+    css_added = False
 
     for ref in list(doctree.findall(nodes.reference)):
         if ref.get(_ANNOTATED_ATTR):
@@ -100,9 +157,13 @@ def annotate_testcase_results(app, doctree, docname):
             continue
 
         result_text = str(result)
+        result_class = RESULT_CLASSES.get(result_text, _FALLBACK_CLASS)
         status_html = (
-            '<span class="score-testcase-result" style="font-weight:bold"> '
+            f'<span class="score-testcase-result {result_class}"> '
             f"({escape(result_text, quote=True)})</span>"
         )
+        if not css_added:
+            doctree.insert(0, nodes.raw("", _TESTCASE_STATUS_CSS, format="html"))
+            css_added = True
         ref.append(nodes.raw("", status_html, format="html"))
         ref[_ANNOTATED_ATTR] = True

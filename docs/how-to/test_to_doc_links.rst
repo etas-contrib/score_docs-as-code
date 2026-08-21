@@ -104,9 +104,10 @@ GitHub test links are decorated with their result, for example ``(passed)``,
 ``(failed)``, ``(skipped)``, or ``(disabled)``. The annotation is applied to
 rendered links that target a testcase need, including the ``testlink`` entries
 shown on requirements. The status text inherits the surrounding theme colour
-so it remains readable in light and dark themes. Testcases without a result
-are left unchanged; links whose GitHub URL identifies multiple testcases are
-also left unchanged because their result would be ambiguous.
+and uses a distinct, contrast-safe colour for each known result in light and
+dark themes. Testcases without a result are left unchanged; links whose
+GitHub URL identifies multiple testcases are also left unchanged because their
+result would be ambiguous.
 
 
 Running Tests and Building Docs

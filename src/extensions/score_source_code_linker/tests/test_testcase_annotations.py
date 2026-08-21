@@ -21,6 +21,7 @@ from docutils import nodes
 
 from src.extensions.score_source_code_linker import testcase_annotations as ta
 from src.extensions.score_source_code_linker.testcase_annotations import (
+    RESULT_CLASSES,
     annotate_testcase_results,
 )
 
@@ -72,9 +73,10 @@ def test_annotates_external_github_testlink():
         annotate_testcase_results(_app(needs), doc, "requirements")
 
     html = ref.children[-1].astext()
-    assert "score-testcase-result" in html
-    assert "font-weight:bold" in html
+    assert RESULT_CLASSES["passed"] in html
     assert "(passed)" in html
+    assert ".score-testcase-result--passed" in doc.astext()
+    assert 'html[data-theme="dark"]' in doc.astext()
 
 
 def test_annotates_resolved_testcase_reference_by_refid():
