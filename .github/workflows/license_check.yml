@@ -29,8 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
-      - uses: eclipse-score/dash-license-scan@dev
+      - uses: eclipse-score/dash-license-scan@fe2f9ab2e0cd2bfac7efdbe2637e188b1a5e2025 # dev as of 2026-08-21
         with:
           token: ${{ secrets.ECLIPSE_GITLAB_API_TOKEN }}
           eclipse_project: ${{ vars.ECLIPSE_PROJECT }}

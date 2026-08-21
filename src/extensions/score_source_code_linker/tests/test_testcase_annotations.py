@@ -21,8 +21,6 @@ from docutils import nodes
 
 from src.extensions.score_source_code_linker import testcase_annotations as ta
 from src.extensions.score_source_code_linker.testcase_annotations import (
-    _FALLBACK_COLOR,
-    RESULT_COLORS,
     annotate_testcase_results,
 )
 
@@ -73,8 +71,10 @@ def test_annotates_external_github_testlink():
     with _patch_needs_data():
         annotate_testcase_results(_app(needs), doc, "requirements")
 
-    assert RESULT_COLORS["passed"] in ref.children[-1].astext()
-    assert "(passed)" in ref.children[-1].astext()
+    html = ref.children[-1].astext()
+    assert "score-testcase-result" in html
+    assert "font-weight:bold" in html
+    assert "(passed)" in html
 
 
 def test_annotates_resolved_testcase_reference_by_refid():
@@ -86,7 +86,6 @@ def test_annotates_resolved_testcase_reference_by_refid():
     with _patch_needs_data():
         annotate_testcase_results(_app(needs), doc, "requirements")
 
-    assert RESULT_COLORS["failed"] in ref.children[-1].astext()
     assert "(failed)" in ref.children[-1].astext()
 
 
@@ -105,9 +104,30 @@ def test_escapes_unexpected_result_value():
         annotate_testcase_results(_app(needs), doc, "requirements")
 
     html = ref.children[-1].astext()
-    assert _FALLBACK_COLOR in html
     assert "&lt;failed&amp;&gt;" in html
     assert "<failed&>" not in html
+
+
+def test_does_not_annotate_ambiguous_external_github_testlink():
+    url = "https://github.com/example/repo/blob/abc/tests/test.py#L42"
+    doc, ref = _doctree_with_reference(refuri=url)
+    needs = {
+        "testcase__passed": {
+            "type": "testcase",
+            "external_url": url,
+            "result": "passed",
+        },
+        "testcase__failed": {
+            "type": "testcase",
+            "external_url": url,
+            "result": "failed",
+        },
+    }
+
+    with _patch_needs_data():
+        annotate_testcase_results(_app(needs), doc, "requirements")
+
+    assert len(ref.children) == 1
 
 
 def test_does_not_annotate_empty_result():
