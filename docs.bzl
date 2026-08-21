@@ -61,6 +61,13 @@ load(
     "create_mounts_manifest",
 )
 
+def _module_name_without_prefix():
+    """Return the current Bazel module name without its first prefix."""
+    module_name = native.module_name()
+    if not module_name:
+        return ""
+    return module_name.split("_", 1)[-1]
+
 def _generated_conf_impl(ctx):
     output = ctx.actions.declare_file(ctx.attr.output_path)
     ctx.actions.expand_template(
@@ -69,6 +76,7 @@ def _generated_conf_impl(ctx):
         substitutions = {
             "{PROJECT}": repr(ctx.attr.project),
             "{PROJECT_URL}": repr(ctx.attr.project_url),
+            "{REQUIRED_IN_ID}": repr([ctx.attr.required_in_id]) if ctx.attr.required_in_id else "[]",
         },
     )
     return [DefaultInfo(files = depset([output]))]
@@ -78,6 +86,7 @@ _generated_conf = rule(
     attrs = {
         "project": attr.string(mandatory = True),
         "project_url": attr.string(mandatory = True),
+        "required_in_id": attr.string(mandatory = True),
         "output_path": attr.string(mandatory = True),
         "template": attr.label(
             allow_single_file = True,
@@ -238,6 +247,7 @@ def docs(
             name = "_docs_generated_config",
             project = project,
             project_url = project_url,
+            required_in_id = _module_name_without_prefix(),
             output_path = config_file_path,
         )
         sphinx_config = ":_docs_generated_config"
