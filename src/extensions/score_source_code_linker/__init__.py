@@ -51,6 +51,9 @@ from src.extensions.score_source_code_linker.repo_source_links import (
     load_repo_source_links_json,
     store_repo_source_links_json,
 )
+from src.extensions.score_source_code_linker.testcase_annotations import (
+    annotate_testcase_results,
+)
 from src.extensions.score_source_code_linker.testlink import (
     DataForTestLink,
     load_data_of_test_case_json,
@@ -322,6 +325,10 @@ def setup_once(app: Sphinx):
 
     # Priority=515 to ensure it's called after the test linker & combined connection
     app.connect("env-updated", inject_links_into_needs, priority=525)
+
+    # sphinx-needs resolves NeedIncoming and need metadata links on the same event.
+    # Run after those resolvers so the GitHub references are available to annotate.
+    app.connect("doctree-resolved", annotate_testcase_results, priority=800)
 
 
 def setup(app: Sphinx) -> dict[str, str | bool]:
