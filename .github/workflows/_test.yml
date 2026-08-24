@@ -45,31 +45,75 @@ jobs:
           cache-save: ${{ github.event_name == 'push' }}
 
       - name: Setup venv
-        run: bazel run --lockfile_mode=error //:ide_support
+        run: |
+          #!/usr/bin/env bash
+          set -euo pipefail
 
-      - name: Prepare test report directory
-        run: mkdir -p tests-report
+          repo="eclipse-score/docs-as-code"
+          tag="v8.0.0"
+          runs=10
 
-      - name: Run public docs.bzl integration tests
-        run: .venv_docs/bin/python -m pytest -vv src/tests/docs_bzl --junitxml=tests-report/docs_bzl.xml
+          urls=(
+            "api|https://api.github.com/repos/${repo}/tarball/${tag}"
+            "github|https://github.com/${repo}/archive/refs/tags/${tag}.tar.gz"
+            "codeload|https://codeload.github.com/${repo}/tar.gz/refs/tags/${tag}"
+          )
 
-      - name: Run bazel test targets
-        run: bazel test --lockfile_mode=error //... --build_tests_only
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
 
-      - name: Build all targets
-        # Skip tests, since some are non buildable negative tests
-        run: bazel build --lockfile_mode=error //... -- -//src/tests/...
+          for entry in "${urls[@]}"; do
+            name="${entry%%|*}"
+            url="${entry#*|}"
+            result="$tmp/$name"
 
-      - name: Prepare bundled test report
-        if: ${{ !cancelled() }}
-        # Follow Symlinks via '-L' to copy correctly
-        run: rsync -amL --include='*/' --include='test.xml' --include='test.log' --exclude='*' bazel-testlogs/ tests-report/
+            echo "=== $name ==="
 
-      - name: Upload bundled test report
-        # No need to upload something that doesn't exist.
-        # This would be skipped anyway if the step before isn't running
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: tests-report
-          path: tests-report
+            for i in $(seq 1 "$runs"); do
+              printf "Run %2d/%d: " "$i" "$runs"
+
+              curl \
+                --location \
+                --output /dev/null \
+                --silent \
+                --show-error \
+                --write-out '%{time_total} %{speed_download} %{http_code} %{num_redirects}\n' \
+                "$url" \
+                | tee -a "$result"
+            done
+
+            echo
+          done
+
+          printf "%-10s %10s %10s %10s %12s %10s\n" \
+            "source" "min[s]" "avg[s]" "max[s]" "MB/s avg" "redirects"
+
+          for entry in "${urls[@]}"; do
+            name="${entry%%|*}"
+            result="$tmp/$name"
+
+            awk -v name="$name" '
+              NR == 1 {
+                min=$1
+                max=$1
+              }
+              {
+                sum += $1
+                speed += $2
+
+                if ($1 < min) min=$1
+                if ($1 > max) max=$1
+
+                redirects=$4
+              }
+              END {
+                printf "%-10s %10.3f %10.3f %10.3f %12.2f %10d\n",
+                  name,
+                  min,
+                  sum / NR,
+                  max,
+                  (speed / NR) / 1000000,
+                  redirects
+              }
+            ' "$result"
+          done
