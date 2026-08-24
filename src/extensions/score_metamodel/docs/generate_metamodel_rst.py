@@ -86,14 +86,24 @@ def _build_table(types: dict) -> list[str]:
     return lines
 
 
-def _class_declarations(types: dict) -> list[str]:
-    """Declare every type, listing mandatory options as class members."""
+def _class_declarations(types: dict, base_options: dict | None = None) -> list[str]:
+    """Declare every type and show mandatory and optional options as members."""
+    base_options = base_options or {}
     lines: list[str] = []
     for name in sorted(types):
-        mandatory_opts = sorted(types[name].get("mandatory_options", {}).keys())
-        if mandatory_opts:
+        mandatory_opts, optional_opts = _effective_options(
+            name, types[name], base_options
+        )
+        if mandatory_opts or optional_opts:
             lines.append(f"class {name} {{")
-            lines.extend(f"  +{opt}" for opt in mandatory_opts)
+            lines.extend(f"  +{opt}" for opt in sorted(mandatory_opts))
+            # Mermaid has no native optional marker for class attributes.  A
+            # textual suffix keeps the attribute in the class box while making
+            # its optional status unambiguous in the rendered diagram.
+            lines.extend(
+                f"  +{opt} [optional]"
+                for opt in sorted(set(optional_opts) - set(mandatory_opts))
+            )
             lines.append("}")
         else:
             lines.append(f"class {name}")
@@ -105,10 +115,15 @@ def _link_edges(types: dict, focal_name: str | None = None) -> list[str]:
     lines: list[str] = []
     seen: set[tuple[str, str, str]] = set()
     for name, ty in sorted(types.items()):
-        links = list(ty.get("mandatory_links", {}).items()) + list(
-            ty.get("optional_links", {}).items()
-        )
-        for link_name, targets in sorted(links):
+        links = [
+            ("mandatory", link_name, targets)
+            for link_name, targets in ty.get("mandatory_links", {}).items()
+        ]
+        links += [
+            ("optional", link_name, targets)
+            for link_name, targets in ty.get("optional_links", {}).items()
+        ]
+        for link_type, link_name, targets in sorted(links):
             for target in _split_targets(targets):
                 if target not in types:
                     continue
@@ -125,7 +140,10 @@ def _link_edges(types: dict, focal_name: str | None = None) -> list[str]:
                     seen.add(key)
                     # Keep every edge in source-to-target form.  Together with
                     # the BT direction this places the target above its source.
-                    lines.append(f"{name} --> {target} : {link_name}")
+                    # Dashed dependency arrows make optional links distinct
+                    # from the solid arrows used for mandatory links.
+                    arrow = "..>" if link_type == "optional" else "-->"
+                    lines.append(f"{name} {arrow} {target} : {link_name}")
     return lines
 
 
@@ -163,11 +181,17 @@ def _node_styles(types: dict) -> list[str]:
     return lines
 
 
-def _build_mermaid(types: dict) -> list[str]:
-    return _class_declarations(types) + _link_edges(types) + _node_styles(types)
+def _build_mermaid(types: dict, base_options: dict | None = None) -> list[str]:
+    return (
+        _class_declarations(types, base_options)
+        + _link_edges(types)
+        + _node_styles(types)
+    )
 
 
-def _build_focused_mermaid(types: dict, name: str) -> list[str]:
+def _build_focused_mermaid(
+    types: dict, name: str, base_options: dict | None = None
+) -> list[str]:
     """Build a Mermaid diagram containing one type and its direct neighbours."""
     included_names = _direct_dependencies(types, name)
     focused_types = {
@@ -177,7 +201,7 @@ def _build_focused_mermaid(types: dict, name: str) -> list[str]:
     }
     # Passing only these types to the renderer keeps unrelated nodes out of the
     # per-type image; the focal_name filter below also keeps unrelated edges out.
-    lines = _class_declarations(focused_types) + _link_edges(
+    lines = _class_declarations(focused_types, base_options) + _link_edges(
         focused_types, focal_name=name
     )
     lines.extend(
@@ -195,12 +219,16 @@ def _build_focused_mermaid(types: dict, name: str) -> list[str]:
     return lines
 
 
-def _mermaid_document(types: dict, focal_name: str | None = None) -> list[str]:
+def _mermaid_document(
+    types: dict,
+    focal_name: str | None = None,
+    base_options: dict | None = None,
+) -> list[str]:
     """Build a complete Mermaid document, optionally focused on one type."""
     diagram_lines = (
-        _build_mermaid(types)
+        _build_mermaid(types, base_options)
         if focal_name is None
-        else _build_focused_mermaid(types, focal_name)
+        else _build_focused_mermaid(types, focal_name, base_options)
     )
     return [
         "---",
@@ -241,11 +269,11 @@ def _append_typed_mapping_section(
     if not mandatory_values and not optional_values:
         return
 
-    # A single table avoids repeating a prominent heading for each value kind.
+    # These are supporting details of a type, so an inline label keeps them
+    # visually subordinate to the type heading.
     lines.extend(
         [
-            heading,
-            '"' * len(heading),
+            f"**{heading}**",
             "",
             ".. list-table::",
             "   :header-rows: 1",
@@ -268,19 +296,22 @@ def _append_typed_mapping_section(
 
 def _build_type_details(types: dict, base_options: dict) -> list[str]:
     """Build the per-type details and their focused diagrams."""
-    incoming = _incoming_mandatory_links(types)
     lines = ["Need Type Details", "-----------------", ""]
 
     for name in sorted(types):
         ty = types[name]
         mandatory_options, optional_options = _effective_options(name, ty, base_options)
         title = ty.get("title", name)
-        lines.extend([name, "~" * len(name), "", f"**Title:** {title}"])
-        lines.append(f"**Prefix:** ``{ty.get('prefix', f'{name}__')}``")
-        if "style" in ty:
-            lines.append(f"**Style:** ``{ty['style']}``")
-
-        lines.append("")
+        prefix = ty.get("prefix", f"{name}__")
+        lines.extend(
+            [
+                name,
+                "~" * len(name),
+                "",
+                f"**{title}** (``{prefix}``)",
+                "",
+            ]
+        )
         _append_typed_mapping_section(
             lines,
             "Options",
@@ -296,17 +327,6 @@ def _build_type_details(types: dict, base_options: dict) -> list[str]:
             "Link",
         )
 
-        if incoming.get(name):
-            lines.extend(
-                [
-                    "Incoming Mandatory Links",
-                    '"' * len("Incoming Mandatory Links"),
-                    "",
-                    ", ".join(f"``{source}``" for source in incoming[name]),
-                    "",
-                ]
-            )
-
         lines.extend(
             [
                 ".. mermaid::",
@@ -317,7 +337,10 @@ def _build_type_details(types: dict, base_options: dict) -> list[str]:
         # Inline diagrams keep the generated assets self-contained.  The type
         # names therefore come directly from metamodel.yaml and need no second
         # list of declared output files in BUILD.
-        lines.extend(f"   {line}" for line in _mermaid_document(types, name))
+        lines.extend(
+            f"   {line}"
+            for line in _mermaid_document(types, name, base_options=base_options)
+        )
         lines.append("")
     return lines
 
@@ -353,7 +376,13 @@ def main() -> int:
 
     table = _build_table(types)
     args.mmd_output.write_text(
-        "\n".join(_mermaid_document(types)) + "\n", encoding="utf-8"
+        "\n".join(
+            _mermaid_document(
+                types, base_options=data.get("needs_types_base_options", {})
+            )
+        )
+        + "\n",
+        encoding="utf-8",
     )
 
     output = "\n".join(
