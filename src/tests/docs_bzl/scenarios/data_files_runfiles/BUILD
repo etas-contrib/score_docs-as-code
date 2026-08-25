@@ -24,11 +24,10 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-# BEGIN docs-bundle-howto: generated-data
-
 # Emit into a ``generated/`` subdirectory (as the real metamodel bundle does)
 # so the resolved mount directory contains only the genrule output and not the
 # sibling ``docs.runfiles/`` tree.
+# BEGIN docs-bundle-howto: generated-data
 genrule(
     name = "generated_page",
     srcs = [],

@@ -68,10 +68,9 @@ cc_binary(
     deps = [":example_library"],
 )
 
-# BEGIN docs-bundle-howto: parent-composition
-
 # The child is nested below the parent bundle before the parent itself is
 # mounted into the synthetic host tree below.
+# BEGIN docs-bundle-howto: parent-composition
 docs_bundle(
     name = "parent",
     source_dir = "parent",
@@ -82,7 +81,6 @@ docs_bundle(
     data = [":generated_doc_output"],
     visibility = ["//visibility:public"],
 )
-
 # END docs-bundle-howto: parent-composition
 
 # An aggregator deliberately has no source_dir. It only propagates its child

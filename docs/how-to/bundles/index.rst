@@ -14,19 +14,13 @@
 
 .. _howto_mount_external_sources:
 
-Get started with bundles
-========================
+How to use bundles
+==================
 
 This page is the getting-started guide for documentation bundles: define a
 bundle, mount it in a project, compose it with other bundles, and consume a
 bundle from another module. For focused patterns and test-backed examples,
 see :doc:`examples`.
-
-For the terminology and composition rules, see :ref:`docs_concept_mounts`.
-
-.. contents::
-   :local:
-   :depth: 2
 
 Declare a bundle
 ----------------
@@ -41,13 +35,12 @@ Create a ``docs_bundle`` next to the source directory that it exports:
    docs_bundle(
        name = "docs_dir",
        source_dir = "docs",
-       entry_doc = "overview",  # default: "index"
        visibility = ["//visibility:public"],
    )
 
 ``source_dir`` is the root of the mounted tree. Its supported documentation
 files are collected like those of ``docs()``; for example,
-``src/docs/index.rst`` becomes ``index`` within the bundle.
+``src/docs/overview.rst`` becomes ``overview`` within the bundle.
 ``entry_doc`` names the bundle-relative page used for navigation when the
 bundle is mounted.
 
@@ -65,7 +58,6 @@ Pass a placement dictionary to ``docs(bundles = [...])``:
            {
                "bundle": "//src:docs_dir",
                "mount_at": "internals/code_docs",
-               "attach_to": "internals/index",
            },
        ],
        source_dir = "docs",
@@ -93,57 +85,8 @@ The configuration has two separate responsibilities:
    docs --> output : mount_at / attach_to
    @enduml
 
-Compose bundles
----------------
-
-A bundle can include other bundles. The child placement is relative to the
-parent bundle, and the consumer chooses where the assembled bundle appears:
-
-.. code-block:: starlark
-
-   docs_bundle(
-       name = "guide",
-       source_dir = "guide",
-       bundles = [
-           {
-               "bundle": "//some/pkg:api_docs",
-               "mount_at": "reference",
-               "attach_to": "index",
-           },
-       ],
-   )
-
-Mounting ``guide`` at ``internals/code_docs`` makes the child available below
-``internals/code_docs/reference``. A build fails if the same bundle would end
-up at two different final locations.
-
-Mount a bundle from another Bazel module
-----------------------------------------
-
-Every project using ``docs()`` exposes its own source directory as
-``:docs_bundle``. Mount such a bundle from another module by using its label:
-
-.. code-block:: starlark
-
-   docs(
-       bundles = [
-           {
-               "bundle": "@score_process_description//:docs_bundle",
-               "mount_at": "process",
-               "attach_to": "index",
-           },
-       ],
-       source_dir = "docs",
-   )
-
-Mounted sources bring their Need directives with them. Do not also add that
-module's ``:needs_json`` target to ``data``: Sphinx-Needs would receive each
-Need twice. Use ``:needs_json`` only for a dependency whose documentation is
-not mounted.
-
-An external module's mounted sources are staged by Bazel, so navigation leads
-to a read-only staged tree. Mount every external module explicitly; bundles do
-not automatically re-export mounts from other external modules.
+For nested composition, generated bundle data, and bundles published by
+another Bazel module, see :doc:`examples`.
 
 Refresh the generated project configuration
 -------------------------------------------
@@ -159,14 +102,15 @@ Both commands refresh the repository-root ``ubproject.toml`` used by IDE tools.
 ``bazel build //:needs_json`` checks the sandboxed needs build without creating
 that developer-facing file.
 
-Examples
---------
+Further Examples
+----------------
 
 The :doc:`examples` page shows nested composition, generated bundle data, and
 the declaration for a bundle exported by another Bazel module.
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    examples
 
@@ -174,5 +118,4 @@ Further reading
 ---------------
 
 * :ref:`docs_concept_mounts` — bundle and mount semantics.
-* `sphinx-mounts documentation <https://sphinx-mounts.useblocks.com/>`_ — full
-  configuration reference.
+* `sphinx-mounts documentation <https://sphinx-mounts.useblocks.com/>`_ — the underlying mechanism.

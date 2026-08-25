@@ -21,10 +21,6 @@ split across bundles, generated during the build, or published by another
 Bazel module. Each example shows the bundle declaration, its placement in the
 consuming project, and the resulting location in the documentation output.
 
-.. contents::
-   :local:
-   :depth: 2
-
 Nest bundles
 ------------
 
@@ -39,6 +35,9 @@ The tested parent bundle composes the child like this:
    :start-after: BEGIN docs-bundle-howto: parent-composition
    :end-before: END docs-bundle-howto: parent-composition
 
+See the `complete nested-bundles fixture on GitHub
+<https://github.com/eclipse-score/docs-as-code/tree/main/src/tests/docs_bzl/scenarios/nested_bundles>`_.
+
 If the parent is mounted at ``guides/example``, its page is rendered at
 ``guides/example/index.html`` and the child landing page at
 ``guides/example/child/landing.html``. The consuming project can change
@@ -49,13 +48,15 @@ Mount generated documentation
 
 Use a data-only bundle when a build action produces the documentation rather
 than a source-tree ``.rst`` file. It has no ``source_dir``; its generated files
-are the bundle's complete payload. The tested scenario declares and mounts the
-generated entry page like this:
+are the bundle's complete payload. You can generate and mount a page like this:
 
 .. literalinclude:: ../../../src/tests/docs_bzl/scenarios/data_files_runfiles/BUILD
    :language: starlark
    :start-after: BEGIN docs-bundle-howto: generated-data
    :end-before: END docs-bundle-howto: generated-data
+
+See the `complete generated-data fixture on GitHub
+<https://github.com/eclipse-score/docs-as-code/tree/main/src/tests/docs_bzl/scenarios/data_files_runfiles>`_.
 
 The generated page is rendered at ``data_test/index.html`` and is added to the
 consuming project's index page's toctree. Although this bundle is data-only,
@@ -73,6 +74,9 @@ like this:
    :language: starlark
    :start-after: BEGIN docs-bundle-howto: external-bundle
    :end-before: END docs-bundle-howto: external-bundle
+
+See the `complete external-bundle fixture on GitHub
+<https://github.com/eclipse-score/docs-as-code/tree/main/src/tests/docs_bzl/scenarios/external_bundle>`_.
 
 The external bundle's entry page is rendered at ``process/index.html`` and is
 added to the consuming project's index by ``attach_to``. Mounted sources also
