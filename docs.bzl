@@ -52,6 +52,7 @@ load(
 load(
     "@score_docs_as_code//:bzl/bundle_rules.bzl",
     "create_bundle",
+    "bundle_source_files",
     "merge_bundle_sourcelinks",
     "external_docs_runfiles",
     "generate_code_target_sourcelinks",
@@ -299,6 +300,11 @@ def docs(
         code_targets = code_targets,
         visibility = ["//visibility:public"],
     )
+    sphinx_sources = bundle_source_files(
+        name = "_docs_sphinx_sources",
+        bundle = ":docs_bundle",
+        visibility = ["//visibility:private"],
+    )
     merge_bundle_sourcelinks(
         name = "sourcelinks_json",
         bundle = ":docs_bundle",
@@ -408,7 +414,10 @@ def docs(
 
     sphinx_docs(
         name = "needs_json",
-        srcs = [":docs_bundle"],
+        # Nested bundle sources are mounted by score_mounts. Passing the
+        # complete bundle as srcs would also expose those files as raw Sphinx
+        # sources and make every nested need appear twice.
+        srcs = [sphinx_sources],
         config = sphinx_config,
         extra_opts = [
             "-W",
