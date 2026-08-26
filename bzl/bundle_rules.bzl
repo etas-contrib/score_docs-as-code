@@ -64,7 +64,11 @@ DocsBundleInfo = provider(
         "entries": "Ordered entries, one per source directory, including its final documentation-tree location.",
         "sourcelinks": "Source-code-link JSON files together with their owning repository.",
         "external_runfiles": "Documentation source files from external repositories needed in runfiles.",
-        "data": "Non-source-tree files (e.g. genrule outputs) needed for Sphinx resolution.",
+        # Bundle-owned generated/supporting files. Both bundle data and
+        # docs(data = [...]) are build inputs; unlike host-owned docs data,
+        # these are resolved at this bundle's mount (for example, a generated
+        # index.rst).
+        "data": "Bundle-owned generated/supporting files resolved at the bundle's mount.",
     },
 )
 
@@ -144,6 +148,26 @@ def _bundle_execroot_path(runtime_path):
     if runtime_path.startswith("../"):
         return "external/" + runtime_path[3:]
     return runtime_path
+
+def _pure_data_runtime_path(ctx):
+    """Return a stable identity for a bundle that has no source directory.
+
+    Pure-data bundles do not use ``runtime_path`` to resolve a source tree;
+    their files are resolved from the manifest's ``data`` entries instead.
+    Give them a synthetic, label-derived identity so multiple distinct
+    pure-data bundles can be composed into one documentation site.
+    """
+    # Encode the complete label identity so every target gets a stable,
+    # distinct synthetic path. In particular, local and external labels remain
+    # distinct when both are composed by one consuming project.
+    label = str(ctx.label)
+    encoded_label = (
+        label.replace("%", "%25")
+        .replace("@", "%40")
+        .replace("/", "%2F")
+        .replace(":", "%3A")
+    )
+    return "__data__/%s" % encoded_label
 
 def _rebase_bundle_entry(entry, mount_at, attach_to, data):
     """Place a bundle entry below a requested documentation-tree location.
@@ -238,7 +262,7 @@ def _docs_bundle_impl(ctx):
     elif own_data:
         # Pure data bundle: create an entry so the data files appear in the manifest.
         entries.append(struct(
-            runtime_path = "",
+            runtime_path = _pure_data_runtime_path(ctx),
             src_root = "",
             mount_at = "",
             attach_to = "",
