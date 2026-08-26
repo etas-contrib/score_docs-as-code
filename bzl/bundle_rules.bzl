@@ -62,6 +62,7 @@ DocsBundleInfo = provider(
     doc = "A documentation bundle with its source and placement metadata.",
     fields = {
         "entries": "Ordered entries, one per source directory, including its final documentation-tree location.",
+        "own_source_files": "This bundle's direct source files, excluding nested bundles.",
         "sourcelinks": "Source-code-link JSON files together with their owning repository.",
         "external_runfiles": "Documentation source files from external repositories needed in runfiles.",
         # Bundle-owned generated/supporting files. Both bundle data and
@@ -312,6 +313,7 @@ def _docs_bundle_impl(ctx):
         DefaultInfo(files = depset(transitive = [all_source_files, all_data])),
         DocsBundleInfo(
             entries = entries,
+            own_source_files = depset(direct = own_source_files),
             sourcelinks = sourcelinks,
             external_runfiles = external_runfiles,
             data = all_data,
@@ -348,6 +350,27 @@ def create_bundle(name, bundles, srcs = [], sourcelinks = [], strip_prefix = "",
         data = data,
         visibility = visibility,
         **kwargs
+    )
+    return ":" + name
+
+def _bundle_source_files_impl(ctx):
+    """Expose only a bundle's direct sources as a Sphinx source tree."""
+    return [DefaultInfo(files = ctx.attr.bundle[DocsBundleInfo].own_source_files)]
+
+_bundle_source_files = rule(
+    implementation = _bundle_source_files_impl,
+    attrs = {
+        "bundle": attr.label(providers = [DocsBundleInfo]),
+    },
+    doc = "Exposes direct bundle sources without nested bundle sources.",
+)
+
+def bundle_source_files(name, bundle, visibility = None):
+    """Create a target containing only the direct sources of a bundle."""
+    _bundle_source_files(
+        name = name,
+        bundle = bundle,
+        visibility = visibility,
     )
     return ":" + name
 
