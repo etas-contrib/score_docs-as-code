@@ -5,12 +5,17 @@
 # information regarding copyright ownership.
 #
 # This program and the accompanying materials are made available under the
-# terms of the Apache License Version 2.0 which is available at
+# terms of the Apache License 2.0 which is available at
 # https://www.apache.org/licenses/LICENSE-2.0
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-project = "Mount contract fixture"
-project_url = "https://example.invalid/mount-contract"
-extensions = ["score_sphinx_bundle"]
+# All Sphinx-Needs templates are deliberately kept flat in this package.
+# Consumers derive the common parent directory from the plural Bazel path
+# expansion, so do not add templates below subdirectories here.
+filegroup(
+    name = "files",
+    srcs = glob(["*.need"]),
+    visibility = ["//visibility:public"],
+)

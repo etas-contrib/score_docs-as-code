@@ -381,6 +381,7 @@ score_source_code_linker/
 ├── needlinks.py                 # CodeLink dataclass & JSON encoder/decoder
 ├── testlink.py                  # DataForTestLink definition & logic
 ├── xml_parser.py                # Parses XML files into test case data
+├── testcase_annotations.py      # Adds result annotations to GitHub testcase links
 ├── tests/                       # Testsuite, containing unit & integration tests
 │   └── ...
 ```
