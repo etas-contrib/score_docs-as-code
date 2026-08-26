@@ -18,6 +18,8 @@ load("//:docs.bzl", "docs")
 # bundle, without adding the producer's needs_json separately.
 docs(
     source_dir = "docs",
+    project = "Subdirectory Bundle Consumer",
+    project_url = "https://example.invalid/subdirectory-bundle-consumer",
     test_sources = ["src/tests/docs_bzl/scenarios/subdirectory_bundle/consumer"],
     bundles = [{
         "bundle": "//src/tests/docs_bzl/scenarios/subdirectory_bundle/producer:docs_bundle",
