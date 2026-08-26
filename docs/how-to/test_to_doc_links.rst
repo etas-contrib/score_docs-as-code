@@ -20,21 +20,44 @@ Reference Docs in Tests
 This guide explains how to annotate test cases so that
 docs-as-code automatically creates traceability links between tests and requirements.
 
-Details of implementation
--------------------------
+How to annotate tests
+---------------------
 
-The mechanism is language-agnostic:
-The ``score_source_code_linker`` extension parses ``test.xml`` files, extracts test metadata
-(name, file, line, result, and verification properties),
-and creates backlinks on the referenced requirements.
+To link a test to the requirements it verifies, add the test metadata using
+the mechanism provided by its test framework:
 
-The extension will look for ``test.xml`` files in both ``bazel-testlogs/``
-as well as a folder named ``tests-report/``. This folder can be created manually if the tests
-require some pre-run step or are matrix tests or similar.
+Python (pytest)
+^^^^^^^^^^^^^^^
+   Use the ``@add_test_properties`` decorator. The test docstring supplies
+   the ``Description`` metadata.
 
+C++ (gTest)
+^^^^^^^^^^^
+   Use ``RecordProperty``. Put shared properties in ``SetUp()`` and
+   per-test properties inside each ``TEST_F``.
 
-Required Properties
--------------------
+Rust
+^^^^
+   There is currently no provided official way to add this metadata in Rust.
+   Use the advanced JUnit XML path below until Rust support is available.
+
+See the `Verification Templates <https://eclipse-score.github.io/reference_integration/main/_collections/score_process/process/process_areas/verification/guidance/verification_templates.html>`_
+for complete examples and the required metadata.
+
+Advanced usage: JUnit XML for other languages
+----------------------------------------------
+
+This section is only relevant when your language or test framework does not
+have one of the integrations above. In that case, produce JUnit XML with the
+metadata described below. The generated test results are processed
+automatically and create GitHub links from the requirements to the testcases.
+
+The extension looks for files named ``test.xml`` under ``bazel-testlogs/`` or
+``tests-report/`` at the workspace root. Create ``tests-report/`` manually when
+the test framework needs a separate pre-run step or produces matrix results.
+
+Required properties
+^^^^^^^^^^^^^^^^^^^
 
 Every linked test must declare the following properties
 (see :need:`gd_guidl__verification_specification` for detailed values):
@@ -50,13 +73,12 @@ Every linked test must declare the following properties
 
 ``Description``
    A human-readable explanation of the test objective and expected outcome.
-   *In Python tests, a docstring takes the place of the description attribute.*
 
 What should a test.xml look like?
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each testcase has file as well as it's line number as additional attributes.
-Then as described above, each testcase also has properties inside the XML.
+Each testcase must include its source file and line number as attributes,
+along with the verification properties.
 
 .. code-block:: xml
 
@@ -80,35 +102,22 @@ Then as described above, each testcase also has properties inside the XML.
      </testsuite>
    </testsuites>
 
-If you are not working in Python and using the provided pytest plugin, please ensure that the xml that is written in the end
-looks like this, otherwise the extension will not be able to parse the xml correctly.
+When properties or attributes are missing, testcases are still generated,
+but a testcase can only be linked to requirements if either ``PartiallyVerifies``
+or ``FullyVerifies`` is filled.
 
-What happens when properties are missing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Testcase result annotations
+---------------------------
 
-When properties or attributes are missing for some or all tests inside the test.xml, testcases are still generated.
-However, testcases can only be linked to the requirements if either Partially- or FullyVerifies is filled.
-
-Language-Specific Annotations
------------------------------
-
-Each language uses a different mechanism to attach properties to test cases,
-but all produce the same JUnit XML output that the linker consumes.
-
-C++ (gTest)
-   Use ``RecordProperty`` — shared properties go in ``SetUp()``, per-test properties
-   inside each ``TEST_F``.
-   See :need:`gd_req__verification_link_tests_cpp`.
-
-Rust
-   Currently there is no provided official way to do this in Rust.
-   We are working with the rust community to figure this out.
-
-Python (pytest)
-   Use the ``@add_test_properties`` decorator; the docstring serves as ``Description``.
-   See :need:`gd_req__verification_link_tests_python`.
-
-See :need:`gd_temp__verification_specification` for code templates.
+GitHub test links are decorated with their result, for example ``(passed)``,
+``(failed)``, ``(skipped)``, or ``(disabled)``. The annotation is applied to
+rendered links that target a testcase need, including the ``testlink`` entries
+shown on requirements. The status text inherits the surrounding theme colour
+and uses CSS classes with colours selected for the current S-CORE light and
+dark themes. These colours are not configurable for arbitrary Sphinx themes.
+Testcases without a result are left unchanged; links whose GitHub URL
+identifies multiple testcases are also left unchanged because their result
+would be ambiguous.
 
 
 Running Tests and Building Docs
@@ -120,7 +129,7 @@ Running Tests and Building Docs
 
       bazel test //...
 
-2. Build the documentation — the linker picks up ``bazel-testlogs/`` automatically:
+2. Build the documentation — the generated test results are picked up automatically:
 
    .. code-block:: bash
 
@@ -183,4 +192,4 @@ Limitations
 -----------
 
 - Tests must be executed by Bazel before building docs so ``test.xml`` files exist.
-- Not compatible with Esbonio / live preview (no ``bazel-testlogs/`` available).
+- Not compatible with Esbonio / live preview because generated test results are unavailable there.

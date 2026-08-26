@@ -250,8 +250,25 @@ needs_types = [
         color="#BFD8D2",
         style="node",
     ),
+    dict(
+        directive="testcase",
+        title="Testcase",
+        prefix="testcase__",
+        color="#D9EAD3",
+        style="node",
+    ),
 ]
-needs_extra_options = ["source_code_link", "testlink"]
+needs_extra_options = [
+    "source_code_link",
+    "testlink",
+    "name",
+    "file",
+    "line",
+    "test_type",
+    "derivation_technique",
+    "result",
+    "result_text",
+]
 needs_extra_links =  [{
       "option": "partially_verifies",
       "incoming": "paritally_verified_by",
@@ -432,7 +449,9 @@ def make_test_link(testlinks: list[DataForTestLink]):
         url="",
         hash="",
     )
-    return ", ".join(f"{get_github_link(metadata, n)}<>{n.name}" for n in testlinks)
+    return ", ".join(
+        f"{get_github_link(metadata, n)}<>{n.name}<>{n.result}" for n in testlinks
+    )
 
 
 def compare_json_files(
@@ -552,6 +571,11 @@ def test_source_link_integration_ok(
             expected_test_link = make_test_link(example_test_link_text_all_ok[treq_id])
             actual_test_code_link = treq_info.get("testlink", "no test link")
             assert expected_test_link == actual_test_code_link, treq_id
+
+        # The rendered testlink references point at the testcase external needs.
+        # Verify the annotation survives the complete Sphinx HTML rendering path.
+        rendered_html = (app.outdir / "index.html").read_text(encoding="utf-8")
+        assert "(passed)" in rendered_html
     finally:
         app.cleanup()
 

@@ -51,6 +51,9 @@ from src.extensions.score_source_code_linker.repo_source_links import (
     load_repo_source_links_json,
     store_repo_source_links_json,
 )
+from src.extensions.score_source_code_linker.testcase_annotations import (
+    annotate_testcase_results,
+)
 from src.extensions.score_source_code_linker.testlink import (
     DataForTestLink,
     load_data_of_test_case_json,
@@ -140,15 +143,24 @@ def setup_source_code_linker(app: Sphinx, ws_root: Path | None):
         description="Skip rescanning source code files via the source code linker.",
     )
 
-    # Define need_string_links here to not have it in conf.py
-    # source_code_link and testlinks have the same schema
+    # Define need_string_links here to not have them in conf.py. Test links
+    # carry the result as an additional field in their serialized value.
     app.config.needs_string_links.setdefault(
-        "source_code_linker",
+        "source_code_linker_pure",
         {
             "regex": r"(?P<url>.+)<>(?P<name>.+)",
             "link_url": "{{url}}",
             "link_name": "{{name}}",
-            "options": ["source_code_link", "testlink"],
+            "options": ["source_code_link"],
+        },
+    )
+    app.config.needs_string_links.setdefault(
+        "test_code_linker",
+        {
+            "regex": r"(?P<url>.+)<>(?P<name>.+)<>(?P<result>.+)",
+            "link_url": "{{url}}",
+            "link_name": "{{name}} ({{result}})",
+            "options": ["testlink"],
         },
     )
 
@@ -323,6 +335,10 @@ def setup_once(app: Sphinx):
     # Priority=515 to ensure it's called after the test linker & combined connection
     app.connect("env-updated", inject_links_into_needs, priority=525)
 
+    # sphinx-needs resolves NeedIncoming and need metadata links on the same event.
+    # Run after those resolvers so the GitHub references are available to annotate.
+    app.connect("doctree-resolved", annotate_testcase_results, priority=800)
+
 
 def setup(app: Sphinx) -> dict[str, str | bool]:
     # Esbonio will execute setup() on every iteration.
@@ -460,7 +476,7 @@ def _render_test_link(
             type="score_source_code_linker",
         )
         return str(link.name)
-    return f"{base}<>{link.name}"
+    return f"{base}<>{link.name}<>{link.result}"
 
 
 def _warn_missing_need(source_code_links: object) -> None:
