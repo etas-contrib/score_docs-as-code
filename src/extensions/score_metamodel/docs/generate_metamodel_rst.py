@@ -499,8 +499,8 @@ class RstRenderer:
                 continue
             styles.extend(
                 [
-                    f"figure#{self._diagram_name(need_type)} pre.mermaid > svg {{",
-                    f"    height: {height};",
+                    f"pre#{self._diagram_name(need_type)}.mermaid > svg {{",
+                    f"    height: {height} !important;",
                     "}",
                 ]
             )
