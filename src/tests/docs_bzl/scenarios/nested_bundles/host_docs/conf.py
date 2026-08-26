@@ -14,4 +14,3 @@
 project = "Mount contract fixture"
 project_url = "https://example.invalid/mount-contract"
 extensions = ["score_sphinx_bundle"]
-suppress_warnings = ["score_source_code_linker"]
