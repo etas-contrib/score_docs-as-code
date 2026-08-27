@@ -440,7 +440,7 @@ class RstRenderer:
             for need_type in self.metamodel.types
         }
         lines = [
-            ".. _metamodel:",
+            ".. _metamodel-reference:",
             "",
             "Metamodel",
             "=========",
