@@ -14,6 +14,11 @@
 # All Sphinx-Needs templates are deliberately kept flat in this package.
 # Consumers derive the common parent directory from the plural Bazel path
 # expansion, so do not add templates below subdirectories here.
+exports_files(
+    ["mod_ver_report_tiny.need"],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "files",
     srcs = glob(["*.need"]),
