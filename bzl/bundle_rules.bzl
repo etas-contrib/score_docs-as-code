@@ -62,6 +62,7 @@ DocsBundleInfo = provider(
     doc = "A documentation bundle with its source and placement metadata.",
     fields = {
         "entries": "Ordered entries, one per source directory, including its final documentation-tree location.",
+        "own_source_entry": "This bundle's own source directory entry, or None for an aggregator.",
         "own_source_files": "This bundle's direct source files, excluding nested bundles.",
         "sourcelinks": "Source-code-link JSON files together with their owning repository.",
         "external_runfiles": "Documentation source files from external repositories needed in runfiles.",
@@ -197,6 +198,7 @@ def _rebase_bundle_entry(entry, mount_at, attach_to):
         entry_doc = entry.entry_doc,
         external = entry.external,
         repository = entry.repository,
+        source_files = entry.source_files,
         data = entry.data,
     )
 
@@ -244,11 +246,12 @@ def _docs_bundle_impl(ctx):
     own_source_files = []
     own_external_runfiles = []
     own_data = depset(direct = ctx.files.data)
+    own_source_entry = None
 
     if ctx.files.srcs:
         runtime_path = _bundle_runtime_path(ctx)
         external = runtime_path.startswith("../")
-        entries.append(struct(
+        own_source_entry = struct(
             runtime_path = runtime_path,
             # The execution root and runfiles tree spell external repositories
             # differently. Keep both locations so every public docs() target can
@@ -259,8 +262,10 @@ def _docs_bundle_impl(ctx):
             entry_doc = ctx.attr.entry_doc,
             external = external,
             repository = ctx.label.workspace_name,
+            source_files = ctx.files.srcs,
             data = own_data,
-        ))
+        )
+        entries.append(own_source_entry)
         own_source_files.extend(ctx.files.srcs)
         # Local sources are read directly from the workspace by ``bazel run``.
         # Only sources from external repositories must be staged in runfiles.
@@ -276,6 +281,7 @@ def _docs_bundle_impl(ctx):
             entry_doc = ctx.attr.entry_doc,
             external = False,
             repository = ctx.label.workspace_name,
+            source_files = [],
             data = own_data,
         ))
 
@@ -317,6 +323,7 @@ def _docs_bundle_impl(ctx):
         DefaultInfo(files = depset(transitive = [all_source_files, all_data])),
         DocsBundleInfo(
             entries = entries,
+            own_source_entry = own_source_entry,
             own_source_files = depset(direct = own_source_files),
             sourcelinks = sourcelinks,
             external_runfiles = external_runfiles,

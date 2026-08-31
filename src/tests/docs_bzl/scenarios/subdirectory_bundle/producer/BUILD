@@ -13,15 +13,15 @@
 
 load("//:docs.bzl", "docs")
 
-# The embedded bundle lives in a subdirectory package alongside the docs source.
-# The parent docs() must mount it explicitly because it is a separate package.
+# The embedded bundle is a nested package below the parent source directory.
+# Bazel owns its sources through the child bundle rather than the parent glob.
 docs(
     source_dir = "docs",
     project = "Subdirectory Bundle Producer",
     project_url = "https://example.invalid/subdirectory-bundle-producer",
     test_sources = ["src/tests/docs_bzl/scenarios/subdirectory_bundle/producer"],
     bundles = [{
-        "bundle": "//src/tests/docs_bzl/scenarios/subdirectory_bundle/producer/embedded:docs_bundle",
+        "bundle": "//src/tests/docs_bzl/scenarios/subdirectory_bundle/producer/docs/embedded:docs_bundle",
         "mount_at": "embedded",
     }],
 )

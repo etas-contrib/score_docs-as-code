@@ -19,4 +19,4 @@ Embedded documentation
    :id: gd_req__embedded
    :version: 1
 
-   The embedded documentation is supplied by a docs_bundle in a subdirectory.
+   The embedded documentation is supplied by a nested docs bundle.

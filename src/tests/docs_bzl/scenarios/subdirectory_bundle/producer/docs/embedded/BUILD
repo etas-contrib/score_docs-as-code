@@ -15,6 +15,6 @@ load("//:docs.bzl", "docs_bundle")
 
 docs_bundle(
     name = "docs_bundle",
-    source_dir = "content",
+    source_dir = ".",
     visibility = ["//visibility:public"],
 )

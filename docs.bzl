@@ -320,6 +320,7 @@ def docs(
             create_mounts_manifest(
                 name = "_mounts_manifest",
                 bundle = mounts_bundle,
+                primary_bundle = ":docs_bundle",
             ),
         ]
 

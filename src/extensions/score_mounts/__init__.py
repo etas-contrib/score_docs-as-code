@@ -168,7 +168,35 @@ def _make_mount_entry(walk_dir: Path, spec: MountSpec) -> dict[str, object]:
         "mount_at": spec.mount_at,
         "attach_to": spec.attach_to,
         "entry_doc": spec.entry_doc,
+        "include": spec.include,
     }
+
+
+def _exclude_unowned_primary_sources(
+    app: Sphinx,
+    config: Config,
+    manifest: MountsManifest,
+    ws_root: Path | None,
+    runfiles_dir: Path | None,
+) -> None:
+    """Keep Sphinx's primary source tree aligned with Bazel's direct glob."""
+    source_dir = Path(app.srcdir).resolve()
+    spec = manifest.primary_source
+    if spec is None:
+        return
+    primary_dir = resolve_walk_dir(manifest, spec, ws_root, runfiles_dir).resolve()
+    if primary_dir != source_dir:
+        return
+    included = {path.lstrip("/") for path in spec.include}
+    excluded = []
+    for source_file in primary_dir.rglob("*"):
+        if source_file.suffix not in {".md", ".rst"}:
+            continue
+        relative_path = source_file.relative_to(primary_dir).as_posix()
+        if relative_path not in included:
+            excluded.append(relative_path)
+    if excluded:
+        config.exclude_patterns = [*config.exclude_patterns, *excluded]
 
 
 def _on_config_inited(app: Sphinx, config: Config) -> None:
@@ -185,6 +213,8 @@ def _on_config_inited(app: Sphinx, config: Config) -> None:
 
     ws_root = find_ws_root()
     runfiles_dir = get_runfiles_dir() if ws_root is not None else None
+
+    _exclude_unowned_primary_sources(app, config, manifest, ws_root, runfiles_dir)
 
     # In every context sphinx_mounts walks the bundle's original files (no copy is
     # made); only where those files are staged differs:
