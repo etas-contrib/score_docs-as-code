@@ -43,6 +43,12 @@ Bundles are read from their original source directories. Consequently, an
 in-repository bundle remains editable and IDE navigation reaches its real
 source files rather than generated copies.
 
+Bazel package boundaries still determine ownership. A host ``docs()`` source
+glob does not include documentation below a nested ``BUILD`` package. Such
+content should be declared by a bundle in that package and composed through
+``bundles``; the generated source allowlist prevents the live host directory
+from rediscovering the same files as primary documentation.
+
 Composition
 -----------
 

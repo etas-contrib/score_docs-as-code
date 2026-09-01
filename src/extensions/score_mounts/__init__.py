@@ -15,11 +15,14 @@
 Bridge extension: consume the mounts manifest authored by Bazel rules and feed it to
 ``sphinx_mounts``.
 
-All mount paths originate from Bazel; this extension performs no path computation. It:
+All mount metadata originates from Bazel; this extension only resolves the
+provided paths for the active execution context. It:
 
 * sets ``config.mounts`` so ``sphinx_mounts`` can build the documentation;
-``score_sync_toml`` reads the resulting ``config.mounts`` directly to write the
-generated ``ubproject.toml``.
+* lets ``score_sync_toml`` read the resulting ``config.mounts`` directly to
+  write the generated ``ubproject.toml``; and
+* excludes source files that are present below the host source directory but
+  were not selected by the host package's Bazel glob.
 """
 
 from __future__ import annotations
@@ -162,7 +165,11 @@ def _canonical_mount_dir(walk_dir: Path, spec: MountSpec) -> Path:
 
 
 def _make_mount_entry(walk_dir: Path, spec: MountSpec) -> dict[str, object]:
-    """Build a mount entry dict from a canonical directory and spec."""
+    """Build a mount entry dict from a canonical directory and spec.
+
+    The ``include`` patterns are kept with the directory so
+    ``sphinx_mounts`` discovers exactly the files selected by Bazel.
+    """
     return {
         "dir": str(_canonical_mount_dir(walk_dir, spec)),
         "mount_at": spec.mount_at,
@@ -179,7 +186,13 @@ def _exclude_unowned_primary_sources(
     ws_root: Path | None,
     runfiles_dir: Path | None,
 ) -> None:
-    """Keep Sphinx's primary source tree aligned with Bazel's direct glob."""
+    """Keep Sphinx's primary source tree aligned with Bazel's direct glob.
+
+    A nested Bazel package may leave its files visible in the live workspace
+    below ``app.srcdir`` even though the host package's ``native.glob`` omitted
+    them. Only files matching Sphinx's configured source suffixes need
+    exclusion; assets remain available below the source directory.
+    """
     source_dir = Path(app.srcdir).resolve()
     spec = manifest.primary_source
     if spec is None:
@@ -188,9 +201,16 @@ def _exclude_unowned_primary_sources(
     if primary_dir != source_dir:
         return
     included = {path.lstrip("/") for path in spec.include}
+    raw_source_suffix = config.source_suffix
+    if isinstance(raw_source_suffix, str):
+        source_suffixes = (raw_source_suffix,)
+    elif isinstance(raw_source_suffix, dict):
+        source_suffixes = tuple(raw_source_suffix)
+    else:
+        source_suffixes = tuple(raw_source_suffix)
     excluded = []
     for source_file in primary_dir.rglob("*"):
-        if source_file.suffix not in {".md", ".rst"}:
+        if not any(source_file.name.endswith(suffix) for suffix in source_suffixes):
             continue
         relative_path = source_file.relative_to(primary_dir).as_posix()
         if relative_path not in included:
@@ -205,7 +225,9 @@ def _on_config_inited(app: Sphinx, config: Config) -> None:
     Runs on Sphinx's ``config-inited`` event (before ``sphinx_mounts``, see the
     priority in ``setup``). For each mount it resolves the directory
     ``sphinx_mounts`` should walk and writes the assembled list to
-    ``config.mounts``. A missing or empty manifest is a no-op.
+    ``config.mounts``. When present, ``primary_source`` supplies the host
+    source allowlist before Sphinx discovers the primary tree. A missing or
+    empty manifest is a no-op.
     """
     manifest = _read_manifest(config)
     if manifest is None or not manifest.mounts:

@@ -72,6 +72,11 @@ Minimal example (root ``BUILD``)
 - ``source_dir`` (string, default: ``"docs"``)
   Path (relative to repository root) to your Sphinx source directory. This is the folder
   that contains the top-level ReST/markdown sources. A ``conf.py`` is optional.
+  Bazel package boundaries apply to this glob: a nested directory containing a
+  ``BUILD`` file is not included in the parent package's source set. Declare
+  documentation in such a nested package as a ``docs_bundle`` and mount it
+  through ``bundles``; the generated manifest keeps it from being discovered a
+  second time from the host directory.
 
 - ``project`` and ``project_url`` (strings, optional)
   Project name and canonical project URL. They are required when ``source_dir``
@@ -175,6 +180,9 @@ Signature: ``docs_bundle(name, source_dir = None, data = [], entry_doc = "index"
   ``docs()`` (RST, Markdown, images, and the other doc file kinds). The
   ``source_dir`` itself is the mount root, so the files mount relative to it (so
   ``concept/index.rst`` with ``source_dir = "concept"`` becomes ``index.rst``).
+  Bazel package boundaries are respected. Sources below a nested ``BUILD``
+  package are owned by that package rather than this bundle and must be exposed
+  through a nested bundle if they are part of the composed documentation.
   The bundle exposes those files as a Bazel depset (via the ``DocsBundleInfo``
   provider) and records the ``source_dir`` path; sphinx-mounts walks that original
   directory directly — no copy is made. Leave it unset for a data-only bundle

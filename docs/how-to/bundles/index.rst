@@ -44,6 +44,11 @@ files are collected like those of ``docs()``; for example,
 ``entry_doc`` names the bundle-relative page used for navigation when the
 bundle is mounted.
 
+Bazel package boundaries are part of source ownership. If a ``BUILD`` file
+appears below ``source_dir``, the parent bundle does not glob that nested
+package's files. Define those files in a nested ``docs_bundle`` and compose it
+with ``bundles`` so the mounted tree contains them exactly once.
+
 Mount a bundle in a project
 ---------------------------
 

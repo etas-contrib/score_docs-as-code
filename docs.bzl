@@ -316,6 +316,8 @@ def docs(
             visibility = ["//visibility:private"],
         )
 
+        # The host bundle supplies the package-aware allowlist for its primary
+        # source tree; nested bundle sources remain mounted entries.
         mounts_manifest_label = [
             create_mounts_manifest(
                 name = "_mounts_manifest",

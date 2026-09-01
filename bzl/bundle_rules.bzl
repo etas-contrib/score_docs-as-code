@@ -61,7 +61,7 @@ load("@score_docs_as_code//:bzl/basics.bzl", "join_path")
 DocsBundleInfo = provider(
     doc = "A documentation bundle with its source and placement metadata.",
     fields = {
-        "entries": "Ordered entries, one per source directory, including its final documentation-tree location.",
+        "entries": "Ordered entries, one per source directory, including its final documentation-tree location and direct source files.",
         "own_source_entry": "This bundle's own source directory entry, or None for an aggregator.",
         "own_source_files": "This bundle's direct source files, excluding nested bundles.",
         "sourcelinks": "Source-code-link JSON files together with their owning repository.",
@@ -183,6 +183,9 @@ def _rebase_bundle_entry(entry, mount_at, attach_to):
     generated files at a different mount. Giving every rebased entry the
     bundle's aggregate data would associate the same file with unrelated
     mounts, so the mounts resolver could select the wrong destination.
+
+    The direct ``source_files`` list is also preserved through rebasing so the
+    manifest can reproduce the source package's allowlist at its final mount.
     """
     is_bundle_root = not entry.mount_at
     if is_bundle_root:

@@ -38,6 +38,20 @@ Each manifest entry contains:
 * ``mount_at`` and ``attach_to`` — the already-composed Sphinx placement; and
 * ``entry_doc`` — the canonical entry document declared by the source bundle.
 * ``external`` — whether the directory belongs to another Bazel module.
+* ``repository`` — the Bazel repository that owns the entry;
+* ``include`` — the exact files selected by the entry's direct Bazel source
+  glob, expressed as patterns relative to the mounted directory; and
+* ``data`` — execroot-relative generated/supporting files resolved at the
+  entry's mount.
+
+The manifest may also contain a top-level ``primary_source`` entry. ``docs()``
+uses it for the host bundle's own source directory. At runtime,
+``score_mounts`` adds every file matching Sphinx's configured source suffixes
+that is present below that directory but absent from
+``primary_source.include`` to Sphinx's ``exclude_patterns``. This mirrors
+Bazel's package-aware source glob when a nested bundle package is physically
+located below the host's source directory and prevents duplicate document
+discovery.
 
 The rule rejects conflicting final placements before Sphinx starts. A mount
 without ``attach_to`` is attached to the ``index`` document beside its
@@ -92,6 +106,11 @@ Why bundles are not materialized
 A ``source_dir`` bundle already has the mount-relative layout on disk.
 Materializing a second directory would duplicate its files, point navigation at
 a generated copy, and add a build action without changing the Sphinx input.
+
+The direct-source allowlist in the manifest handles the one filtering case
+needed by Bazel package boundaries without copying files: it limits discovery
+to the files owned by the source bundle while leaving the original directory
+available for mounted assets.
 
 Reconsider materialization only if a future bundle cannot be represented by one
 existing directory, for example for a filtered file set, a custom

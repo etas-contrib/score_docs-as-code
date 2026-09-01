@@ -29,6 +29,28 @@ from typing import cast
 
 @dataclass(frozen=True)
 class MountSpec:
+    """One Bazel-authored source or data mount in the runtime manifest.
+
+    The path fields are intentionally kept as strings: Bazel chooses their
+    spelling for the current execution context, while the extension resolves
+    them only after it knows whether Sphinx is running from the workspace or a
+    sandbox.
+
+    Attributes:
+        src_root: Execroot-relative source directory, or an empty string for a
+            data-only entry.
+        runtime_path: Runfiles-relative source directory used for external
+            repositories.
+        mount_at: Final documentation-tree placement.
+        attach_to: Host document receiving the entry document, if configured.
+        entry_doc: Bundle-relative navigation entry.
+        external: Whether the source belongs to another Bazel repository.
+        repository: Owning Bazel repository name.
+        include: Paths selected by the bundle's direct source glob, relative to
+            the mounted directory and formatted as Sphinx-mounts patterns.
+        data: Execroot-relative generated/supporting files owned by the entry.
+    """
+
     src_root: str
     runtime_path: str
     mount_at: str
@@ -42,6 +64,14 @@ class MountSpec:
 
 @dataclass(frozen=True)
 class MountsManifest:
+    """Parsed mounts manifest and optional host source allowlist.
+
+    ``primary_source`` describes the host project's own source bundle. It is
+    separate from ``mounts`` because it is not mounted at a documentation-tree
+    placement; it tells the extension which files the host Bazel package owns
+    when the live source directory also contains nested packages.
+    """
+
     mounts: list[MountSpec]
     primary_source: MountSpec | None = None
 
