@@ -38,6 +38,16 @@ docs_bundle(
     visibility = ["//visibility:public"],
 )
 
+# This source bundle deliberately declares only one file from ``isolated/``.
+# The sibling below must not become part of the mounted documentation merely
+# because it shares the source file's original parent directory.
+docs_bundle(
+    name = "isolated_source_bundle",
+    srcs = ["isolated/index.rst"],
+    entry_doc = "index",
+    visibility = ["//visibility:public"],
+)
+
 docs(
     source_dir = "docs",
     bundles = [{
@@ -47,6 +57,10 @@ docs(
     }, {
         "bundle": ":legacy_data_bundle",
         "mount_at": "legacy_data_test",
+        "attach_to": "index",
+    }, {
+        "bundle": ":isolated_source_bundle",
+        "mount_at": "isolated_test",
         "attach_to": "index",
     }],
 )

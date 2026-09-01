@@ -24,6 +24,7 @@ import pytest
 from src.extensions.score_mounts._resolver import (
     MountSpec,
     load_mounts_manifest,
+    resolve_source_files,
     resolve_walk_dir,
 )
 
@@ -216,6 +217,34 @@ def test_generated_root_source_mount_uses_bazel_bin_under_bazel_run(
         resolve_walk_dir(load_mounts_manifest(manifest), spec, tmp_path / "workspace")
         == tmp_path / "workspace" / "bazel-bin"
     )
+
+
+def test_explicit_source_files_resolve_below_original_root(tmp_path: Path) -> None:
+    """Resolve an explicit file allowlist without copying its source files."""
+    source_root = tmp_path / "workspace" / "docs"
+    source_root.mkdir(parents=True)
+    (source_root / "index.rst").write_text("Index", encoding="utf-8")
+    (source_root / "guide.rst").write_text("Guide", encoding="utf-8")
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "mounts": [
+                {
+                    "src_root": "docs",
+                    "runtime_path": "docs",
+                    "mount_at": "generated",
+                    "files": ["index.rst", "guide.rst"],
+                }
+            ]
+        },
+    )
+    spec = load_mounts_manifest(manifest).mounts[0]
+
+    assert resolve_source_files(
+        load_mounts_manifest(manifest),
+        spec,
+        tmp_path / "workspace",
+    ) == [source_root / "index.rst", source_root / "guide.rst"]
 
 
 def test_generated_source_mount_uses_execroot_in_sandbox(

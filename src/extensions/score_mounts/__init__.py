@@ -35,6 +35,7 @@ from src.extensions.score_mounts._resolver import (
     MountsManifest,
     MountSpec,
     load_mounts_manifest,
+    resolve_source_files,
     resolve_walk_dir,
 )
 from src.helper_lib import find_ws_root, get_runfiles_dir
@@ -171,6 +172,18 @@ def _make_mount_entry(walk_dir: Path, spec: MountSpec) -> dict[str, object]:
     }
 
 
+def _make_file_mount_entry(
+    source_files: list[Path], spec: MountSpec
+) -> dict[str, object]:
+    """Build a file-list mount entry from the original source files."""
+    return {
+        "files": [str(source_file) for source_file in source_files],
+        "mount_at": spec.mount_at,
+        "attach_to": spec.attach_to,
+        "entry_doc": spec.entry_doc,
+    }
+
+
 def _on_config_inited(app: Sphinx, config: Config) -> None:
     """Translate the Bazel manifest into ``sphinx_mounts`` runtime config.
 
@@ -186,8 +199,9 @@ def _on_config_inited(app: Sphinx, config: Config) -> None:
     ws_root = find_ws_root()
     runfiles_dir = get_runfiles_dir() if ws_root is not None else None
 
-    # In every context sphinx_mounts walks the bundle's original files (no copy is
-    # made); only where those files are staged differs:
+    # In every context sphinx_mounts reads the bundle's original files (no copy
+    # is made); directory mounts are walked while explicit source mounts use
+    # their declared file list. Only where those files are staged differs:
     #   * external bundle: use its runfiles-relative location under ``bazel run``
     #     and its execroot-relative location in a sandboxed Bazel build.
     #   * in-tree bundle under `bazel run`: use the live workspace source
@@ -201,6 +215,12 @@ def _on_config_inited(app: Sphinx, config: Config) -> None:
     runtime_mounts: list[dict[str, object]] = []
     for spec in manifest.mounts:
         if not spec.src_root:
+            continue
+        if spec.files:
+            # Explicit source bundles use sphinx-mounts' file-list mode so the
+            # original files are read directly without discovering siblings.
+            source_files = resolve_source_files(manifest, spec, ws_root, runfiles_dir)
+            runtime_mounts.append(_make_file_mount_entry(source_files, spec))
             continue
         walk_dir = resolve_walk_dir(manifest, spec, ws_root, runfiles_dir)
         if not walk_dir.is_dir():

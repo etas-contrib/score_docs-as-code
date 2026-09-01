@@ -142,6 +142,12 @@ def _bundle_runtime_path(ctx):
         external_prefix = path_parts[0] + "/" + path_parts[1] + "/"
     return external_prefix + ctx.attr.strip_prefix.rstrip("/")
 
+def _source_target_path(source_file):
+    """Return the path spelling used by the source-target staging action."""
+    # Generated files need their execroot path; workspace files resolve from
+    # their runfiles short path.
+    return source_file.path if not source_file.is_source else source_file.short_path
+
 def _source_targets_runtime_path(files):
     """Return the runtime directory shared by one set of source targets.
 
@@ -150,9 +156,7 @@ def _source_targets_runtime_path(files):
     consistently for the complete source set.
     """
     first_file = files[0]
-    # Generated outputs need their execroot path; workspace files resolve from
-    # their runfiles short path.
-    first_path = first_file.path if not first_file.is_source else first_file.short_path
+    first_path = _source_target_path(first_file)
     first_is_source = first_file.is_source
     separator = first_path.rfind("/")
     # A source in the root package has the workspace root as its parent.
@@ -162,11 +166,7 @@ def _source_targets_runtime_path(files):
         # and bazel-out because they have different runtime resolution rules.
         if source_file.is_source != first_is_source:
             fail("explicit bundle sources cannot mix workspace and generated files")
-        source_path = (
-            source_file.path
-            if not source_file.is_source
-            else source_file.short_path
-        )
+        source_path = _source_target_path(source_file)
         source_separator = source_path.rfind("/")
         # Use the same ``.`` spelling for another root-package source.
         source_root = source_path[:source_separator] if source_separator >= 0 else "."
@@ -174,6 +174,22 @@ def _source_targets_runtime_path(files):
             fail(("explicit bundle sources must share one parent directory; " +
                   "found %r and %r") % (runtime_path, source_root))
     return runtime_path
+
+def _source_targets_relative_paths(files, runtime_path):
+    """Return each source target's path relative to the shared source root."""
+    relative_paths = []
+    for source_file in files:
+        source_path = _source_target_path(source_file)
+        # A root-package source has ``.`` as its shared parent, so its complete
+        # path is already relative to the staging tree.
+        if runtime_path == ".":
+            relative_paths.append(source_path)
+            continue
+        prefix = runtime_path + "/"
+        if not source_path.startswith(prefix):
+            fail("explicit bundle source %r is outside %r" % (source_path, runtime_path))
+        relative_paths.append(source_path[len(prefix):])
+    return relative_paths
 
 def _bundle_execroot_path(runtime_path):
     """Return the execroot-relative spelling of an external runtime path."""
@@ -231,6 +247,8 @@ def _rebase_bundle_entry(entry, mount_at, attach_to):
         # Preserve whether the entry's source root comes from bazel-out when
         # the entry is moved below a parent bundle's mount point.
         generated = entry.generated,
+        # Preserve the explicit file allowlist when the entry is rebased.
+        files = entry.files,
         data = entry.data,
     )
 
@@ -300,6 +318,8 @@ def _docs_bundle_impl(ctx):
             repository = ctx.label.workspace_name,
             # Directory-discovered sources are resolved from the workspace.
             generated = False,
+            # Directory mounts discover all supported files below this root.
+            files = [],
             data = own_data,
         ))
         own_source_files.extend(ctx.files.source_dir_globbed)
@@ -308,12 +328,14 @@ def _docs_bundle_impl(ctx):
         if external:
             own_external_runfiles.extend(ctx.files.source_dir_globbed)
     elif ctx.files.source_targets:
-        # Explicit source targets retain their Bazel artifact location so the
-        # resolver can find generated files in bazel-bin under ``bazel run``.
+        # Keep explicit sources at their original paths; the manifest carries
+        # the declared relative file list so runtime discovery cannot include
+        # undeclared siblings from the shared parent directory.
         runtime_path = _source_targets_runtime_path(ctx.files.source_targets)
-        # File.is_source distinguishes a workspace source target from a
-        # generated target; the runtime resolver uses that distinction later.
-        generated = not ctx.files.source_targets[0].is_source
+        source_files = _source_targets_relative_paths(
+            ctx.files.source_targets,
+            runtime_path,
+        )
         external = runtime_path.startswith("../")
         entries.append(struct(
             runtime_path = runtime_path,
@@ -323,13 +345,18 @@ def _docs_bundle_impl(ctx):
             entry_doc = ctx.attr.entry_doc,
             external = external,
             repository = ctx.label.workspace_name,
-            generated = generated,
+            # Generated inputs need bazel-out-to-bazel-bin translation; source
+            # inputs resolve from their original workspace or runfiles paths.
+            generated = not ctx.files.source_targets[0].is_source,
+            # Runtime file-list mounting uses these paths relative to the
+            # original source root and therefore visits only declared files.
+            files = source_files,
             data = own_data,
         ))
         own_source_files.extend(ctx.files.source_targets)
         # Explicit artifacts outside the workspace source tree need to be
         # staged for ``bazel run`` just like external source bundles.
-        if generated or external:
+        if not ctx.files.source_targets[0].is_source or external:
             own_external_runfiles.extend(ctx.files.source_targets)
     elif own_data:
         # Pure data bundle: create an entry so the data files appear in the manifest.
@@ -343,6 +370,8 @@ def _docs_bundle_impl(ctx):
             repository = ctx.label.workspace_name,
             # Pure-data entries do not resolve a generated source root.
             generated = False,
+            # Pure-data entries have no documentation source allowlist.
+            files = [],
             data = own_data,
         ))
 

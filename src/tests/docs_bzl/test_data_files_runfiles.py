@@ -38,3 +38,14 @@ def test_legacy_generated_data_files_remain_reachable_at_runtime():
     legacy_html = result.build_dir / "legacy_data_test" / "index.html"
 
     assert "Legacy Data Page" in legacy_html.read_text(encoding="utf-8")
+
+
+def test_explicit_source_bundle_excludes_undeclared_siblings():
+    """Explicit source bundles must not recursively mount undeclared files."""
+    result = run_scenario("run", "data_files_runfiles", ":docs")
+
+    declared_html = result.build_dir / "isolated_test" / "index.html"
+    undeclared_html = result.build_dir / "isolated_test" / "undeclared.html"
+
+    assert "Isolated Declared Page" in declared_html.read_text(encoding="utf-8")
+    assert not undeclared_html.exists()

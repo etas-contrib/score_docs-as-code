@@ -23,7 +23,7 @@ def _mounts_manifest_impl(ctx):
 
     json_mounts = []
     for entry in entries:
-        json_mounts.append({
+        mount = {
             "src_root": entry.src_root,
             "runtime_path": entry.runtime_path,
             "mount_at": entry.mount_at,
@@ -35,7 +35,12 @@ def _mounts_manifest_impl(ctx):
             # tree rather than a workspace or external-repository directory.
             "generated": entry.generated,
             "data": [f.path for f in entry.data.to_list()],
-        })
+        }
+        # Explicit source targets are mounted as a file allowlist. Directory
+        # bundles omit this key and retain the existing recursive behavior.
+        if entry.files:
+            mount["files"] = entry.files
+        json_mounts.append(mount)
 
     out = ctx.actions.declare_file(ctx.label.name + ".json")
     ctx.actions.write(out, json.encode({"mounts": json_mounts}))

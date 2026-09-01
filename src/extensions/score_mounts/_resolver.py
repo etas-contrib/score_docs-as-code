@@ -41,6 +41,9 @@ class MountSpec:
     # Generated roots use bazel-bin under ``bazel run`` and bazel-out in a
     # sandbox; source and external roots follow their normal path rules.
     generated: bool = False
+    # Explicit source bundles provide paths relative to ``runtime_path`` so
+    # the mount can use the original files without recursively walking peers.
+    files: list[str] = field(default_factory=list)
     data: list[str] = field(default_factory=list)
 
 
@@ -80,6 +83,11 @@ def load_mounts_manifest(manifest_path: str | Path) -> MountsManifest:
             raise ValueError(
                 f"mounts manifest entry field 'data' must be a list: {raw_data!r}"
             )
+        raw_files = entry.get("files", [])
+        if not isinstance(raw_files, list):
+            raise ValueError(
+                f"mounts manifest entry field 'files' must be a list: {raw_files!r}"
+            )
         mounts.append(
             MountSpec(
                 src_root=str(entry["src_root"]),
@@ -94,6 +102,7 @@ def load_mounts_manifest(manifest_path: str | Path) -> MountsManifest:
                 # Older manifests do not have this field and represent regular
                 # workspace or external-repository source roots.
                 generated=bool(entry.get("generated", False)),
+                files=[str(f) for f in cast("list[object]", raw_files)],
                 data=[str(f) for f in cast("list[object]", raw_data)],
             )
         )
@@ -137,3 +146,28 @@ def resolve_walk_dir(
     if ws_root is not None:
         return ws_root / spec.src_root
     return Path.cwd() / spec.src_root
+
+
+def resolve_source_files(
+    manifest: MountsManifest,
+    spec: MountSpec,
+    ws_root: Path | None,
+    runfiles_dir: Path | None = None,
+) -> list[Path]:
+    """Resolve an explicit source allowlist below its original parent.
+
+    ``src_root`` uses the same context-dependent resolution as directory
+    mounts. The manifest's relative file names then identify only the Bazel
+    artifacts declared by ``docs_bundle(srcs = [...])``.
+    """
+    walk_dir = resolve_walk_dir(manifest, spec, ws_root, runfiles_dir)
+    resolved_files = []
+    for relative_path in spec.files:
+        source_file = walk_dir / relative_path
+        if not source_file.is_file():
+            raise ValueError(
+                "score_mounts: resolved source file does not exist: "
+                f"{source_file} (mount_at={spec.mount_at})"
+            )
+        resolved_files.append(source_file)
+    return resolved_files
