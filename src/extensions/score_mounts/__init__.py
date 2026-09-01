@@ -179,6 +179,46 @@ def _make_mount_entry(walk_dir: Path, spec: MountSpec) -> dict[str, object]:
     }
 
 
+def _source_suffixes(config: Config) -> tuple[str, ...]:
+    """Return the source suffixes configured for the current Sphinx project.
+
+    Sphinx accepts a single suffix, a sequence of suffixes, or a mapping from
+    suffixes to parsers. The exclusion scan only needs the suffix keys.
+    """
+    configured = config.source_suffix
+    if isinstance(configured, str):
+        return (configured,)
+    if isinstance(configured, dict):
+        return tuple(configured)
+    return tuple(configured or ())
+
+
+def _selected_source_paths(spec: MountSpec) -> set[str]:
+    """Normalize manifest include paths for comparison with relative paths."""
+    return {path.lstrip("/") for path in spec.include}
+
+
+def _is_source_file(path: Path, suffixes: tuple[str, ...]) -> bool:
+    """Return whether ``path`` is a file Sphinx may parse."""
+    return path.is_file() and any(path.name.endswith(suffix) for suffix in suffixes)
+
+
+def _unowned_source_paths(
+    source_dir: Path,
+    selected_paths: set[str],
+    suffixes: tuple[str, ...],
+) -> list[str]:
+    """Find parseable files below ``source_dir`` that Bazel did not select."""
+    unowned_paths = []
+    for source_file in source_dir.rglob("*"):
+        if not _is_source_file(source_file, suffixes):
+            continue
+        relative_path = source_file.relative_to(source_dir).as_posix()
+        if relative_path not in selected_paths:
+            unowned_paths.append(relative_path)
+    return sorted(unowned_paths)
+
+
 def _exclude_unowned_primary_sources(
     app: Sphinx,
     config: Config,
@@ -193,28 +233,20 @@ def _exclude_unowned_primary_sources(
     them. Only files matching Sphinx's configured source suffixes need
     exclusion; assets remain available below the source directory.
     """
-    source_dir = Path(app.srcdir).resolve()
     spec = manifest.primary_source
     if spec is None:
         return
+
+    source_dir = Path(app.srcdir).resolve()
     primary_dir = resolve_walk_dir(manifest, spec, ws_root, runfiles_dir).resolve()
     if primary_dir != source_dir:
         return
-    included = {path.lstrip("/") for path in spec.include}
-    raw_source_suffix = config.source_suffix
-    if isinstance(raw_source_suffix, str):
-        source_suffixes = (raw_source_suffix,)
-    elif isinstance(raw_source_suffix, dict):
-        source_suffixes = tuple(raw_source_suffix)
-    else:
-        source_suffixes = tuple(raw_source_suffix)
-    excluded = []
-    for source_file in primary_dir.rglob("*"):
-        if not any(source_file.name.endswith(suffix) for suffix in source_suffixes):
-            continue
-        relative_path = source_file.relative_to(primary_dir).as_posix()
-        if relative_path not in included:
-            excluded.append(relative_path)
+
+    excluded = _unowned_source_paths(
+        source_dir,
+        _selected_source_paths(spec),
+        _source_suffixes(config),
+    )
     if excluded:
         config.exclude_patterns = [*config.exclude_patterns, *excluded]
 
