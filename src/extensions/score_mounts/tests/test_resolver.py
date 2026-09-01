@@ -193,6 +193,31 @@ def test_generated_source_mount_uses_bazel_bin_under_bazel_run(tmp_path: Path) -
     )
 
 
+def test_generated_root_source_mount_uses_bazel_bin_under_bazel_run(
+    tmp_path: Path,
+) -> None:
+    """Translate a generated root-level source to the bazel-bin directory."""
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "mounts": [
+                {
+                    "src_root": "bazel-out/k8-fastbuild/bin",
+                    "runtime_path": "bazel-out/k8-fastbuild/bin",
+                    "mount_at": "generated",
+                    "generated": True,
+                }
+            ]
+        },
+    )
+    spec = load_mounts_manifest(manifest).mounts[0]
+
+    assert (
+        resolve_walk_dir(load_mounts_manifest(manifest), spec, tmp_path / "workspace")
+        == tmp_path / "workspace" / "bazel-bin"
+    )
+
+
 def test_generated_source_mount_uses_execroot_in_sandbox(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

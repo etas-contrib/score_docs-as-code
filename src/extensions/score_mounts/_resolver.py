@@ -118,7 +118,9 @@ def resolve_walk_dir(
             # while their manifest paths are execroot-relative bazel-out paths.
             output_parts = spec.src_root.split("/")
             if (
-                len(output_parts) >= 4
+                # A generated file may be directly below the configuration's
+                # ``bin`` directory, so the source root itself can end there.
+                len(output_parts) >= 3
                 and output_parts[0] == "bazel-out"
                 and output_parts[2] == "bin"
             ):
