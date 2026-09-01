@@ -29,3 +29,12 @@ def test_generated_source_files_reachable_at_runtime():
     generated_html = result.build_dir / "data_test" / "index.html"
 
     assert "Generated Data Page" in generated_html.read_text(encoding="utf-8")
+
+
+def test_legacy_generated_data_files_remain_reachable_at_runtime():
+    """Legacy generated RST files declared through ``data`` still work."""
+    result = run_scenario("run", "data_files_runfiles", ":docs")
+
+    legacy_html = result.build_dir / "legacy_data_test" / "index.html"
+
+    assert "Legacy Data Page" in legacy_html.read_text(encoding="utf-8")
