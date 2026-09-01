@@ -117,7 +117,7 @@ def _canonical_mount_dir(walk_dir: Path, spec: MountSpec) -> Path:
       files inside that directory can be symlinks to Bazel's repository
       cache, for example
       ``~/.cache/bazel/.../external/score_process_description+/process/index.rst``.
-    - for generated data bundles, the mount root may be the sandbox copy of a
+    - for generated bundle sources or data, the mount root may be the sandbox copy of a
       ``bazel-out`` directory, for example
       ``.../sandbox/.../execroot/_main/bazel-out/.../docs/generated``;
       generated files below it can resolve to the action execroot spelling,
@@ -129,8 +129,8 @@ def _canonical_mount_dir(walk_dir: Path, spec: MountSpec) -> Path:
       ``.../sandbox/.../execroot/_main/score/socom/docs/index.rst``
       ``→ /home/user/workspace/score/socom/docs/index.rst``.
 
-    This applies to all bundle types: external repositories, generated data
-    bundles, and in-tree (same-workspace) source bundles.  Resolve one mounted
+    This applies to all bundle types: external repositories, generated bundle
+    sources or data, and in-tree (same-workspace) source bundles. Resolve one mounted
     source file first and walk back by its bundle-relative suffix to get the
     canonical root.
 

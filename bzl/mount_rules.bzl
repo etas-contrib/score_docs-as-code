@@ -31,6 +31,9 @@ def _mounts_manifest_impl(ctx):
             "entry_doc": entry.entry_doc,
             "external": entry.external,
             "repository": entry.repository,
+            # Tell the runtime resolver whether src_root is a generated output
+            # tree rather than a workspace or external-repository directory.
+            "generated": entry.generated,
             "data": [f.path for f in entry.data.to_list()],
         })
 

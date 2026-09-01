@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-# This fixture exercises the public docs() macro with a data bundle whose
+# This fixture exercises the public docs() macro with a source bundle whose
 # only content is a genrule output living in ``bazel-out/.../bin/``.  That
 # output must reach the runfiles of ``:docs`` (via _external_docs_runfiles)
 # and be resolved by ``score_mounts`` at ``bazel run`` time.  See PR #686.
@@ -30,10 +30,10 @@ genrule(
 ===================' > $@""",
 )
 
-# Pure-data bundle: the genrule output lives in ``bazel-out/``, not the tree.
+# Source bundle: the genrule output lives in ``bazel-out/``, not the tree.
 docs_bundle(
     name = "data_bundle",
-    data = [":generated_page"],
+    srcs = [":generated_page"],
     entry_doc = "index",
     visibility = ["//visibility:public"],
 )

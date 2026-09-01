@@ -29,6 +29,8 @@ from typing import cast
 
 @dataclass(frozen=True)
 class MountSpec:
+    """Describe one documentation mount and how its source root is resolved."""
+
     src_root: str
     runtime_path: str
     mount_at: str
@@ -36,6 +38,9 @@ class MountSpec:
     entry_doc: str = "index"
     external: bool = False
     repository: str = ""
+    # Generated roots use bazel-bin under ``bazel run`` and bazel-out in a
+    # sandbox; source and external roots follow their normal path rules.
+    generated: bool = False
     data: list[str] = field(default_factory=list)
 
 
@@ -86,6 +91,9 @@ def load_mounts_manifest(manifest_path: str | Path) -> MountsManifest:
                 else "index",
                 external=bool(entry.get("external", False)),
                 repository=str(entry.get("repository", "")),
+                # Older manifests do not have this field and represent regular
+                # workspace or external-repository source roots.
+                generated=bool(entry.get("generated", False)),
                 data=[str(f) for f in cast("list[object]", raw_data)],
             )
         )
@@ -98,7 +106,25 @@ def resolve_walk_dir(
     ws_root: Path | None,
     runfiles_dir: Path | None = None,
 ) -> Path:
-    """Resolve a mount directory for either ``bazel run`` or a sandbox build."""
+    """Resolve a mount directory for either ``bazel run`` or a sandbox build.
+
+    Generated source roots are recorded with their execroot-relative bazel-out
+    path, while ``bazel run`` exposes the same artifacts below ``bazel-bin`` in
+    the workspace. The ``generated`` flag selects that translation.
+    """
+    if spec.generated:
+        if ws_root is not None:
+            # Generated source files are exposed through bazel-bin at runtime,
+            # while their manifest paths are execroot-relative bazel-out paths.
+            output_parts = spec.src_root.split("/")
+            if (
+                len(output_parts) >= 4
+                and output_parts[0] == "bazel-out"
+                and output_parts[2] == "bin"
+            ):
+                return ws_root / "bazel-bin" / "/".join(output_parts[3:])
+            return ws_root / spec.src_root
+        return Path.cwd() / spec.src_root
     if spec.external and ws_root is not None:
         if runfiles_dir is None:
             raise ValueError("external mounts under bazel run require RUNFILES_DIR")

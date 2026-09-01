@@ -13,9 +13,8 @@
 """Unit tests for the mounts manifest loader (``_resolver``).
 
 These cover the pure parsing layer only: reading the JSON manifest into
-``MountSpec`` objects, applying defaults, and rejecting malformed
-input. Context-dependent path resolution (runfiles vs. exec root) lives in the
-extension's ``__init__`` and is exercised via the consumer tests instead."""
+``MountSpec`` objects, applying defaults, rejecting malformed input, and
+resolving source roots in runfiles versus an exec root."""
 
 import json
 from pathlib import Path
@@ -164,3 +163,56 @@ def test_external_mount_uses_runfiles_root_under_bazel_run(tmp_path: Path) -> No
         tmp_path / "workspace",
         tmp_path,
     ) == (tmp_path / "score_process_description+" / "docs_as_mount")
+
+
+def test_generated_source_mount_uses_bazel_bin_under_bazel_run(tmp_path: Path) -> None:
+    """Translate an execroot-relative generated source to workspace bazel-bin."""
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "mounts": [
+                {
+                    "src_root": "bazel-out/k8-fastbuild/bin/pkg/generated",
+                    "runtime_path": "bazel-out/k8-fastbuild/bin/pkg/generated",
+                    "mount_at": "generated",
+                    "generated": True,
+                }
+            ]
+        },
+    )
+    spec = load_mounts_manifest(manifest).mounts[0]
+
+    assert (
+        resolve_walk_dir(
+            load_mounts_manifest(manifest),
+            spec,
+            tmp_path / "workspace",
+            tmp_path / "workspace" / "docs.runfiles",
+        )
+        == tmp_path / "workspace" / "bazel-bin" / "pkg" / "generated"
+    )
+
+
+def test_generated_source_mount_uses_execroot_in_sandbox(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Keep the generated source's execroot path inside a sandbox."""
+    monkeypatch.chdir(tmp_path)
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "mounts": [
+                {
+                    "src_root": "bazel-out/k8-fastbuild/bin/pkg/generated",
+                    "runtime_path": "bazel-out/k8-fastbuild/bin/pkg/generated",
+                    "mount_at": "generated",
+                    "generated": True,
+                }
+            ]
+        },
+    )
+    spec = load_mounts_manifest(manifest).mounts[0]
+
+    assert resolve_walk_dir(load_mounts_manifest(manifest), spec, None) == (
+        tmp_path / "bazel-out" / "k8-fastbuild" / "bin" / "pkg" / "generated"
+    )
