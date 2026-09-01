@@ -69,10 +69,10 @@ and mount a page like this:
    ===================' > $@""",
    )
 
-   # Pure-data bundle: the genrule output lives in ``bazel-out/``, not the tree.
+   # Source bundle: the genrule output lives in ``bazel-out/``, not the tree.
    docs_bundle(
        name = "data_bundle",
-       data = [":generated_page"],
+       srcs = [":generated_page"],
        entry_doc = "index",
        visibility = ["//visibility:public"],
    )

@@ -155,9 +155,8 @@ def _source_targets_runtime_path(files):
     first_path = first_file.path if not first_file.is_source else first_file.short_path
     first_is_source = first_file.is_source
     separator = first_path.rfind("/")
-    if separator < 0:
-        fail("explicit bundle source %r has no parent directory" % first_path)
-    runtime_path = first_path[:separator]
+    # A source in the root package has the workspace root as its parent.
+    runtime_path = first_path[:separator] if separator >= 0 else "."
     for source_file in files[1:]:
         # A single bundle entry cannot combine source roots from the workspace
         # and bazel-out because they have different runtime resolution rules.
@@ -169,7 +168,8 @@ def _source_targets_runtime_path(files):
             else source_file.short_path
         )
         source_separator = source_path.rfind("/")
-        source_root = source_path[:source_separator] if source_separator >= 0 else ""
+        # Use the same ``.`` spelling for another root-package source.
+        source_root = source_path[:source_separator] if source_separator >= 0 else "."
         if source_root != runtime_path:
             fail(("explicit bundle sources must share one parent directory; " +
                   "found %r and %r") % (runtime_path, source_root))
