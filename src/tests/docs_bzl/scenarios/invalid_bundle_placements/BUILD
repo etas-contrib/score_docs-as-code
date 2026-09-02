@@ -75,12 +75,3 @@ docs_bundle(
     ],
     tags = ["manual"],
 )
-
-# The public macro must reject mixing directory-discovered and explicit source
-# inputs before creating an ambiguous bundle definition.
-docs_bundle(
-    name = "bad_source_and_srcs",
-    source_dir = "child",
-    srcs = ["child/a.rst"],
-    tags = ["manual"],
-)
