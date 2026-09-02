@@ -63,6 +63,37 @@ docs_bundle(
     visibility = ["//visibility:public"],
 )
 
+# These explicit bundles deliberately select disjoint files from one parent.
+# Their source lists must remain independent even though their runtime roots
+# are identical.
+docs_bundle(
+    name = "shared_first_bundle",
+    srcs = ["shared/first.rst"],
+    entry_doc = "first",
+    visibility = ["//visibility:public"],
+)
+
+docs_bundle(
+    name = "shared_second_bundle",
+    srcs = ["shared/second.rst"],
+    entry_doc = "second",
+    visibility = ["//visibility:public"],
+)
+
+# Analyze both bundles together to verify that disjoint files from one source
+# parent are accepted without requiring a full Sphinx build.
+docs_bundle(
+    name = "shared_parent_bundle",
+    bundles = [{
+        "bundle": ":shared_first_bundle",
+        "mount_at": "first",
+    }, {
+        "bundle": ":shared_second_bundle",
+        "mount_at": "second",
+    }],
+    visibility = ["//visibility:public"],
+)
+
 docs(
     source_dir = "docs",
     bundles = [{

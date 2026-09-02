@@ -100,6 +100,57 @@ def test_materialize_mounts_preserves_explicit_source_files(
     )
 
 
+def test_materialize_mounts_keeps_bazel_bin_path_before_resolving_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Keep generated file mounts workspace-relative despite output symlinks."""
+    git_root = tmp_path / "workspace"
+    git_root.mkdir()
+    canonical_file = tmp_path / "bazel-cache" / "generated" / "index.rst"
+    canonical_file.parent.mkdir(parents=True)
+    canonical_file.write_text("Generated", encoding="utf-8")
+    bazel_file = git_root / "bazel-bin" / "pkg" / "index.rst"
+    bazel_file.parent.mkdir(parents=True)
+    bazel_file.symlink_to(canonical_file)
+    monkeypatch.setattr(_mounts, "find_git_root", lambda: git_root)
+
+    fragment = materialize_mounts(
+        [{"files": [str(bazel_file)], "mount_at": "generated"}]
+    )
+
+    assert fragment is not None
+    assert fragment.read_text(encoding="utf-8") == (
+        '[[mounts]]\nfiles = ["bazel-bin/pkg/index.rst"]\nmount_at = "generated"\n'
+    )
+
+
+def test_materialize_mounts_maps_external_runfile_symlink(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Keep external file mounts in their stable bazel-bin spelling."""
+    git_root = tmp_path / "workspace"
+    runfiles_dir = git_root / "bazel-bin" / "docs.runfiles"
+    external_file = runfiles_dir / "external_repo+" / "docs" / "index.rst"
+    external_file.parent.mkdir(parents=True)
+    canonical_file = tmp_path / "repository-cache" / "external_repo+" / "index.rst"
+    canonical_file.parent.mkdir(parents=True)
+    canonical_file.write_text("External", encoding="utf-8")
+    external_file.symlink_to(canonical_file)
+    monkeypatch.setattr(_mounts, "find_git_root", lambda: git_root)
+    monkeypatch.setattr(_mounts, "get_runfiles_dir", lambda: runfiles_dir)
+
+    fragment = materialize_mounts(
+        [{"files": [str(external_file)], "mount_at": "external"}]
+    )
+
+    assert fragment is not None
+    assert fragment.read_text(encoding="utf-8") == (
+        "[[mounts]]\n"
+        'files = ["bazel-bin/external/external_repo+/docs/index.rst"]\n'
+        'mount_at = "external"\n'
+    )
+
+
 def test_setup_skips_toml_sync_without_git_worktree(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -20,23 +20,65 @@ def _toml_string(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def _toml_path(path: Path) -> str:
-    """Derive a stable TOML path from a resolved runtime path."""
-    resolved_path = path.resolve()
-    git_root = find_git_root()
-    if git_root is not None:
-        try:
-            return str(resolved_path.relative_to(git_root))
-        except ValueError:
-            pass
-
+def _relative_path(path: Path, root: Path) -> str | None:
+    """Return a lexical path relative to ``root`` when it is below that root."""
     try:
-        external_path = resolved_path.relative_to(get_runfiles_dir())
+        return str(path.relative_to(root))
     except ValueError:
-        return str(resolved_path)
-    if external_path.parts[0] == "_main":
-        return str(Path(*external_path.parts[1:]))
-    return "bazel-bin/external/" + str(external_path)
+        return None
+
+
+def _git_toml_path(path: Path, git_root: Path | None) -> str | None:
+    """Map a workspace path while leaving nested runfiles for special handling."""
+    if git_root is None:
+        return None
+    relative_path = _relative_path(path, git_root)
+    if relative_path is None:
+        return None
+    # A runfiles tree may itself live below the workspace. Let its dedicated
+    # conversion preserve the stable bazel-bin/external spelling instead.
+    if any(part.endswith(".runfiles") for part in Path(relative_path).parts):
+        return None
+    return relative_path
+
+
+def _runfiles_toml_path(path: Path, runfiles_dir: Path) -> str | None:
+    """Map a lexical runfiles path to the stable TOML spelling."""
+    relative_path = _relative_path(path, runfiles_dir)
+    if relative_path is None:
+        return None
+    relative_parts = Path(relative_path).parts
+    if relative_parts and relative_parts[0] == "_main":
+        return str(Path(*relative_parts[1:]))
+    return "bazel-bin/external/" + relative_path
+
+
+def _toml_path(path: Path) -> str:
+    """Derive a stable TOML path without following Bazel runfile symlinks."""
+    # ``bazel-bin`` and external runfiles are often symlinks into Bazel's
+    # output or repository cache. Keep the lexical path first so the generated
+    # TOML remains portable across machines and Bazel invocations.
+    lexical_path = path.absolute()
+    git_root = find_git_root()
+    lexical_git_path = _git_toml_path(lexical_path, git_root)
+    if lexical_git_path is not None:
+        return lexical_git_path
+
+    runfiles_dir = get_runfiles_dir()
+    lexical_runfiles_path = _runfiles_toml_path(lexical_path, runfiles_dir)
+    if lexical_runfiles_path is not None:
+        return lexical_runfiles_path
+
+    # Existing canonical mount entries may already contain a resolved path.
+    # Retain the previous fallback behavior for those callers.
+    resolved_path = path.resolve()
+    resolved_git_path = _relative_path(resolved_path, git_root) if git_root else None
+    if resolved_git_path is not None:
+        return resolved_git_path
+    resolved_runfiles_path = _runfiles_toml_path(resolved_path, runfiles_dir)
+    if resolved_runfiles_path is not None:
+        return resolved_runfiles_path
+    return str(resolved_path)
 
 
 def _toml_dir(entry: dict[str, Any]) -> str:

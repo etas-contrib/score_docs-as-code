@@ -119,14 +119,31 @@ def _parent_index_docname(mount_at):
     return join_path(parent, "index")
 
 def _ensure_unique_entries(entries):
-    """Reject a source directory reached through more than one bundle path."""
-    seen = {}
+    """Reject overlapping bundle entries while allowing disjoint file lists."""
+    seen_directories = {}
+    seen_files = {}
     for entry in entries:
-        key = entry.runtime_path
-        if key in seen:
+        if entry.files:
+            # Explicit bundles share a parent directory by design. Their
+            # individual files, rather than that shared parent, define their
+            # identity and determine whether the entries actually overlap.
+            if entry.runtime_path in seen_directories:
+                fail(("bundle conflict: source directory %r is included through more " +
+                      "than one bundle path; include every documentation source directory once") % entry.runtime_path)
+            for relative_file in entry.files:
+                # Relative paths are unique within the runtime root, so this
+                # key identifies the underlying source independently of mount_at.
+                file_key = entry.runtime_path + "/" + relative_file
+                if file_key in seen_files:
+                    fail(("bundle conflict: explicit source file %r is included " +
+                          "through more than one bundle path") % file_key)
+                seen_files[file_key] = entry
+            continue
+
+        if entry.runtime_path in seen_directories or entry.runtime_path in seen_files:
             fail(("bundle conflict: source directory %r is included through more " +
-                  "than one bundle path; include every documentation source directory once") % key)
-        seen[key] = entry
+                  "than one bundle path; include every documentation source directory once") % entry.runtime_path)
+        seen_directories[entry.runtime_path] = entry
 
 def _bundle_runtime_path(ctx):
     """Return this bundle source directory's Bazel runtime path.

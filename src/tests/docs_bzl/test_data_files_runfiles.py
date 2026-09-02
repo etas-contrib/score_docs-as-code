@@ -50,3 +50,8 @@ def test_explicit_source_bundle_excludes_undeclared_siblings():
 
     assert "Isolated Declared Page" in declared_html.read_text(encoding="utf-8")
     assert not undeclared_html.exists()
+
+
+def test_explicit_bundles_can_share_a_source_parent():
+    """Disjoint explicit file lists may use the same source parent."""
+    run_scenario("build", "data_files_runfiles", ":shared_parent_bundle")
