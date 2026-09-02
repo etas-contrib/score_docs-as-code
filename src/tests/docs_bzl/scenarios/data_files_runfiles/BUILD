@@ -25,9 +25,24 @@ load("//:docs.bzl", "docs", "docs_bundle")
 genrule(
     name = "generated_page",
     srcs = [],
-    outs = ["generated/index.rst"],
-    cmd = """echo 'Generated Data Page
-===================' > $@""",
+    outs = [
+        "generated/index.rst",
+        "generated/generated_data.mmd",
+    ],
+    # The RST and Mermaid file are both declared sources, but only the RST
+    # should be registered as a Sphinx document. The Mermaid file is a
+    # companion asset that must remain readable next to the original RST.
+    cmd = """cat > $(location generated/index.rst) <<'EOF'
+Generated Data Page
+===================
+
+.. mermaid:: generated_data.mmd
+   :name: generated-data-diagram
+EOF
+cat > $(location generated/generated_data.mmd) <<'EOF'
+classDiagram
+  class GeneratedData
+EOF""",
 )
 
 # Source bundle: the genrule output lives in ``bazel-out/``, not the tree.

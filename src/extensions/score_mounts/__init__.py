@@ -184,6 +184,16 @@ def _make_file_mount_entry(
     }
 
 
+def _configured_source_suffixes(config: Config) -> tuple[str, ...]:
+    """Return the source suffixes configured for the current Sphinx build."""
+    configured = config.source_suffix
+    # Sphinx accepts either a sequence of suffixes or a mapping from suffixes
+    # to parser names; both forms expose the suffixes during iteration.
+    if isinstance(configured, str):
+        return (configured,)
+    return tuple(configured)
+
+
 def _on_config_inited(app: Sphinx, config: Config) -> None:
     """Translate the Bazel manifest into ``sphinx_mounts`` runtime config.
 
@@ -220,7 +230,20 @@ def _on_config_inited(app: Sphinx, config: Config) -> None:
             # Explicit source bundles use sphinx-mounts' file-list mode so the
             # original files are read directly without discovering siblings.
             source_files = resolve_source_files(manifest, spec, ws_root, runfiles_dir)
-            runtime_mounts.append(_make_file_mount_entry(source_files, spec))
+            source_suffixes = _configured_source_suffixes(config)
+            document_files = [
+                source_file
+                for source_file in source_files
+                if any(source_file.name.endswith(suffix) for suffix in source_suffixes)
+            ]
+            if not document_files:
+                # An explicit bundle may contain only companion assets. Such
+                # assets remain available at their original paths, but there
+                # is no Sphinx document to register for this mount.
+                continue
+            # Companion assets stay in the original source directory and are
+            # resolved relative to the explicitly mounted document.
+            runtime_mounts.append(_make_file_mount_entry(document_files, spec))
             continue
         walk_dir = resolve_walk_dir(manifest, spec, ws_root, runfiles_dir)
         if not walk_dir.is_dir():

@@ -29,6 +29,7 @@ def test_generated_source_files_reachable_at_runtime():
     generated_html = result.build_dir / "data_test" / "index.html"
 
     assert "Generated Data Page" in generated_html.read_text(encoding="utf-8")
+    assert "generated-data-diagram" in generated_html.read_text(encoding="utf-8")
 
 
 def test_legacy_generated_data_files_remain_reachable_at_runtime():

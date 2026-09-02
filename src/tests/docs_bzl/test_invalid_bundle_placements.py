@@ -31,3 +31,7 @@ def test_invalid_bundle_placements_are_rejected_during_analysis():
     run_scenario(
         "build", "invalid_bundle_placements", ":bad_attach_to", expect_error=True
     )
+    result = run_scenario(
+        "build", "invalid_bundle_placements", ":bad_source_and_srcs", expect_error=True
+    )
+    assert "srcs cannot be combined with source_dir" in result.stderr
