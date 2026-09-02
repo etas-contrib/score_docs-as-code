@@ -120,6 +120,12 @@ def resolve_walk_dir(
     Generated source roots are recorded with their execroot-relative bazel-out
     path, while ``bazel run`` exposes the same artifacts below ``bazel-bin`` in
     the workspace. The ``generated`` flag selects that translation.
+
+    For example, a generated ``bazel-out/k8-fastbuild/bin/pkg/docs`` root
+    resolves to ``<workspace>/bazel-bin/pkg/docs`` under ``bazel run`` and to
+    ``<execroot>/bazel-out/k8-fastbuild/bin/pkg/docs`` in a sandbox. A regular
+    workspace source resolves to ``<workspace>/<src_root>`` under ``bazel run``
+    and ``<execroot>/<src_root>`` in a sandbox.
     """
     if spec.generated:
         if ws_root is not None:

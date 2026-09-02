@@ -135,6 +135,8 @@ def _bundle_runtime_path(ctx):
     runfiles. Keep that spelling here; ``_bundle_execroot_path`` converts it to
     the corresponding ``external/<repo>/...`` form for build actions.
     """
+    # All files were globbed from this bundle's one source_dir, so the first
+    # file is representative for detecting an external-repository prefix.
     source_file = ctx.files.source_dir_globbed[0].short_path
     external_prefix = ""
     if source_file.startswith("../"):
@@ -144,29 +146,33 @@ def _bundle_runtime_path(ctx):
 
 def _source_target_path(source_file):
     """Return the path spelling used by the source-target staging action."""
-    # Generated files need their execroot path; workspace files resolve from
-    # their runfiles short path.
+    # Bazel marks workspace files with ``is_source``; generated outputs use
+    # the execroot path while workspace files use their runfiles short path.
     return source_file.path if not source_file.is_source else source_file.short_path
 
 def _source_targets_runtime_path(files):
     """Return the runtime directory shared by one set of source targets.
 
     Source targets are either workspace files or generated outputs. Their
-    paths use different Bazel spellings, so the kind of the first file is used
-    consistently for the complete source set.
+    paths use different Bazel spellings, while one manifest entry can carry
+    only one runtime root and one generated/source classification. The first
+    file therefore establishes the canonical representation and every later
+    file is validated against it.
     """
     first_file = files[0]
     first_path = _source_target_path(first_file)
     first_is_source = first_file.is_source
     separator = first_path.rfind("/")
-    # A source in the root package has the workspace root as its parent.
+    # A root-package source has no parent component; ``.`` represents the
+    # workspace/execroot root so it can still be used as the shared directory.
     runtime_path = first_path[:separator] if separator >= 0 else "."
     for source_file in files[1:]:
         # A single bundle entry cannot combine source roots from the workspace
         # and bazel-out because they have different runtime resolution rules.
-        if source_file.is_source != first_is_source:
-            fail("explicit bundle sources cannot mix workspace and generated files")
         source_path = _source_target_path(source_file)
+        if source_file.is_source != first_is_source:
+            fail(("explicit bundle sources cannot mix workspace and generated files; " +
+                  "found %r and %r") % (first_path, source_path))
         source_separator = source_path.rfind("/")
         # Use the same ``.`` spelling for another root-package source.
         source_root = source_path[:source_separator] if source_separator >= 0 else "."
@@ -300,7 +306,8 @@ def _docs_bundle_impl(ctx):
     # The macro validates this combination before creating the rule; retain
     # the rule-level check for callers of the internal helper as well.
     if ctx.files.source_dir_globbed and ctx.files.source_targets:
-        fail("a bundle cannot combine source_dir sources with explicit source targets")
+        fail(("bundle %s cannot combine source_dir sources with explicit source " +
+              "targets") % ctx.label)
 
     if ctx.files.source_dir_globbed:
         runtime_path = _bundle_runtime_path(ctx)
