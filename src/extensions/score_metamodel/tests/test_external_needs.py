@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
 
 import pytest
 import score_metamodel.external_needs as ext_needs
@@ -31,6 +33,57 @@ from score_metamodel.external_needs import (
     parse_external_needs_sources_from_DATA,
 )
 from sphinx.config import Config
+from sphinx_needs.needsfile import NeedsList
+
+
+def _finalise(config: Config) -> NeedsList:
+    needs_list = cast(NeedsList, SimpleNamespace(needs_list={}, config=config))
+    NeedsList._finalise(needs_list)  # pyright: ignore[reportPrivateUsage] - white-box test
+    return needs_list
+
+
+def test_extend_needs_json_exporter_reports_missing_config(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The host export reports a missing project URL as a configuration error."""
+    errors: list[str] = []
+    monkeypatch.setattr(NeedsList, "_finalise", lambda _needs_list: None)
+    monkeypatch.setattr(ext_needs.logger, "error", errors.append)
+
+    ext_needs.extend_needs_json_exporter(Config())
+
+    assert errors == [
+        "Config value 'project_url' is not set. Please set it in your Sphinx config."
+    ]
+
+
+@pytest.mark.parametrize(
+    ("exported_project_url", "expected_project_url"),
+    [(None, "https://example.test/after"), ("", "")],
+)
+def test_extend_needs_json_exporter_uses_configured_or_explicit_value(
+    monkeypatch: pytest.MonkeyPatch,
+    exported_project_url: str | None,
+    expected_project_url: str,
+) -> None:
+    """The export uses either the current config value or its explicit override."""
+    config = Config()
+    config.project_url = "https://example.test/before"
+
+    monkeypatch.setattr(NeedsList, "_finalise", lambda _needs_list: None)
+    ext_needs.extend_needs_json_exporter(
+        config, exported_project_url=exported_project_url
+    )
+    if exported_project_url is None:
+        config.project_url = "https://example.test/after"
+    needs_list = _finalise(config)
+
+    assert needs_list.needs_list["project_url"] == expected_project_url
+    assert config.project_url == (
+        "https://example.test/after"
+        if exported_project_url is None
+        else "https://example.test/before"
+    )
 
 
 def test_empty_list():
