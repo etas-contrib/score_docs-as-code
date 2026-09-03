@@ -15,11 +15,20 @@
 Bridge extension: consume the mounts manifest authored by Bazel rules and feed it to
 ``sphinx_mounts``.
 
-All mount paths originate from Bazel; this extension performs no path computation. It:
+All mount roots originate from Bazel; this extension resolves them for the
+active execution context and derives structural directory exclusions. It:
 
 * sets ``config.mounts`` so ``sphinx_mounts`` can build the documentation;
 ``score_sync_toml`` reads the resulting ``config.mounts`` directly to write the
 generated ``ubproject.toml``.
+
+For directory mounts, the source-ownership invariant is that every document is
+discovered exactly once: the primary Sphinx source tree owns files outside mounted
+roots, and a directory mount owns its root except for nested directory mounts. The
+exclusions below encode those boundaries as directory patterns so the ownership
+remains correct when files are added later. Explicit file-list mounts remain in
+file-list mode; they are intended for generated sources outside the primary source
+tree, and nested workspace ``srcs`` are a known limitation of this logic.
 """
 
 from __future__ import annotations
@@ -162,13 +171,24 @@ def _canonical_mount_dir(walk_dir: Path, spec: MountSpec) -> Path:
     return walk_dir.resolve()
 
 
-def _make_mount_entry(walk_dir: Path, spec: MountSpec) -> dict[str, object]:
-    """Build a mount entry dict from a canonical directory and spec."""
+def _make_mount_entry(
+    walk_dir: Path,
+    spec: MountSpec,
+    exclude: tuple[str, ...] = (),
+) -> dict[str, object]:
+    """Build a ``sphinx_mounts`` directory entry.
+
+    ``exclude`` contains paths relative to ``walk_dir``. ``sphinx_mounts`` applies
+    those patterns during its recursive walk, so an empty tuple means this mount
+    owns the whole directory and a pattern such as ``components/**`` delegates
+    that subtree to a nested mount.
+    """
     return {
         "dir": str(_canonical_mount_dir(walk_dir, spec)),
         "mount_at": spec.mount_at,
         "attach_to": spec.attach_to,
         "entry_doc": spec.entry_doc,
+        "exclude": list(exclude),
     }
 
 
@@ -194,13 +214,113 @@ def _configured_source_suffixes(config: Config) -> tuple[str, ...]:
     return tuple(configured)
 
 
+def _nested_mount_pattern(parent_dir: Path, child_dir: Path) -> str | None:
+    """Map a strict physical descendant to a recursive relative glob.
+
+    Mount directories have already been resolved before this helper is called, so
+    the comparison is about the directories Sphinx will physically walk rather
+    than their Bazel or manifest spellings. Equal and unrelated directories do
+    not create an ownership boundary and therefore return ``None``.
+    """
+    try:
+        relative_dir = child_dir.relative_to(parent_dir)
+    except ValueError:
+        return None
+    if not relative_dir.parts:
+        return None
+    return f"{relative_dir.as_posix()}/**"
+
+
+def _mount_exclusions(
+    source_dir: Path,
+    source_mounts: list[tuple[MountSpec, Path]],
+) -> tuple[tuple[str, ...], tuple[tuple[str, ...], ...]]:
+    """Return primary and per-mount exclusions in one pairwise traversal.
+
+    The primary source walk must exclude every directory mount below
+    ``source_dir``. Each directory mount must also exclude every nested directory
+    mount from its own walk. Computing both sets here avoids rescanning the full
+    mount list once for every parent mount. The two directions of each pair are
+    checked because either directory may be the descendant.
+    """
+    primary_patterns: set[str] = set()
+    nested_patterns = [set[str]() for _ in source_mounts]
+
+    for parent_index, (_, parent_dir) in enumerate(source_mounts):
+        primary_pattern = _nested_mount_pattern(source_dir, parent_dir)
+        if primary_pattern is not None:
+            primary_patterns.add(primary_pattern)
+
+        for child_index in range(parent_index + 1, len(source_mounts)):
+            _, child_dir = source_mounts[child_index]
+
+            child_pattern = _nested_mount_pattern(parent_dir, child_dir)
+            if child_pattern is not None:
+                nested_patterns[parent_index].add(child_pattern)
+
+            parent_pattern = _nested_mount_pattern(child_dir, parent_dir)
+            if parent_pattern is not None:
+                nested_patterns[child_index].add(parent_pattern)
+
+    return (
+        tuple(sorted(primary_patterns)),
+        tuple(tuple(sorted(patterns)) for patterns in nested_patterns),
+    )
+
+
+def _exclude_mounted_primary_sources(
+    config: Config,
+    exclusions: tuple[str, ...],
+) -> None:
+    """Hide mounted bundle roots from Sphinx's primary source discovery.
+
+    The exclusion is based on directory ownership rather than the manifest's
+    current file list. This keeps newly created files visible to live preview
+    while ensuring a source file is discovered by either the host tree or its
+    owning bundle mount, never both.
+    """
+    if exclusions:
+        # Preserve project-configured exclusions and append only the bundle roots
+        # that are physically inside the primary source tree.
+        config.exclude_patterns = [*config.exclude_patterns, *exclusions]
+
+
+def _resolve_source_mounts(
+    manifest: MountsManifest,
+    ws_root: Path | None,
+    runfiles_dir: Path | None,
+) -> list[tuple[MountSpec, Path]]:
+    """Resolve and validate the directory mounts used for ownership checks.
+
+    Explicit source bundles are deliberately omitted: ``docs_bundle(srcs = [...])``
+    owns a declared file list, not the directory containing those files, so it
+    must remain in ``sphinx_mounts`` file-list mode and must not create a directory
+    exclusion. ``srcs`` is intended for generated sources outside the primary
+    source tree; an explicitly mounted workspace file below a walked root remains
+    a known limitation because exact-file exclusions are not derived here.
+    """
+    source_mounts: list[tuple[MountSpec, Path]] = []
+    for spec in manifest.mounts:
+        if not spec.src_root or spec.files:
+            continue
+        walk_dir = resolve_walk_dir(manifest, spec, ws_root, runfiles_dir)
+        if not walk_dir.is_dir():
+            raise ValueError(
+                "score_mounts: resolved mount dir does not exist: "
+                f"{walk_dir} (mount_at={spec.mount_at})"
+            )
+        source_mounts.append((spec, walk_dir.resolve()))
+    return source_mounts
+
+
 def _on_config_inited(app: Sphinx, config: Config) -> None:
     """Translate the Bazel manifest into ``sphinx_mounts`` runtime config.
 
     Runs on Sphinx's ``config-inited`` event (before ``sphinx_mounts``, see the
     priority in ``setup``). For each mount it resolves the directory
-    ``sphinx_mounts`` should walk and writes the assembled list to
-    ``config.mounts``. A missing or empty manifest is a no-op.
+    ``sphinx_mounts`` should walk, excludes nested mount roots from containing
+    walks, and writes the assembled list to ``config.mounts``. A missing or
+    empty manifest is a no-op.
     """
     manifest = _read_manifest(config)
     if manifest is None or not manifest.mounts:
@@ -220,6 +340,27 @@ def _on_config_inited(app: Sphinx, config: Config) -> None:
     #     as inputs at their exec-root-relative path. The manifest lives under
     #     bazel-out/ and is NOT colocated with them, so src_root is resolved
     #     against the exec root (the sphinx action's cwd), not the manifest.
+
+    # Directory mounts need to be resolved as a group before runtime entries are
+    # assembled. Only then can their physical roots be compared for nesting and
+    # can both Sphinx's primary walk and each parent mount be given exclusions.
+    source_mounts = _resolve_source_mounts(manifest, ws_root, runfiles_dir)
+    primary_exclusions, nested_exclusions = _mount_exclusions(
+        Path(app.srcdir).resolve(), source_mounts
+    )
+    _exclude_mounted_primary_sources(config, primary_exclusions)
+
+    # ``source_mounts`` omits pure-data and explicit file-list entries. Explicit
+    # ``srcs`` entries intentionally retain their existing file-list behavior;
+    # generated sources are expected to live outside the primary source tree.
+    # Map the remaining specs back to their prevalidated paths by object identity
+    # so the following loop can preserve manifest declaration order. ``MountSpec``
+    # contains lists and is therefore not usable as a dictionary key, despite its
+    # frozen dataclass declaration.
+    source_mounts_by_id = {
+        id(spec): (index, walk_dir)
+        for index, (spec, walk_dir) in enumerate(source_mounts)
+    }
 
     # Pure-data bundles have empty src_root; skip directory walk.
     runtime_mounts: list[dict[str, object]] = []
@@ -245,13 +386,18 @@ def _on_config_inited(app: Sphinx, config: Config) -> None:
             # resolved relative to the explicitly mounted document.
             runtime_mounts.append(_make_file_mount_entry(document_files, spec))
             continue
-        walk_dir = resolve_walk_dir(manifest, spec, ws_root, runfiles_dir)
-        if not walk_dir.is_dir():
-            raise ValueError(
-                "score_mounts: resolved mount dir does not exist: "
-                f"{walk_dir} (mount_at={spec.mount_at})"
+
+        # This directory was validated during the ownership pass above. Reuse its
+        # resolved spelling so the exclusion patterns and the runtime mount refer
+        # to exactly the same physical root.
+        index, walk_dir = source_mounts_by_id[id(spec)]
+        runtime_mounts.append(
+            _make_mount_entry(
+                walk_dir,
+                spec,
+                nested_exclusions[index],
             )
-        runtime_mounts.append(_make_mount_entry(walk_dir, spec))
+        )
 
     config.mounts = runtime_mounts
 
