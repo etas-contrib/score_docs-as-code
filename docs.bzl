@@ -75,11 +75,6 @@ def _module_name_without_prefix():
     return module_name.split("_", 1)[-1]
 
 def _generated_conf_impl(ctx):
-    """Generate a Sphinx config at the source-root path expected by sphinxdocs.
-
-    ``entry_doc`` determines which document Sphinx treats as the project root
-    when a bundle's entry page is not named ``index``.
-    """
     output = ctx.actions.declare_file(ctx.attr.output_path)
     ctx.actions.expand_template(
         template = ctx.file.template,
@@ -88,7 +83,6 @@ def _generated_conf_impl(ctx):
             "{PROJECT}": repr(ctx.attr.project),
             "{PROJECT_URL}": repr(ctx.attr.project_url),
             "{REQUIRED_IN_ID}": repr([ctx.attr.required_in_id]) if ctx.attr.required_in_id else "[]",
-            "{ENTRY_DOC}": repr(ctx.attr.entry_doc),
         },
     )
     return [DefaultInfo(files = depset([output]))]
@@ -99,7 +93,6 @@ _generated_conf = rule(
         "project": attr.string(mandatory = True),
         "project_url": attr.string(mandatory = True),
         "required_in_id": attr.string(mandatory = True),
-        "entry_doc": attr.string(default = "index"),
         "output_path": attr.string(mandatory = True),
         "template": attr.label(
             allow_single_file = True,
