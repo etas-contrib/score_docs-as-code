@@ -32,6 +32,7 @@ from score_metamodel.external_needs import (
     get_external_needs_source,
     parse_external_needs_sources_from_DATA,
 )
+from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx_needs.needsfile import NeedsList
 
@@ -85,6 +86,37 @@ def test_register_project_url_export_can_override_exported_value(
 
     assert needs_list.needs_list["project_url"] == ""
     assert config.project_url == "https://example.test/host"
+
+
+@pytest.mark.parametrize(
+    ("bundle_needs_export", "exported_project_url"),
+    [(False, None), (True, "")],
+)
+def test_connect_external_needs_selects_project_url_export_mode(
+    monkeypatch: pytest.MonkeyPatch,
+    bundle_needs_export: bool,
+    exported_project_url: str | None,
+) -> None:
+    """Only bundle-local exports replace the project URL in the JSON output."""
+    observed: list[str | None] = []
+
+    def record_exporter_call(
+        _config: Config,
+        *,
+        exported_project_url: str | None,
+    ) -> None:
+        observed.append(exported_project_url)
+
+    monkeypatch.setattr(ext_needs, "register_project_url_export", record_exporter_call)
+
+    config = Config()
+    config.external_needs_source = "[]"
+    config.score_bundle_needs_export = bundle_needs_export
+    ext_needs.connect_external_needs(
+        cast(Sphinx, SimpleNamespace(config=config)), config
+    )
+
+    assert observed == [exported_project_url]
 
 
 def test_empty_list():

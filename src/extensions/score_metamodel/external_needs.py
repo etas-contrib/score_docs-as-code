@@ -237,7 +237,12 @@ def add_external_docs_sources(e: ExternalNeedsSource, config: Config):
 
 
 def connect_external_needs(app: Sphinx, config: Config):
-    register_project_url_export(config)
+    # Bundle-local exports intentionally leave project_url empty, while host
+    # builds retain the existing missing-value diagnostic.
+    register_project_url_export(
+        config,
+        exported_project_url="" if config.score_bundle_needs_export else None,
+    )
 
     # Local external needs from DATA (e.g. :needs_json or :docs_sources)
     external_needs = get_external_needs_source(app.config.external_needs_source)
