@@ -114,7 +114,7 @@ def _is_needs_json_target(label):
     """
     return str(label).rsplit(":", 1)[-1] == "needs_json"
 
-def docs_bundle(
+def _declare_docs_bundle(
     name,
     source_dir = None,
     srcs = [],
@@ -125,7 +125,7 @@ def docs_bundle(
     code_targets = [],
     visibility = None,
     **kwargs):
-    """A docs bundle, optionally composed of others.
+    """Declare a bundle without adding bundle-specific build targets.
 
     Args:
       name: target name.
@@ -208,6 +208,31 @@ def docs_bundle(
         entry_doc = entry_doc,
         bundles = bundles,
         data = bundle_data,
+        visibility = visibility,
+        **kwargs
+    )
+
+def docs_bundle(
+    name,
+    source_dir = None,
+    srcs = [],
+    data = [],
+    entry_doc = "index",
+    bundles = [],
+    scan_code = [],
+    code_targets = [],
+    visibility = None,
+    **kwargs):
+    """Declare a reusable documentation bundle."""
+    _declare_docs_bundle(
+        name = name,
+        source_dir = source_dir,
+        srcs = srcs,
+        data = data,
+        entry_doc = entry_doc,
+        bundles = bundles,
+        scan_code = scan_code,
+        code_targets = code_targets,
         visibility = visibility,
         **kwargs
     )
@@ -381,7 +406,7 @@ def docs(
 
     # The public bundle carries both the complete source tree and the
     # transitive source-code links of every nested bundle.
-    docs_bundle(
+    _declare_docs_bundle(
         name = "docs_bundle",
         source_dir = source_dir,
         data = data,
