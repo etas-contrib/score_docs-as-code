@@ -6,45 +6,42 @@
   *******************************************************************************
 -->
 
-# Public `docs.bzl` integration tests
+# Public `docs.bzl` scenario tests
 
-These tests run **outside** Bazel with pytest and drive the public `docs.bzl`
-macros through real `bazel run` / `bazel build` commands. They cover exactly
-what a consumer invokes: `docs()`, `docs_bundle()`, mounts, cross-module
-compatibility reporting, and failure cases.
+These pytest tests exercise the public `docs()` and `docs_bundle()` macros
+through real Bazel builds and runs. Fixtures live below `scenarios/`; the test
+modules are `test_docs_bzl_scenarios.py` and
+`test_expected_output_consistency.py`.
 
-```text
-docs_bzl/
-├── scenarios/       # one fixture per consumer scenario
-│   ├── basic_docs/
-│   ├── reference_integration/
-│   ├── metamodel_violation/
-│   ├── nested_bundles/
-│   ├── subdirectory_bundle/
-│   ├── external_bundle/
-│   ├── local_version_mismatch/
-│   └── invalid_bundle_placements/
-└── test_<scenario>.py
+## Run
+
+```sh
+.venv_docs/bin/python -m pytest -vv src/tests/docs_bzl
 ```
 
-Each scenario has a fixture folder and a matching pytest file. The names describe
-consumer behavior, not the Bazel mechanism used to execute it. Positive rendering
-uses `bazel run`; sandbox-only behavior uses `bazel build`; invalid package
-definitions are expected build failures. Assertions retain rendered HTML,
-manifest order and metadata, source links, toctree attachment, and diagnostics.
-The cross-module compatibility test creates its consumer in a temporary
-workspace, so this repository's production ``MODULE.bazel`` stays free of test
-dependencies while the test still traverses real Bzlmod module boundaries.
+The suite runs Bazel and should be run sequentially. CI splits it into:
 
-Note that these tests run `bazel` commands, so they are slow. They need to be executed
-sequentially. Use sparingly. They do not call `bazel clean`, so the persistent
-Bazel server and its action, repository, and disk caches are reused between
-cases. There is still a small analysis/startup cost per command; keep scenarios
-coarse-grained and use `bazel run` only where runtime behavior matters.
+```sh
+.venv_docs/bin/python -m pytest -vv -m bazel_cached src/tests/docs_bzl
+.venv_docs/bin/python -m pytest -vv -m bazel_slow src/tests/docs_bzl
+```
 
-Run via:
+Build-only expected outputs are marked `bazel_cached`; outputs that execute
+Sphinx through `bazel run`, as well as expected-failure tests, are marked
+`bazel_slow`.
 
-    .venv_docs/bin/python -m pytest -vv src/tests/docs_bzl
+## Expected outputs
 
-The suite is deliberately separate from `bazel test //...`, since pytest is its
-driver. CI stores its JUnit XML together with the Bazel test reports.
+Positive scenarios may check in files below a fixture's `_expected/` directory:
+
+- `_expected/<target>/...` checks selected files below a directory output.
+- `_expected/<target>.<suffix>` checks one file output.
+
+Only files already present below `_expected/` are part of the contract. JSON is
+compared as sorted, formatted data; other files, including HTML, are compared
+byte-for-byte.
+
+Each expected output is its own pytest case. When generated content changes,
+the case updates the checked-in file, prints the unified diff through pytest,
+and fails with exit code 1. Review the change and run pytest again; an
+unchanged output passes. Files are never added or removed automatically.
