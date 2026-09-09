@@ -82,6 +82,48 @@ def _sphinx_define(name, value):
         return []
     return ["--define=" + name + "=" + value]
 
+def _needs_sphinx_extra_opts(
+        master_doc,
+        external_needs_source,
+        score_bundle_needs_export,
+        score_sourcelinks_json,
+        score_source_code_linker_plain_links,
+        mounts_manifest,
+        score_metamodel_yaml):
+    """Return the common diagnostics and configuration for a Needs build."""
+    return [
+        "-W",
+        "--keep-going",
+        "-T",
+    ] + [
+        option
+        for name, value in [
+        ("master_doc", master_doc),
+        ("external_needs_source", external_needs_source),
+        ("score_bundle_needs_export", score_bundle_needs_export),
+        ("score_sourcelinks_json", score_sourcelinks_json),
+        ("score_source_code_linker_plain_links", score_source_code_linker_plain_links),
+        ("mounts_manifest", mounts_manifest),
+        ("score_metamodel_yaml", score_metamodel_yaml),
+        ]
+        for option in _sphinx_define(name, value)
+    ]
+
+def _declare_sphinx_build_binary(name, data, deps):
+    """Declare the private Sphinx executable used by one Needs target."""
+    sphinx_build_name = _bundle_internal_target(name, "sphinx_build")
+    sphinx_build_binary(
+        name = sphinx_build_name,
+        data = data,
+        deps = deps,
+        # The Sphinx executable is an implementation detail of the Needs
+        # target; only the generated Needs target itself needs the requested
+        # visibility.
+        visibility = ["//visibility:private"],
+        tags = ["manual"],
+    )
+    return ":" + sphinx_build_name
+
 def _needs_sphinx_docs(
         name,
         config,
@@ -100,16 +142,10 @@ def _needs_sphinx_docs(
         sphinx_build_data = [],
         visibility = None):
     """Declare a bundle Needs export with the repository-wide Sphinx policy."""
-    sphinx_build_name = _bundle_internal_target(name, "sphinx_build")
-    sphinx_build_binary(
-        name = sphinx_build_name,
-        data = sphinx_build_data,
-        deps = sphinx_build_deps,
-        # The Sphinx executable is an implementation detail of the Needs
-        # target; only the generated Needs target itself needs the requested
-        # visibility.
-        visibility = ["//visibility:private"],
-        tags = ["manual"],
+    sphinx_build = _declare_sphinx_build_binary(
+        name,
+        sphinx_build_data,
+        sphinx_build_deps,
     )
     sphinx_docs(
         name = name,
@@ -118,28 +154,16 @@ def _needs_sphinx_docs(
         config = config,
         formats = ["needs"],
         strip_prefix = strip_prefix,
-        extra_opts = (
-            # Keep the baseline diagnostic policy in the Needs wrapper. The
-            # underlying sphinxdocs rule already supplies common Bazel-safe
-            # options such as ``--jobs auto``, ``--fresh-env``, and
-            # ``--write-all``.
-            [
-                "-W",
-                "--keep-going",
-                "-T",
-            ] +
-            _sphinx_define("master_doc", master_doc) +
-            _sphinx_define("external_needs_source", external_needs_source) +
-            _sphinx_define("score_bundle_needs_export", score_bundle_needs_export) +
-            _sphinx_define("score_sourcelinks_json", score_sourcelinks_json) +
-            _sphinx_define(
-                "score_source_code_linker_plain_links",
-                score_source_code_linker_plain_links,
-            ) +
-            _sphinx_define("mounts_manifest", mounts_manifest) +
-            _sphinx_define("score_metamodel_yaml", score_metamodel_yaml)
+        extra_opts = _needs_sphinx_extra_opts(
+            master_doc,
+            external_needs_source,
+            score_bundle_needs_export,
+            score_sourcelinks_json,
+            score_source_code_linker_plain_links,
+            mounts_manifest,
+            score_metamodel_yaml,
         ),
-        sphinx = ":" + sphinx_build_name,
+        sphinx = sphinx_build,
         tools = tools,
         visibility = visibility,
         # Persistent workers can retain stale symlinks after dependency
@@ -160,7 +184,7 @@ def _bundle_internal_target(name, target):
     return name + ".__internal__." + target
 
 def _generated_conf_impl(ctx):
-    """Generate a Sphinx config at the source-root path expected by sphinxdocs."""
+    """Generate the Sphinx config consumed by the documentation targets."""
     output = ctx.actions.declare_file(ctx.attr.output_path)
     ctx.actions.expand_template(
         template = ctx.file.template,
@@ -374,13 +398,7 @@ def _declare_bundle_local_needs(
     # Build the own export from this bundle's sources only. References to
     # Needs owned by another bundle are intentionally unsupported until
     # cross-bundle imports are added.
-    sphinx_build_deps = deps + _missing_requirements(deps)
-    for fixed_dep in [
-        Label("//src:plantuml_for_python"),
-        Label("//src/extensions/score_sphinx_bundle:score_sphinx_bundle"),
-    ]:
-        if fixed_dep not in sphinx_build_deps:
-            sphinx_build_deps.append(fixed_dep)
+    sphinx_build_deps = _sphinx_runtime_deps(deps)
 
     needs_local = _bundle_internal_target(name, "needs_local")
     _needs_sphinx_docs(
@@ -469,6 +487,33 @@ def _missing_requirements(deps):
               "\nInconsistent deps for docs(): either include all dependencies or none of them."
         fail(msg)
     fail("This case should be unreachable?!")
+
+def _sphinx_deps(deps):
+    """Return the dependency set supplied by the documentation caller."""
+    return deps + _missing_requirements(deps)
+
+def _sphinx_runtime_deps(deps):
+    """Add the extensions required by every Sphinx invocation."""
+    result = _sphinx_deps(deps)
+    for fixed_dep in [
+        Label("//src:plantuml_for_python"),
+        Label("//src/extensions/score_sphinx_bundle:score_sphinx_bundle"),
+    ]:
+        if fixed_dep not in result:
+            result.append(fixed_dep)
+    return result
+
+def _declare_docs_binary(name, srcs, data, deps, env, action):
+    """Declare one of the interactive documentation command targets."""
+    command_env = env | {"ACTION": action}
+    py_binary(
+        name = name,
+        srcs = srcs,
+        data = data,
+        deps = deps,
+        env = command_env,
+        tags = ["manual"],
+    )
 
 def docs(
         source_dir = "docs",
@@ -581,7 +626,7 @@ def docs(
             ),
         ]
 
-    deps = deps + _missing_requirements(deps)
+    deps = _sphinx_deps(deps)
     deps = deps + [
         Label("//src:plantuml_for_python"),
         Label("//src/extensions/score_sphinx_bundle:score_sphinx_bundle"),
@@ -668,18 +713,16 @@ def docs(
         docs_env["KNOWN_GOOD_JSON"] = "$(location " + known_good_str + ")"
         docs_data += known_good_label
 
-    docs_env["ACTION"] = "incremental"
-
-    py_binary(
-        # Generated documentation artifacts may live below ``docs/``.  A
-        # py_binary named ``docs`` would own the conflicting Bazel output path
-        # ``docs``; expose this binary via the alias below instead.
+    # Generated documentation artifacts may live below ``docs/``.  A
+    # py_binary named ``docs`` would own the conflicting Bazel output path
+    # ``docs``; expose this binary via the alias below instead.
+    _declare_docs_binary(
         name = "_score_docs_cli",
         srcs = [incremental_src],
         data = docs_data,
         deps = deps,
         env = docs_env,
-        tags = ["manual"],
+        action = "incremental",
     )
 
     native.alias(
@@ -688,34 +731,29 @@ def docs(
         tags = ["manual"],
     )
 
-    docs_env["ACTION"] = "linkcheck"
-    py_binary(
+    _declare_docs_binary(
         name = "docs_link_check",
-        tags = ["manual"],
         srcs = [incremental_src],
         data = docs_data,
         deps = deps,
         env = docs_env,
+        action = "linkcheck",
     )
-
-    docs_env["ACTION"] = "check"
-    py_binary(
+    _declare_docs_binary(
         name = "docs_check",
-        tags = ["manual"],
         srcs = [incremental_src],
         data = docs_data,
         deps = deps,
         env = docs_env,
+        action = "check",
     )
-
-    docs_env["ACTION"] = "live_preview"
-    py_binary(
+    _declare_docs_binary(
         name = "live_preview",
-        tags = ["manual"],
         srcs = [incremental_src],
         data = docs_data,
         deps = deps,
         env = docs_env,
+        action = "live_preview",
     )
 
     py_venv(
