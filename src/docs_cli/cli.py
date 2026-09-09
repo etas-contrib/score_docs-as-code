@@ -146,12 +146,11 @@ def mounted_watch_dirs(
 
 def sphinx_arguments(ws_root: Path, package_dir: Path, build_dir: Path) -> list[str]:
     """Resolve package sources and Bazel-provided configuration for every builder."""
+    is_bazel_build = os.environ.get("ACTION") == "build_needs_json"
     source_directory = get_env("SOURCE_DIRECTORY")
     base_arguments = [
         str(package_dir / source_directory),
         str(build_dir),
-        "--warning-file",
-        str(build_dir / "warnings.txt"),
         "-W",  # treat warning as errors
         "--keep-going",  # do not abort after one error
         "-T",  # show details in case of errors in extensions
@@ -166,20 +165,46 @@ def sphinx_arguments(ws_root: Path, package_dir: Path, build_dir: Path) -> list[
         f"--define=mounts_manifest={os.environ.get('MOUNTS_MANIFEST', '')}",
     ]
 
+    if is_bazel_build:
+        # The Bazel action declares ``build_dir`` as its output tree, and that
+        # tree must contain only the Needs inventory consumed by downstream
+        # actions. Keep Sphinx's internal doctree cache beside it instead of
+        # mixing action state into the declared output.
+        base_arguments.extend(["-d", str(build_dir) + "_doctrees"])
+
+        # The sandboxed Needs rule transports options as JSON so spaces, quotes and
+        # equals signs survive the environment boundary. Append them last so an
+        # action-specific value can override one of the shared defaults above.
+        base_arguments.extend(json.loads(os.environ.get("SPHINX_EXTRA_OPTS", "[]")))
+    else:
+        # Interactive builds keep warnings in the workspace so developers can
+        # inspect them after a failed build. A Bazel action reports failure
+        # through its exit code and must leave its declared output tree free of
+        # this diagnostic side file.
+        base_arguments.extend(["--warning-file", str(build_dir / "warnings.txt")])
+
     generated_config = os.environ.get("SPHINX_CONFIG_FILE", "")
     if generated_config:
-        # Under ``bazel run`` this is a runfiles-relative path.  Sphinx wants
-        # the directory containing a file literally named ``conf.py``.
+        # The action receives ctx.file.config.path, which is interpreted from
+        # the action's execution-root working directory. Resolve it locally
+        # instead of using runfiles lookup; interactive targets receive a
+        # runfiles-relative path and need that lookup before Sphinx gets the
+        # containing directory.
         config_file = Path(generated_config)
-        if not config_file.is_absolute():
+        if is_bazel_build:
+            config_file = config_file.absolute()
+        elif not config_file.is_absolute():
             config_file = get_runfiles_dir() / config_file
         base_arguments.extend(["-c", str(config_file.parent)])
 
     metamodel_yaml = os.environ.get("SCORE_METAMODEL_YAML", "")
     if metamodel_yaml:
-        # ``docs`` passes a runfiles-relative path under ``bazel run``.  Keep
-        # the workspace-relative fallback for direct invocations.
-        if not os.path.isabs(metamodel_yaml):
+        # Under ``bazel run``, this environment variable is runfiles-relative
+        # and must be resolved through RUNFILES_DIR. A sandboxed Needs action
+        # instead expands the metamodel label to an execution-root path in
+        # SPHINX_EXTRA_OPTS; applying runfiles lookup there would escape the
+        # action's declared inputs.
+        if not is_bazel_build and not os.path.isabs(metamodel_yaml):
             runfiles_dir = os.environ.get("RUNFILES_DIR", "")
             metamodel_yaml = str(
                 (Path(runfiles_dir) / metamodel_yaml)
@@ -259,23 +284,29 @@ def main(argv: list[str] | None = None) -> int:
         logger.info("Waiting for client to connect on port: " + str(args.debug_port))
         debugpy.wait_for_client()
 
+    action = get_env("ACTION")
+    is_bazel_build = action == "build_needs_json"
     ws_root = Path(os.getenv("BUILD_WORKSPACE_DIRECTORY", ""))
     # Docs source and output are resolved relative to the package where docs()
     # was called; an empty PACKAGE_DIR denotes the workspace root.
     package_dir = ws_root / os.environ.get("PACKAGE_DIR", "")
-
     build_dir = package_dir / "_build"
+    if is_bazel_build:
+        # Bazel owns the action's paths; never use the caller's workspace cache.
+        package_dir = Path.cwd()
+        build_dir = Path(get_env("OUTPUT_DIRECTORY")).absolute()
+
     sentinel_files = [
         ws_root / "MODULE.bazel",
         ws_root / "MODULE.bazel.lock",
         package_dir / "BUILD",
     ]
-    clean_builddir_if_stale(build_dir, sentinel_files)
+    if not is_bazel_build:
+        clean_builddir_if_stale(build_dir, sentinel_files)
 
     warning_file = build_dir / "warnings.txt"
     base_arguments = sphinx_arguments(ws_root, package_dir, build_dir)
 
-    action = get_env("ACTION")
     if action == "live_preview":
         sphinx_autobuild_main(
             base_arguments
@@ -290,7 +321,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if action == "incremental":
         builder = "html"
-    elif action == "check":
+    elif action in ("check", "build_needs_json"):
         builder = "needs"
     elif action == "linkcheck":
         builder = "linkcheck"
@@ -304,6 +335,11 @@ def main(argv: list[str] | None = None) -> int:
     end_time = time.perf_counter()
     print(f"docs ({action}) finished in {end_time - start_time:.1f} seconds")
 
+    if is_bazel_build:
+        # The declared output is owned by the action. Do not record an
+        # interactive cache hash or write a warning marker into the workspace.
+        return exit_code
+
     if exit_code == 0:
         update_module_hash(build_dir, sentinel_files)
     else:
@@ -315,4 +351,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # Extensions need stable runfiles paths even when Sphinx changes directory.
+    for variable in ("RUNFILES_DIR", "JAVA_RUNFILES"):
+        if os.environ.get(variable):
+            os.environ[variable] = str(Path(os.environ[variable]).absolute())
+
     sys.exit(main())
