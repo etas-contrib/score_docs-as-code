@@ -138,11 +138,30 @@ def mounted_watch_dirs(
     return watch_dirs
 
 
+def _resolve_runfiles_relative_path(config: DocsCliConfig, value: Path) -> Path:
+    """Resolve a Bazel-provided path that may be runfiles-relative.
+
+    Build actions and direct calls already receive an absolute or
+    execroot/cwd-relative path. ``bazel run`` instead passes an
+    rlocationpath, which must be joined with the launcher's own runfiles
+    directory before use.
+    """
+    if not config.is_bazel_build and not value.is_absolute():
+        runfiles_dir = env.optional_path("RUNFILES_DIR")
+        ws_root = config.ws_root or Path()
+        value = runfiles_dir / value if runfiles_dir is not None else ws_root / value
+    return value.absolute()
+
+
 def sphinx_arguments(
     config: DocsCliConfig,
 ) -> list[str]:
     """Build Sphinx arguments from the resolved launcher configuration."""
     output_dir = config.output_dir
+    mounts_manifest = env.optional_path("MOUNTS_MANIFEST")
+    if mounts_manifest:
+        mounts_manifest = _resolve_runfiles_relative_path(config, mounts_manifest)
+
     base_arguments = [
         str(config.source_dir),
         str(output_dir),
@@ -157,7 +176,7 @@ def sphinx_arguments(
         f"--define=testcase_source_dirs={env.get('TEST_SOURCES', '[]')}",
         # Path to the Bazel-emitted mounts manifest (empty when no mounts are
         # configured); consumed by the score_mounts extension.
-        f"--define=mounts_manifest={env.optional_path('MOUNTS_MANIFEST') or ''}",
+        f"--define=mounts_manifest={mounts_manifest or ''}",
     ]
 
     if config.is_bazel_build:
@@ -179,33 +198,18 @@ def sphinx_arguments(
         base_arguments.extend(["--warning-file", str(output_dir / "warnings.txt")])
 
     if config_file := env.optional_path("SPHINX_CONFIG_FILE"):
-        # The action receives ctx.file.config.path, which is interpreted from
-        # the action's execution-root working directory. Resolve it locally
-        # instead of using runfiles lookup; interactive targets receive a
-        # runfiles-relative path and need that lookup before Sphinx gets the
-        # containing directory.
-        if config.is_bazel_build:
-            config_file = config_file.absolute()
-        elif not config_file.is_absolute():
-            config_file = get_runfiles_dir() / config_file
+        config_file = _resolve_runfiles_relative_path(config, config_file)
         base_arguments.extend(["-c", str(config_file.parent)])
 
     if metamodel_yaml := env.optional_path("SCORE_METAMODEL_YAML"):
-        # Under ``bazel run``, this environment variable is runfiles-relative
-        # and must be resolved through RUNFILES_DIR. A sandboxed Needs action
-        # instead expands the metamodel label to an execution-root path in
-        # SPHINX_EXTRA_OPTS; applying runfiles lookup there would escape the
-        # action's declared inputs.
-        if not config.is_bazel_build and not metamodel_yaml.is_absolute():
-            runfiles_dir = env.optional_path("RUNFILES_DIR")
-            ws_root = config.ws_root or Path()
-            metamodel_yaml = (
-                runfiles_dir / metamodel_yaml
-                if runfiles_dir is not None
-                else ws_root / metamodel_yaml
-            )
-        metamodel_yaml = metamodel_yaml.absolute()
+        metamodel_yaml = _resolve_runfiles_relative_path(config, metamodel_yaml)
         base_arguments.append(f"--define=score_metamodel_yaml={metamodel_yaml}")
+
+    if sourcelinks_json := env.optional_path("SCORE_SOURCELINKS"):
+        # The sandboxed Needs action and ``bazel run`` both set this env var;
+        # only the extension reads ``app.config.score_sourcelinks_json``.
+        sourcelinks_json = _resolve_runfiles_relative_path(config, sourcelinks_json)
+        base_arguments.append(f"--define=score_sourcelinks_json={sourcelinks_json}")
 
     if github_repository := env.get("GITHUB_REPOSITORY", ""):
         # GITHUB_REPOSITORY is expected as "owner/repo"; partition("/") splits
@@ -221,6 +225,7 @@ def sphinx_arguments(
         base_arguments.append(f"-A=doc_path={relative_doc_path}")
 
     if known_good_json := env.optional_path("KNOWN_GOOD_JSON"):
+        known_good_json = _resolve_runfiles_relative_path(config, known_good_json)
         base_arguments.append(f"--define=KNOWN_GOOD_JSON={known_good_json}")
 
     return base_arguments
@@ -231,17 +236,12 @@ def watch_arguments(config: DocsCliConfig) -> list[str]:
     mounts_manifest = env.optional_path("MOUNTS_MANIFEST")
     watch_arguments: list[str] = []
     if mounts_manifest:
-        # ``MOUNTS_MANIFEST`` is runfiles-relative under ``bazel run`` and
-        # an ordinary path for direct invocations, matching score_mounts.
-        manifest_path = (
-            get_runfiles_dir() / mounts_manifest
-            if config.is_bazel_run
-            else mounts_manifest
-        )
+        manifest_path = _resolve_runfiles_relative_path(config, mounts_manifest)
+        runfiles_dir = get_runfiles_dir() if config.is_bazel_run else None
         for watch_dir in mounted_watch_dirs(
             manifest_path,
             config.ws_root,
-            get_runfiles_dir() if config.is_bazel_run else None,
+            runfiles_dir,
         ):
             watch_arguments.extend(["--watch", watch_dir])
     return watch_arguments
@@ -277,6 +277,12 @@ def main(argv: list[str] | None = None) -> int:
         debugpy.wait_for_client()
 
     config = DocsCliConfig.from_environment(env)
+    # cli.py is only ever invoked via `bazel run` (a _declare_docs_binary
+    # target) or as the sandboxed Needs action's executable; see
+    # src/docs_cli/README.md. ExecutionEnvironment.DIRECT exists so
+    # DocsCliConfig/sphinx_arguments stay unit-testable without a real
+    # runfiles tree (see main_test.py) and should never occur here.
+    assert not config.is_direct, "cli.py must run via bazel run or a Bazel action"
     ws_root = config.ws_root or Path()
     package_dir = config.package_dir
     output_dir = config.output_dir
