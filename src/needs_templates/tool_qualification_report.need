@@ -20,6 +20,8 @@
 {% if needs %}{% for need in needs %}{{ need_reference(need) }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}—{% endif %}
 {%- endmacro %}
 
+**Automatically generated overview starts here.**
+
 Tool qualification matrix
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
