@@ -78,6 +78,22 @@
 
 
 
+.. Test if the optional `maturity` option for `mod` follows the pattern `^(preview|experimental|release)$`
+
+.. mod:: Test Module Maturity Bad
+   :id: mod__test_options__maturity_bad
+   :maturity: stable
+   :expect: mod__test_options__maturity_bad.maturity (stable): does not follow pattern `^(preview|experimental|release)$`.
+
+
+
+.. mod:: Test Module Maturity Good
+   :id: mod__test_options__maturity_good
+   :maturity: preview
+   :expect_not: does not follow pattern
+
+
+
 .. feat_saf_fmea:: This is a test
    :id: feat_saf_fmea__test_options__3
    :sufficient: no
