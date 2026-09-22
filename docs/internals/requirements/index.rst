@@ -32,6 +32,10 @@ Pages
   itself, including test results and testcase metadata.
 - ``requirement_coverage`` shows per-requirement test and code linkage,
   using the same metrics as CI quality gates.
+- ``classification`` describes the owned tool use cases, potential
+  malfunctions and the derived safety/TCL evaluation.
+- ``qualification`` describes the qualification evidence and lifecycle rules
+  that follow from a LOW classification.
 
 .. toctree::
    :maxdepth: 1
@@ -41,3 +45,5 @@ Pages
    requirements
    requirement_coverage
    tooling_verification
+   classification
+   qualification

@@ -262,6 +262,42 @@ needs_types:
       realizes: workproduct
     parts: 2
 
+  # Tool qualification reports keep use cases top-level for readable rendering.
+  # Their malfunctions are nested below them and use parent_needs as their
+  # semantic relationship.
+  # If either stakeholder requirements or tool requirements reflect this level,
+  # then tool_usecase is NOT relevant.
+  tool_usecase:
+    title: Tool Use Case
+    description: |
+      Defines the usage context in which the tool is evaluated.
+      A tool use case does not introduce additional requirements.
+      It groups the stakeholder and tool requirements relevant to a
+      particular way the project relies on the tool.
+    color: "#E1D5E7"
+    mandatory_links:
+      belongs_to: doc_tool
+      realized_by: tool_req
+    optional_links:
+      realizes: stkh_req
+    parts: 3
+
+  # A malfunction describes a violation of one or more requirements. Safety
+  # measures are deliberately kept as free text on the malfunction because
+  # they are report evidence, not independently traceable model elements.
+  potential_tool_malfunction:
+    title: Potential Tool Malfunction
+    color: "#F8CECC"
+    mandatory_options:
+      safety_affected: "^(YES|NO)$"
+    optional_options:
+      detection_sufficient: "^(YES|NO)$"
+      safety_measures: ^.+$
+    mandatory_links:
+      parent_needs: tool_usecase
+      violates: stkh_req, tool_req
+    parts: 3
+
   # Requirements
   # req-Id: tool_req__docs_req_types
   stkh_req:
@@ -1064,6 +1100,17 @@ needs_extra_links:
   realizes:
     incoming: realized by
     outgoing: realizes
+
+  realized_by:
+    incoming: realized by
+    outgoing: realizes
+
+  # Sphinx-Needs stores nested Need relationships under parent_needs. Use
+  # report-oriented labels so generated links describe the containment rather
+  # than exposing the implementation-oriented word "parent".
+  parent_needs:
+    incoming: contains
+    outgoing: contained by
 
   # Decision Record
   affects:
