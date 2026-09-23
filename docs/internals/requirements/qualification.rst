@@ -36,7 +36,7 @@ The report owns its evaluation through ``belongs_to`` links from
 evaluation and qualification views below automatically.
 
 .. doc_tool:: Doc-as-Code
-   :id: doc_tool__doc_as_code
+   :id: doc_tool__score_docs_as_code
    :status: evaluated
    :version: 3
    :tool_version: v8.1.2

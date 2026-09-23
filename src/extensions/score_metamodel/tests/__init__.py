@@ -154,6 +154,7 @@ def need(**kwargs: Any) -> NeedItem:
         "content",
         "pre_content",
         "post_content",
+        "post_template",
     }
 
     # Extract extras (any remaining kwargs not in core or source/content)
@@ -176,6 +177,7 @@ def need(**kwargs: Any) -> NeedItem:
         content=kwargs.get("content", ""),
         pre_content=kwargs.get("pre_content"),
         post_content=kwargs.get("post_content"),
+        post_template=kwargs.get("post_template"),
     )
 
     return NeedItem(

@@ -181,6 +181,39 @@ def test_low_malfunction_with_tool_requirement_is_valid():
     logger.assert_no_warnings()
 
 
+def test_legacy_report_without_structured_workflow_is_ignored():
+    """Legacy reports without the structured post-template remain compatible."""
+    report = need(
+        id="doc_tool__legacy_report",
+        type="doc_tool",
+        status="evaluated",
+        safety_affected="NO",
+        tcl="HIGH",
+    )
+    logger = fake_check_logger()
+
+    check_tool_qualification_workflow(MagicMock(), _graph_needs(report), logger)
+
+    logger.assert_no_warnings()
+
+
+def test_structured_report_requires_owned_usecase():
+    """Structured reports still require explicit tool-use-case ownership."""
+    report = need(
+        id="doc_tool__structured_report",
+        type="doc_tool",
+        status="evaluated",
+        safety_affected="NO",
+        tcl="HIGH",
+        post_template="tool_qualification_report",
+    )
+    logger = fake_check_logger()
+
+    check_tool_qualification_workflow(MagicMock(), _graph_needs(report), logger)
+
+    logger.assert_warning("must own at least one `tool_usecase`")
+
+
 def test_low_malfunction_with_only_stakeholder_requirement_is_invalid():
     """A stakeholder requirement alone cannot receive tool qualification evidence."""
     stakeholder = need(id="stkh_req__test_report__requirement", type="stkh_req")

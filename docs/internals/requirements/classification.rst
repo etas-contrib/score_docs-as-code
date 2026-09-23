@@ -217,7 +217,7 @@ Derived-view
 
 .. tool_usecase:: Build/CI behavior
    :id: tool_usecase__docs_as_code__build_ci
-   :belongs_to: doc_tool__doc_as_code
+   :belongs_to: doc_tool__score_docs_as_code
    :realized_by:
       tool_req__docs_doc_types,
       tool_req__docs_common_attr_safety_link_check,
@@ -403,7 +403,7 @@ Derived-view
 
 .. tool_usecase:: PR Review
    :id: tool_usecase__docs_as_code__pr_review
-   :belongs_to: doc_tool__doc_as_code
+   :belongs_to: doc_tool__score_docs_as_code
    :realized_by: tool_req__docs_doc_types
    :version: 1
 
@@ -414,7 +414,7 @@ Derived-view
 
 .. tool_usecase:: Derived-view
    :id: tool_usecase__docs_as_code__derived_view
-   :belongs_to: doc_tool__doc_as_code
+   :belongs_to: doc_tool__score_docs_as_code
    :realized_by:
       tool_req__docs_arch_views,
       tool_req__docs_verification_report_need,

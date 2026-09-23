@@ -330,6 +330,13 @@ def check_tool_qualification_workflow(
 
         usecases = _owned_usecases(doc_tool, needs)
         if not usecases:
+            # Existing SCORE repositories may still contain legacy doc_tool
+            # reports whose requirements are modeled directly on the report.
+            # The structured workflow is opt-in through its post-template; do
+            # not make those reports fail merely because this extension now
+            # knows about tool_usecase ownership.
+            if not doc_tool.get("post_template"):
+                continue
             log.warning_for_need(
                 doc_tool,
                 "non-draft Tool Verification Reports must own at least one "
