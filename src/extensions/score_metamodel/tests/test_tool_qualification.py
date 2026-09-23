@@ -48,8 +48,8 @@ def _low_report(
         id="doc_tool__test_report",
         type="doc_tool",
         status=status,
-        safety_affected="YES",
-        tcl="LOW",
+        safety_affected="",
+        tcl="",
     )
     usecase = need(
         id="tool_usecase__test_report__context",
@@ -181,31 +181,27 @@ def test_low_malfunction_with_tool_requirement_is_valid():
     logger.assert_no_warnings()
 
 
-def test_legacy_report_without_structured_workflow_is_ignored():
-    """Legacy reports without the structured post-template remain compatible."""
-    report = need(
-        id="doc_tool__legacy_report",
-        type="doc_tool",
-        status="evaluated",
-        safety_affected="NO",
-        tcl="HIGH",
-    )
+def test_report_summary_is_derived_when_summary_fields_are_omitted():
+    """A TVR stores summary values derived from its malfunction graph."""
+    all_needs = _low_report()
     logger = fake_check_logger()
 
-    check_tool_qualification_workflow(MagicMock(), _graph_needs(report), logger)
+    check_tool_qualification_workflow(MagicMock(), all_needs, logger)
 
     logger.assert_no_warnings()
+    report = all_needs.values.return_value[0]
+    assert report["safety_affected"] == "YES"
+    assert report["tcl"] == "LOW"
 
 
-def test_structured_report_requires_owned_usecase():
-    """Structured reports still require explicit tool-use-case ownership."""
+def test_report_requires_owned_usecase():
+    """A non-draft report requires explicit tool-use-case ownership."""
     report = need(
-        id="doc_tool__structured_report",
+        id="doc_tool__report_without_usecase",
         type="doc_tool",
         status="evaluated",
-        safety_affected="NO",
-        tcl="HIGH",
-        post_template="tool_qualification_report",
+        safety_affected="",
+        tcl="",
     )
     logger = fake_check_logger()
 
@@ -224,28 +220,6 @@ def test_low_malfunction_with_only_stakeholder_requirement_is_invalid():
     check_tool_qualification_workflow(MagicMock(), all_needs, logger)
 
     logger.assert_warning("must violate at least one `tool_req`")
-
-
-def test_mismatching_derived_safety_value_is_invalid():
-    """The stored TVR safety flag must match its owned malfunction graph."""
-    all_needs = _low_report()
-    all_needs.values.return_value[0]["safety_affected"] = "NO"
-    logger = fake_check_logger()
-
-    check_tool_qualification_workflow(MagicMock(), all_needs, logger)
-
-    logger.assert_warning("graph derives 'YES'")
-
-
-def test_mismatching_derived_tcl_is_invalid():
-    """The stored TVR TCL must match the LOW malfunction classification."""
-    all_needs = _low_report()
-    all_needs.values.return_value[0]["tcl"] = "HIGH"
-    logger = fake_check_logger()
-
-    check_tool_qualification_workflow(MagicMock(), all_needs, logger)
-
-    logger.assert_warning("graph derives 'LOW'")
 
 
 def test_mixed_use_cases_derive_low_from_one_low_malfunction():
@@ -330,8 +304,8 @@ def test_high_report_does_not_require_qualification():
         id="doc_tool__high_report",
         type="doc_tool",
         status="released",
-        safety_affected="NO",
-        tcl="HIGH",
+        safety_affected="",
+        tcl="",
     )
     usecase = need(
         id="tool_usecase__high_report__context",

@@ -40,7 +40,7 @@ The important distinction is between:
   tool-management state and the overall evaluation result.
 - **Tool requirements (`tool_req`)** — what the project relies on the tool to do.
 - **Tool use cases (`tool_usecase`)** — the usage context in which the project
-  relies on those requirements.
+  relies on the tool.
 - **Potential tool malfunctions (`potential_tool_malfunction`)** — ways in which
   the expected tool behaviour can fail.
 - **Safety measures** — measures active during intended tool usage that prevent
@@ -58,9 +58,9 @@ flowchart LR
     TC["testcase<br/>Qualification Evidence"]
 
     UC -->|"realizes<br/>(optional)"| STKH
-    UC -->|"realized_by"| TR
+    UC -->|"realized_by<br/>(optional)"| TR
 
-    PM -->|"violates"| UC
+    PM -->|"nested under<br/>(parent_needs)"| UC
     PM -->|"violates"| STKH
     PM -->|"violates"| TR
 
@@ -139,14 +139,18 @@ The remainder of this guide follows these steps.
 
 The SCORE Tool Verification Report (TVR) is represented by `doc_tool`.
 
-The current metamodel contains the following relevant attributes:
+The TVR uses the following relevant attributes:
 
 - `status`: `draft | evaluated | qualified | released | rejected`
-- `safety_affected`: `YES | NO`
 - `security_affected`: `YES | NO`
-- `tcl`: `LOW | HIGH` — the SCORE Tool Confidence Level (SCORE TCL) used by
-  this model
-- `tool_version`: optional in the current metamodel
+- `tool_version`: optional
+
+The generated TVR report additionally shows:
+
+- `safety_affected`, derived from the owned malfunctions
+- SCORE Tool Confidence Level (SCORE TCL), derived from the owned malfunctions
+
+The report author does not provide these summary values.
 
 Example structure:
 
@@ -154,9 +158,7 @@ Example structure:
 ```{doc_tool} S-CORE Docs-as-Code Tool Verification Report
 :id: doc_tool__s_core_docs_as_code
 :status: draft
-:safety_affected: YES
 :security_affected: NO
-:tcl: LOW
 :tool_version: <exact version>
 
 Describe the tool, its intended use, relevant configuration, environment,
@@ -165,22 +167,23 @@ constraints, inputs, outputs, and available documentation.
 ````
 
 ```{note}
-`tcl` is mandatory in the current metamodel even while the report is still
-`draft`. Update it to the actual evaluation result once Step 5 is complete.
+The report author provides the tool identity, status, and security relevance.
+The safety summary and SCORE TCL are derived from the owned malfunction graph.
 ```
 
 ### External tool
 
 Identify the exact version and configuration that is actually used.
 
-Do not evaluate the S-CORE Docs-as-Code tool, Clang, or GitHub generically when
-the project relies on a specific version, plugin set, configuration, or usage
-restriction.
+Evaluate the exact tool instance used by the project, including its version,
+plugins, configuration, and usage restrictions.
 
 ### Self-developed tool
 
-Reference the project's normal version/release identification. The TVR must make
-clear which released tool version the evaluation applies to.
+Reference the project's normal version, release, or source-revision
+identification. For example, a Git commit can identify the evaluated tool when
+the relevant source and build context are clear. The TVR must make clear which
+specific tool version or revision the evaluation applies to.
 
 ---
 
@@ -192,14 +195,14 @@ A `tool_usecase` captures:
 
 > **What are we relying on this tool to do in our development process?**
 
-The current metamodel defines:
+Represent a `tool_usecase` with the following relationships:
 
 ```yaml
 tool_usecase:
   mandatory_links:
     belongs_to: doc_tool
-    realized_by: tool_req
   optional_links:
+    realized_by: tool_req
     realizes: stkh_req
 ```
 
@@ -214,17 +217,20 @@ flowchart LR
 
     UC -->|"belongs_to<br/>(mandatory)"| DT
     UC -->|"realizes<br/>(optional)"| STKH
-    UC -->|"realized_by<br/>(mandatory)"| TR
+    UC -->|"realized_by<br/>(optional)"| TR
 
     style STKH fill:#DAE8FC
     style UC fill:#E1D5E7
     style TR fill:#F5F5F5
 ```
 
-### When is `tool_usecase` useful?
+### How to model `tool_usecase`
 
-Use `tool_usecase` when the stakeholder requirements are too high-level and the
-tool requirements are too detailed to clearly express the usage context.
+Every `evaluated`, `qualified`, or `released` TVR must own at least one
+`tool_usecase`. The use case records the context in which the project relies on
+the tool. Link it to a `tool_req` when a matching requirement exists; the
+`realized_by` link is optional so the context can be documented before that
+requirement has been defined.
 
 For example:
 
@@ -234,14 +240,15 @@ For example:
 - tool requirement: unresolved requirement links must be reported.
 
 If an existing requirement already expresses the usage context exactly, avoid
-inventing additional behaviour in the use case. The use case can remain a thin
-grouping/context element.
+inventing additional behaviour in the use case. Keep it as a thin
+grouping/context element, whether or not it links to a `tool_req`.
 
 ```{important}
-With the current metamodel, every `potential_tool_malfunction` has a mandatory
-`parent_needs` link to a `tool_usecase`. Therefore, once you model
-malfunctions, a `tool_usecase` is structurally required even if it merely
-references an already well-scoped requirement.
+Write each `potential_tool_malfunction` nested inside its `tool_usecase`. The
+nested structure creates the `parent_needs` relationship automatically; do not
+add a separate `parent_needs` option. Therefore, once you model malfunctions,
+place them under a `tool_usecase` even if that use case merely provides context
+for an already well-scoped requirement.
 ```
 
 ### Tool model example
@@ -301,7 +308,7 @@ requirements already describe the behaviour relied upon by the project.
 For every tool use case, identify relevant ways in which the expected tool
 behaviour could fail.
 
-The current metamodel defines:
+Represent a `potential_tool_malfunction` with the following options and links:
 
 ```yaml
 potential_tool_malfunction:
@@ -311,6 +318,7 @@ potential_tool_malfunction:
     detection_sufficient: "^(YES|NO)$"
     safety_measures: ^.+$
   mandatory_links:
+    # Established by nesting the malfunction inside its tool use case.
     parent_needs: tool_usecase
     violates: stkh_req, tool_req
 ```
@@ -324,7 +332,7 @@ flowchart LR
     STKH["stkh_req"]
     TR["tool_req"]
 
-    PM -->|"parent_needs"| UC
+    PM -->|"nested under<br/>(parent_needs)"| UC
     PM -->|"violates"| STKH
     PM -->|"violates"| TR
 
@@ -374,10 +382,17 @@ could eventually contribute to an incorrect engineering decision.
 
 ### Tool model example
 
-````markdown
-```{potential_tool_malfunction} Unresolved requirement link is accepted as valid
+`````markdown
+::::{tool_usecase} Validate requirement traceability during documentation builds
+:id: tool_usecase__docs_as_code__traceability
+:belongs_to: doc_tool__s_core_docs_as_code
+:realized_by: tool_req__docs_as_code__unresolved_links
+:realizes: stkh_req__docs_as_code__traceability
+
+The project relies on the documentation tool to detect invalid traceability.
+
+:::{potential_tool_malfunction} Unresolved requirement link is accepted as valid
 :id: potential_tool_malfunction__docs_as_code__unresolved_link_accepted
-:parent_needs: tool_usecase__docs_as_code__traceability
 :violates:
   tool_req__docs_as_code__unresolved_links,
   stkh_req__docs_as_code__traceability
@@ -386,8 +401,9 @@ could eventually contribute to an incorrect engineering decision.
 
 An unresolved requirement link is accepted as valid and the documentation build
 does not report the problem.
-```
-````
+:::
+::::
+`````
 
 There is no conceptual difference between external and self-developed tools in
 this step. Malfunctions are derived from the intended usage and the requirements
@@ -459,10 +475,13 @@ Examples include:
 
 Document the relevant measure using `safety_measures`.
 
-````markdown
-```{potential_tool_malfunction} Generated source contains invalid syntax
+`````markdown
+::::{tool_usecase} Generate production source from the approved model
+:id: tool_usecase__generator__generate_source
+:belongs_to: doc_tool__s_core_docs_as_code
+
+:::{potential_tool_malfunction} Generated source contains invalid syntax
 :id: potential_tool_malfunction__generator__invalid_syntax
-:parent_needs: tool_usecase__generator__generate_source
 :violates: tool_req__generator__valid_source
 :safety_affected: YES
 :detection_sufficient: YES
@@ -470,8 +489,9 @@ Document the relevant measure using `safety_measures`.
 
 The generator may emit syntactically invalid source code. The mandatory
 downstream compilation detects this malfunction before the output can be used.
-```
-````
+:::
+::::
+`````
 
 The important point is that the measure is part of the **defined intended
 usage**.
@@ -482,7 +502,7 @@ the intended usage, evaluate the malfunction with that usage concept.
 
 ---
 
-## Step 5 — Determine confidence and qualification need
+## Step 5 — Determine classification and qualification need
 
 For the SCORE safety evaluation, the simplified decision is:
 
@@ -495,51 +515,50 @@ flowchart TD
     C -->|"NO"| D["LOW confidence<br/>Qualification required"]
 ```
 
-| `safety_affected` | `detection_sufficient` | TVR SCORE TCL (`tcl`) | Qualification |
+| `safety_affected` | `detection_sufficient` | TVR SCORE TCL | Qualification |
 |---|---|---|---|
 | `NO` | not relevant | `HIGH` | not required |
 | `YES` | `YES` | `HIGH` | not required |
 | `YES` | `NO` | `LOW` | required |
 
-The tooling derives the TVR values from the owned graph rather than treating
-them as independent labels:
+The workflow automatically calculates the TVR summary from the owned
+malfunction graph:
 
-1. Follow `doc_tool` -> `tool_usecase` through the mandatory `belongs_to` link.
-2. Follow each use case -> `potential_tool_malfunction` through
-   `parent_needs`.
-3. Set `doc_tool.safety_affected` to `YES` if any owned malfunction is safety
-   affected; otherwise set it to `NO`.
-4. Set `doc_tool.tcl` to `LOW` if any owned malfunction is safety affected and
-   has `detection_sufficient: NO`; otherwise set it to `HIGH`.
+1. It follows `doc_tool` -> `tool_usecase` through the mandatory `belongs_to`
+   link.
+2. It follows each use case -> nested `potential_tool_malfunction` needs
+   through the generated `parent_needs` relationship.
+3. It reports safety affected as `YES` if any owned malfunction is safety
+   affected; otherwise it reports `NO`.
+4. It reports SCORE TCL as `LOW` if any owned malfunction is safety affected
+   and has `detection_sufficient: NO`; otherwise it reports `HIGH`.
 
-The stored `safety_affected` and `tcl` values remain mandatory SCORE TVR data,
-but validation reports a mismatch when they do not match this derivation.
-Qualification evidence does not change either value and does not change a
-malfunction's `detection_sufficient` result.
+The generated report exposes the classification result as `HIGH` or `LOW`. In
+this model, `HIGH` means no qualification is required and `LOW` means
+qualification is required. A `LOW` result identifies the evidence that must be
+provided; it does not mean that qualification has already happened. The
+evaluation result and `detection_sufficient` remain unchanged by qualification.
 
-The report declares the confidence result through `:tcl: HIGH` or
-`:tcl: LOW`. In this model, `HIGH` means no qualification is required and `LOW`
-means qualification is required. Qualification can change the report status from
-`evaluated` to `qualified` and add linked test evidence, but it does not change
-the evaluation result: `tcl` remains `HIGH` or `LOW`, and
-`detection_sufficient` remains `YES` or `NO`.
-
-After the evaluation is complete, update the `doc_tool`:
+After the evaluation is complete, the generated report exposes the derived
+summary. No manual `safety_affected` or `tcl` values are required on the
+`doc_tool`.
 
 ```text
 :status: evaluated
-:tcl: HIGH
+SCORE TCL: HIGH
+Qualification required: NO
 ```
 
 or:
 
 ```text
 :status: evaluated
-:tcl: LOW
+SCORE TCL: LOW
+Qualification required: YES
 ```
 
-The report must state the SCORE TCL through `:tcl:` and the resulting
-qualification need. A `LOW` report shall explain the required evidence.
+For a `LOW` result, the generated qualification view identifies the required
+tool requirements and their current evidence status.
 
 ### Multiple use cases and malfunctions
 
@@ -604,9 +623,10 @@ It is not a reclassification caused by qualification.
 
 ## Step 6 — Qualify the tool if required
 
-Qualification is required when the evaluation results in insufficient
-confidence and the project does not resolve that through a changed usage
-concept.
+Qualification is an evidence activity required when the evaluation results in
+insufficient confidence and the project does not resolve that through a changed
+usage concept. It does not happen merely because the qualification view is
+generated.
 
 SCORE uses validation of the software tool as the qualification approach.
 
@@ -630,8 +650,10 @@ as `testcase` needs. Their normal links to requirements are:
 - `fully_verifies`
 - `partially_verifies`
 
-For qualification, the relevant testcases should verify the `tool_req` needs
-that define the behaviour relied upon by the tool use cases.
+For each qualification-relevant `tool_req`, qualification requires at least one
+recorded testcase with `result: passed` and a `fully_verifies` link to that
+requirement. A `partially_verifies` link is useful supplemental traceability,
+but does not complete qualification by itself.
 
 ### Qualification is not a detection measure
 
@@ -696,8 +718,10 @@ The campaign shall record the exact tool version, relevant configuration,
 environment and dependencies, invocation, input, expected and actual results,
 and outcome.
 
-The resulting SCORE `testcase` should link to the tool requirement via
-`fully_verifies` or `partially_verifies`, as appropriate.
+The resulting SCORE `testcase` must link to the tool requirement via
+`fully_verifies` for the requirement to count as qualified. A
+`partially_verifies` link may be recorded as supplemental evidence, but does not
+complete qualification by itself.
 
 Vendor documentation, release notes, and **upstream tests**—tests maintained
 by the vendor or originating project—can support the argument. They remain
@@ -715,7 +739,8 @@ If the normal development process already produces testcases that:
 
 - verify the relevant `tool_req` needs,
 - execute against the tool version being qualified,
-- provide suitable recorded results,
+- provide a recorded `result: passed`, and
+- link to each relevant requirement with `fully_verifies`,
 
 reuse those testcases as qualification evidence.
 
@@ -739,18 +764,17 @@ insufficient.
 
 If no qualification was required, the evaluated report can proceed to review.
 
-If qualification was required and completed successfully:
-
-```text
-:status: qualified
-```
+If qualification was required and every relevant `tool_req` has the required
+passed `fully_verifies` evidence, set the report status to `qualified`.
 
 The evaluation result itself does **not** automatically change.
 
-This is a valid final state before release:
+Changing the status does not create qualification evidence; it records that the
+required evidence has already been provided.
+
+This is a valid final state before release; the generated summary remains LOW:
 
 ```text
-:tcl: LOW
 :status: qualified
 ```
 
@@ -826,8 +850,7 @@ traceability.
 
 ### Stakeholder requirement
 
-A real `stkh_req` must provide the mandatory metadata defined by the SCORE
-metamodel. For example:
+A real `stkh_req` must provide the required SCORE metadata. For example:
 
 ````markdown
 ```{stkh_req} Provide valid verification traceability
@@ -854,10 +877,10 @@ The tool shall report unresolved requirement links as errors.
 ```
 ````
 
-### Tool use case
+### Tool use case and potential malfunction
 
-````markdown
-```{tool_usecase} Validate requirement traceability during documentation builds
+`````markdown
+::::{tool_usecase} Validate requirement traceability during documentation builds
 :id: tool_usecase__docs_as_code__traceability
 :belongs_to: doc_tool__s_core_docs_as_code
 :realized_by: tool_req__docs_as_code__unresolved_links
@@ -865,15 +888,9 @@ The tool shall report unresolved requirement links as errors.
 
 The project relies on the documentation tool to detect invalid traceability
 before generated documentation is accepted.
-```
-````
 
-### Potential malfunction
-
-````markdown
-```{potential_tool_malfunction} Unresolved requirement link is accepted as valid
+:::{potential_tool_malfunction} Unresolved requirement link is accepted as valid
 :id: potential_tool_malfunction__docs_as_code__unresolved_link_accepted
-:parent_needs: tool_usecase__docs_as_code__traceability
 :violates:
   tool_req__docs_as_code__unresolved_links,
   stkh_req__docs_as_code__traceability
@@ -881,8 +898,9 @@ before generated documentation is accepted.
 :detection_sufficient: NO
 
 An unresolved requirement link is accepted as valid and no error is reported.
-```
-````
+:::
+::::
+`````
 
 The resulting model is:
 
@@ -894,8 +912,8 @@ flowchart LR
     PM["potential_tool_malfunction__docs_as_code__<br/>unresolved_link_accepted"]
 
     UC -->|"realizes"| STKH
-    UC -->|"realized_by"| TR
-    PM -->|"parent_needs"| UC
+    UC -->|"realized_by (optional)"| TR
+    PM -->|"nested under<br/>(parent_needs)"| UC
     PM -->|"violates"| STKH
     PM -->|"violates"| TR
 
@@ -908,7 +926,7 @@ flowchart LR
 Because the malfunction is safety relevant and detection is insufficient:
 
 ```text
-tcl = LOW
+SCORE TCL = LOW
 qualification required = YES
 ```
 
@@ -924,9 +942,9 @@ progress:
 
 ```{mermaid}
 flowchart LR
-    A["evaluated<br/>tcl = LOW"] --> B["qualification tests pass"]
-    B --> C["qualified<br/>tcl = LOW"]
-    C --> D["released<br/>tcl = LOW"]
+    A["evaluated<br/>SCORE TCL = LOW"] --> B["qualification tests pass"]
+    B --> C["qualified<br/>SCORE TCL = LOW"]
+    C --> D["released<br/>SCORE TCL = LOW"]
 ```
 
 ---
@@ -961,10 +979,10 @@ code.
 ```
 ````
 
-### Tool use case
+### Tool use case and potential malfunction
 
-````markdown
-```{tool_usecase} Generate production source from the approved model
+`````markdown
+::::{tool_usecase} Generate production source from the approved model
 :id: tool_usecase__generator__generate_source
 :belongs_to: doc_tool__s_core_docs_as_code
 :realized_by: tool_req__generator__state_transitions
@@ -972,15 +990,9 @@ code.
 
 The project relies on the generator to transform the approved model into
 production source code.
-```
-````
 
-### Potential malfunction
-
-````markdown
-```{potential_tool_malfunction} State transition is omitted from generated source
+:::{potential_tool_malfunction} State transition is omitted from generated source
 :id: potential_tool_malfunction__generator__missing_transition
-:parent_needs: tool_usecase__generator__generate_source
 :violates:
   tool_req__generator__state_transitions,
   stkh_req__generator__approved_model
@@ -989,13 +1001,14 @@ production source code.
 
 A state transition present in the approved input model is omitted from the
 generated source code.
-```
-````
+:::
+::::
+`````
 
 Result:
 
 ```text
-tcl = LOW
+SCORE TCL = LOW
 qualification required = YES
 ```
 
@@ -1062,7 +1075,7 @@ flowchart LR
     TR["Concrete tool behaviour"]
 
     UC -->|"realizes"| STKH
-    UC -->|"realized_by"| TR
+    UC -->|"realized_by (optional)"| TR
 ```
 
 ---
@@ -1117,7 +1130,6 @@ Qualification may leave the evaluation unchanged:
 ```text
 :safety_affected: YES
 :detection_sufficient: NO
-:tcl: LOW
 :status: qualified
 ```
 
@@ -1155,13 +1167,13 @@ flowchart TD
     A["1. Identify exact tool version / configuration"]
     B["2. Create doc_tool<br/>status = draft"]
     C["3. Define tool_usecase"]
-    D["4. Link tool_req<br/>and optionally stkh_req"]
+    D["4. Link available tool_req<br/>and optionally stkh_req"]
     E["5. Identify potential_tool_malfunction"]
-    F["6. Set safety_affected"]
+    F["6. Read generated TVR summary"]
     G["7. Document safety_measures<br/>and detection_sufficient"]
-    H["8. Determine tcl"]
+    H["8. Read generated SCORE TCL"]
     I["status = evaluated"]
-    J{"tcl = LOW?"}
+    J{"SCORE TCL = LOW?"}
     K["Verify relevant tool_req<br/>with testcase evidence"]
     L["status = qualified"]
     M["Review / approve TVR"]
@@ -1195,7 +1207,7 @@ testcase -> fully_verifies/partially_verifies -> tool_req
     -> provides qualification evidence
 
 qualified
-    -> qualification evidence exists; it does not mean tcl became HIGH
+    -> qualification evidence exists; it does not change the generated SCORE TCL
 ```
 
 ## SCORE references

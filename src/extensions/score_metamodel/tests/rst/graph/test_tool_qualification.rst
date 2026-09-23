@@ -22,9 +22,7 @@
 .. doc_tool:: Draft tool verification report
    :id: doc_tool__tool_qualification_checks
    :status: draft
-   :safety_affected: NO
    :security_affected: NO
-   :tcl: HIGH
    :version: 1
 
 .. tool_req:: Tool qualification check requirement
@@ -35,6 +33,11 @@
    :id: tool_usecase__tool_qualification_checks
    :belongs_to: doc_tool__tool_qualification_checks
    :realized_by: tool_req__tool_qualification_checks
+   :version: 1
+
+.. tool_usecase:: Tool usage context without a pre-existing requirement
+   :id: tool_usecase__tool_qualification_unmapped
+   :belongs_to: doc_tool__tool_qualification_checks
    :version: 1
 
 .. potential_tool_malfunction:: Missing detection value

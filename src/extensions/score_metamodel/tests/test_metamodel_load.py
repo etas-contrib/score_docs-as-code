@@ -231,11 +231,17 @@ def test_tool_qualification_types_model_nested_traceability():
     result = load_metamodel_data()
     types = {need_type["directive"]: need_type for need_type in result.needs_types}
 
+    report_options = types["doc_tool"]
+    assert "safety_affected" not in report_options["mandatory_options"]
+    assert report_options["optional_options"]["safety_affected"] == "^(YES|NO)$"
+    assert "tcl" not in report_options["mandatory_options"]
+    assert report_options["optional_options"]["tcl"] == "^(LOW|HIGH)$"
+
     assert types["tool_usecase"]["mandatory_links_str"] == {
         "belongs_to": "doc_tool",
-        "realized_by": "tool_req",
     }
     assert types["tool_usecase"]["optional_links_str"] == {
+        "realized_by": "tool_req",
         "realizes": "stkh_req",
     }
     assert types["potential_tool_malfunction"]["mandatory_links_str"] == {

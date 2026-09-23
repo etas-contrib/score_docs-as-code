@@ -1,15 +1,36 @@
 {#
   score: render-after-needs-collection
 
-  Reusable post-template for a ``doc_tool`` qualification report. The report
-  owns its use cases through ``belongs_to``; malfunctions are then resolved
-  through ``parent_needs``. This keeps the rendered view driven by the same
-  graph that the workflow checks validate.
+  Reusable post-template for a ``doc_tool`` qualification report.
 #}
 {% set usecases = linked_needs(id, "belongs_to_back")|selectattr("type", "equalto", "tool_usecase")|list %}
+{% set malfunction_scope = namespace(ids=[]) %}
+{% set qualification_requirement_scope = namespace(ids=[]) %}
+{% for usecase in usecases %}
+{% for malfunction in linked_needs(usecase["id"], "parent_needs_back") %}
+{% if malfunction["id"] not in malfunction_scope.ids %}
+{% set malfunction_scope.ids = malfunction_scope.ids + [malfunction["id"]] %}
+{% endif %}
+{% if malfunction.get("safety_affected") == "YES" and malfunction.get("detection_sufficient") == "NO" %}
+{% for requirement in linked_needs(malfunction["id"], "violates")|selectattr("type", "equalto", "tool_req")|list %}
+{% if requirement["id"] not in qualification_requirement_scope.ids %}
+{% set qualification_requirement_scope.ids = qualification_requirement_scope.ids + [requirement["id"]] %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endfor %}
 
 {% macro text(value, fallback="—") -%}
 {{ (value|default("", true)|replace("\n", " ")|trim) or fallback }}
+{%- endmacro %}
+
+{% macro plantuml_text(value, fallback="—") -%}
+{{ ((value|default("", true)|replace("\n", " ")|trim) or fallback)|replace('"', "'") }}
+{%- endmacro %}
+
+{% macro id_filter_list(ids) -%}
+[{% for need_id in ids %}"{{ need_id }}"{% if not loop.last %}, {% endif %}{% endfor %}]
 {%- endmacro %}
 
 {% macro need_reference(need) -%}
@@ -75,15 +96,62 @@
 {% endfor %}
 {% endfor %}
 
-**Automatically generated overview starts here.**
+Conclusion
+^^^^^^^^^^
 
-Tool evaluation
-^^^^^^^^^^^^^^^
+*Generated from linked report records.*
 
-The following view is derived from the owned ``tool_usecase`` and
-``potential_tool_malfunction`` Needs.
+The following values are generated on the ``doc_tool`` from its owned
+``potential_tool_malfunction`` records:
 
-.. list-table:: Tool evaluation
+* ``safety_affected: {{ "YES" if summary.safety else "NO" }}`` means that
+  {{ "at least one owned malfunction is safety affected" if summary.safety else "no owned malfunction is safety affected" }}.
+* ``tcl: {{ "LOW" if summary.low else "HIGH" }}`` means that
+  {{ "at least one safety-relevant malfunction has insufficient detection" if summary.low else "no safety-relevant malfunction has insufficient detection" }}.
+* Qualification is **{{ "required" if summary.low else "not required" }}**
+  because the generated ``tcl`` is ``{{ "LOW" if summary.low else "HIGH" }}``.
+
+Tool verification graph
+^^^^^^^^^^^^^^^^^^^^^^^
+
+*Generated from linked report records.*
+
+.. plantuml::
+
+   @startuml
+   left to right direction
+   skinparam componentStyle rectangle
+
+   rectangle "Tool Verification Report" as report [[#{{ id }}]]
+   rectangle "Tool requirements" as requirements [[#tool-qualification-matrix]]
+   rectangle "Passed fully-verifying testcases" as testcases [[#qualification-evidence]]
+   testcases --> requirements : fully verifies
+{% for usecase in usecases %}
+{% set usecase_alias = "usecase_" ~ loop.index %}
+   rectangle "{{ plantuml_text(usecase.get("title")) }}" as {{ usecase_alias }} [[#{{ usecase["id"] }}]]
+   report --> {{ usecase_alias }}
+{% for malfunction in linked_needs(usecase["id"], "parent_needs_back") %}
+{% set malfunction_alias = usecase_alias ~ "_malfunction_" ~ loop.index %}
+   rectangle "{{ plantuml_text(malfunction.get("title")) }}" as {{ malfunction_alias }} [[#{{ malfunction["id"] }}]]
+   {{ usecase_alias }} --> {{ malfunction_alias }}
+{% if malfunction.get("safety_affected") == "YES" and malfunction.get("detection_sufficient") == "NO" %}
+   {{ malfunction_alias }} --> requirements : violates
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% if not usecases %}
+   rectangle "No tool use cases" as no_usecases
+   report --> no_usecases
+{% endif %}
+
+   @enduml
+
+Evaluation overview
+^^^^^^^^^^^^^^^^^^^
+
+*Generated from linked report records.*
+
+.. list-table:: Evaluation overview
    :header-rows: 1
    :widths: 20 24 25 12 25 16
 
@@ -104,7 +172,7 @@ The following view is derived from the owned ``tool_usecase`` and
 {% endfor %}
 {% endfor %}
 {% if not usecases %}
-   * - Report data is collected after the document Needs are merged.
+   * - No tool use cases.
      - —
      - —
      - —
@@ -112,15 +180,40 @@ The following view is derived from the owned ``tool_usecase`` and
      - —
 {% endif %}
 
-Derived summary
-~~~~~~~~~~~~~~~
+Evaluation statistics
+^^^^^^^^^^^^^^^^^^^^^
 
-* Safety affected: **{{ "YES" if summary.safety else "NO" }}**
-* Tool confidence: **{{ "LOW" if summary.low else "HIGH" }}**
-* Qualification required: **{{ "YES" if summary.low else "NO" }}**
+*Generated from linked report records.*
+
+.. grid:: 1 2 2 2
+   :gutter: 3
+
+   .. grid-item::
+
+      .. needpie:: Detection sufficiency
+         :labels: Sufficient, Insufficient, Not assessed
+         :colors: #37a12d, #f0a500, #ca2828
+         :legend:
+
+         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and detection_sufficient == "YES"
+         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and detection_sufficient == "NO"
+         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and not detection_sufficient
+
+   .. grid-item::
+
+      .. needpie:: Qualification requirement verification
+         :labels: Fully verified, Partially verified, Not verified
+         :colors: #37a12d, #f0a500, #ca2828
+         :legend:
+
+         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and fully_verifies_back
+         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and partially_verifies_back and not fully_verifies_back
+         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and not fully_verifies_back and not partially_verifies_back
 
 Tool qualification matrix
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*Generated from linked report records.*
 
 The qualification matrix contains only safety-relevant malfunctions whose
 detection is insufficient. Every such malfunction must violate at least one
@@ -153,6 +246,8 @@ detection is insufficient. Every such malfunction must violate at least one
 Qualification evidence
 ^^^^^^^^^^^^^^^^^^^^^^
 
+*Generated from linked report records.*
+
 Qualification is complete only when every relevant ``tool_req`` has a passed
 testcase linked with ``fully_verifies``. A partial verification remains useful
 traceability evidence but does not by itself complete qualification.
@@ -183,6 +278,8 @@ traceability evidence but does not by itself complete qualification.
 
 Traceability evidence
 ^^^^^^^^^^^^^^^^^^^^^
+
+*Generated from linked report records.*
 
 The evidence below keeps safety measures and generated testcase links visible
 for the qualification-relevant malfunctions.

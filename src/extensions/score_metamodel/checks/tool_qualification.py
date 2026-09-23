@@ -210,30 +210,6 @@ def _check_low_malfunction_links(
             )
 
 
-def _validate_report_values(
-    doc_tool: NeedItem,
-    malfunctions: list[NeedItem],
-    log: CheckLogger,
-) -> str:
-    """Validate the stored TVR summary against its owned malfunctions."""
-    expected_safety, expected_tcl = derive_tvr_values(malfunctions)
-    if doc_tool.get("safety_affected") != expected_safety:
-        log.warning_for_need(
-            doc_tool,
-            f"`safety_affected` is {doc_tool.get('safety_affected')!r}, but "
-            f"the owned malfunction graph derives {expected_safety!r}.",
-            category="tool-qualification",
-        )
-    if doc_tool.get("tcl") != expected_tcl:
-        log.warning_for_need(
-            doc_tool,
-            f"`tcl` is {doc_tool.get('tcl')!r}, but the owned malfunction "
-            f"graph derives {expected_tcl!r}.",
-            category="tool-qualification",
-        )
-    return expected_tcl
-
-
 def _validate_report_status(
     doc_tool: NeedItem,
     status: Any,
@@ -249,7 +225,8 @@ def _validate_report_status(
     if status == "qualified" and expected_tcl != "LOW":
         log.warning_for_need(
             doc_tool,
-            f"`status: {status}` is only valid for a TVR with `tcl: LOW`; "
+            f"`status: {status}` is only valid for a TVR with generated "
+            "SCORE TCL LOW; "
             "HIGH-confidence reports do not require qualification.",
             category="tool-qualification",
         )
@@ -330,23 +307,22 @@ def check_tool_qualification_workflow(
 
         usecases = _owned_usecases(doc_tool, needs)
         if not usecases:
-            # Existing SCORE repositories may still contain legacy doc_tool
-            # reports whose requirements are modeled directly on the report.
-            # The structured workflow is opt-in through its post-template; do
-            # not make those reports fail merely because this extension now
-            # knows about tool_usecase ownership.
-            if not doc_tool.get("post_template"):
-                continue
             log.warning_for_need(
                 doc_tool,
-                "non-draft Tool Verification Reports must own at least one "
-                "`tool_usecase` through `belongs_to`.",
+                "evaluated, qualified, and released Tool Verification Reports "
+                "must own at least one `tool_usecase` through `belongs_to`.",
                 category="tool-qualification",
             )
             continue
 
         malfunctions = _malfunctions_for_report(doc_tool, needs)
-        expected_tcl = _validate_report_values(doc_tool, malfunctions, log)
+        safety_affected, expected_tcl = derive_tvr_values(malfunctions)
+        # These summary values are properties of the report's owned
+        # malfunction graph.  Store them on the report so exported Needs and
+        # report consumers see the same classification that the workflow
+        # validation uses; authors only provide the malfunction-level inputs.
+        doc_tool["safety_affected"] = safety_affected
+        doc_tool["tcl"] = expected_tcl
         _validate_report_status(
             doc_tool,
             status,

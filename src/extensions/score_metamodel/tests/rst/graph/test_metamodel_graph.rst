@@ -84,9 +84,7 @@
 .. doc_tool:: Nested tool qualification report
    :id: doc_tool__nested_qualification
    :status: evaluated
-   :safety_affected: YES
    :security_affected: NO
-   :tcl: LOW
    :version: 1
 
 .. tool_usecase:: Nested tool use case

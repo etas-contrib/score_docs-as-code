@@ -245,13 +245,16 @@ needs_types:
     mandatory_options:
       # req-Id: tool_req__docs_tvr_status
       status: ^(draft|evaluated|qualified|released|rejected)$
-      # req-Id: tool_req__docs_tvr_safety
-      safety_affected: "^(YES|NO)$"
       # req-Id: tool_req__docs_tvr_security
       security_affected: "^(YES|NO)$"
+    optional_options:
+      # These summary fields are rendered from the owned malfunction graph by
+      # the structured TVR workflow. They are optional so process templates
+      # can declare their output shape; report authors must not duplicate them.
+      # req-Id: tool_req__docs_tvr_safety
+      safety_affected: "^(YES|NO)$"
       # req-Id: tool_req__docs_tvr_confidence_level
       tcl: "^(LOW|HIGH)$"
-    optional_options:
       author: ^.*$
       approver: ^.*$
       reviewer: ^.*$
@@ -265,20 +268,22 @@ needs_types:
   # Tool qualification reports keep use cases top-level for readable rendering.
   # Their malfunctions are nested below them and use parent_needs as their
   # semantic relationship.
-  # If either stakeholder requirements or tool requirements reflect this level,
-  # then tool_usecase is NOT relevant.
+  # Evaluated, qualified, and released tool qualification reports require at
+  # least one tool_usecase as the context anchor for their evaluation.
+  # Requirement links remain optional so the context can be recorded before all
+  # requirements exist.
   tool_usecase:
     title: Tool Use Case
     description: |
       Defines the usage context in which the tool is evaluated.
       A tool use case does not introduce additional requirements.
-      It groups the stakeholder and tool requirements relevant to a
-      particular way the project relies on the tool.
+      Where applicable, it groups the stakeholder and tool requirements
+      relevant to a particular way the project relies on the tool.
     color: "#E1D5E7"
     mandatory_links:
       belongs_to: doc_tool
-      realized_by: tool_req
     optional_links:
+      realized_by: tool_req
       realizes: stkh_req
     parts: 3
 
