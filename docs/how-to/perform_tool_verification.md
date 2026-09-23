@@ -23,7 +23,11 @@ and execute that process with the available S-CORE Docs-as-Code model.
 
 ```{note}
 This guide focuses on the safety-related evaluation and qualification aspects
-of SCORE Tool Management. Security-related evaluation remains unsolved for now.
+of SCORE Tool Management. Security evaluation is outside this guide. Use the
+[SCORE Security Analysis Guideline](https://eclipse-score.github.io/process_description/main/process_areas/security_analysis/guidance/security_analysis_guideline.html)
+and applicable work products to identify relevant assets, threats, and impacts.
+For example, data integrity may matter for a tool use case while data
+availability does not; reflect that result in the TVR.
 ```
 
 ---
@@ -32,8 +36,8 @@ of SCORE Tool Management. Security-related evaluation remains unsolved for now.
 
 The important distinction is between:
 
-- **Tool Verification Report (`doc_tool`)** — records the SCORE tool-management
-  state and the overall evaluation result.
+- **Tool Verification Report (TVR, `doc_tool`)** — records the SCORE
+  tool-management state and the overall evaluation result.
 - **Tool requirements (`tool_req`)** — what the project relies on the tool to do.
 - **Tool use cases (`tool_usecase`)** — the usage context in which the project
   relies on those requirements.
@@ -133,14 +137,15 @@ The remainder of this guide follows these steps.
 
 ### What to model
 
-The SCORE Tool Verification Report is represented by `doc_tool`.
+The SCORE Tool Verification Report (TVR) is represented by `doc_tool`.
 
 The current metamodel contains the following relevant attributes:
 
 - `status`: `draft | evaluated | qualified | released | rejected`
 - `safety_affected`: `YES | NO`
 - `security_affected`: `YES | NO`
-- `tcl`: `LOW | HIGH`
+- `tcl`: `LOW | HIGH` — the SCORE Tool Confidence Level (SCORE TCL) used by
+  this model
 - `tool_version`: optional in the current metamodel
 
 Example structure:
@@ -490,7 +495,7 @@ flowchart TD
     C -->|"NO"| D["LOW confidence<br/>Qualification required"]
 ```
 
-| `safety_affected` | `detection_sufficient` | TVR `tcl` | Qualification |
+| `safety_affected` | `detection_sufficient` | TVR SCORE TCL (`tcl`) | Qualification |
 |---|---|---|---|
 | `NO` | not relevant | `HIGH` | not required |
 | `YES` | `YES` | `HIGH` | not required |
@@ -512,6 +517,13 @@ but validation reports a mismatch when they do not match this derivation.
 Qualification evidence does not change either value and does not change a
 malfunction's `detection_sufficient` result.
 
+The report declares the confidence result through `:tcl: HIGH` or
+`:tcl: LOW`. In this model, `HIGH` means no qualification is required and `LOW`
+means qualification is required. Qualification can change the report status from
+`evaluated` to `qualified` and add linked test evidence, but it does not change
+the evaluation result: `tcl` remains `HIGH` or `LOW`, and
+`detection_sufficient` remains `YES` or `NO`.
+
 After the evaluation is complete, update the `doc_tool`:
 
 ```text
@@ -526,7 +538,8 @@ or:
 :tcl: LOW
 ```
 
-The report must clearly state whether qualification is required.
+The report must state the SCORE TCL through `:tcl:` and the resulting
+qualification need. A `LOW` report shall explain the required evidence.
 
 ### Multiple use cases and malfunctions
 
@@ -565,6 +578,10 @@ Before:
 :detection_sufficient: NO
 ```
 
+An **independent check** is a separate opportunity to prevent or detect the
+failure; it may be a downstream tool, compiler, consistency check, or review and
+does not require a different organisation.
+
 After the independent check becomes a mandatory part of intended usage:
 
 ```text
@@ -575,6 +592,11 @@ After the independent check becomes a mandatory part of intended usage:
 
 This requires **re-evaluating the affected malfunction because the usage concept
 changed**.
+
+The check must be mandatory for every applicable artifact or execution and gate
+acceptance. Verify this through workflow or test-campaign evidence, such as a
+CI gate, configured checker, or recorded review, and describe it in
+`safety_measures`. An occasional or merely proposed check is insufficient.
 
 It is not a reclassification caused by qualification.
 
@@ -663,24 +685,30 @@ The tool shall report an unresolved requirement link as an error.
 ```
 ````
 
-A requirements-based qualification test can then:
+This is an example of a requirements-based qualification test; other campaign
+tests need not be requirements-based:
 
 1. create input containing a known unresolved link,
-2. execute the exact configured tool version,
+2. execute the configured tool version with the relevant configured invocation,
 3. verify that the expected error is reported.
+
+The campaign shall record the exact tool version, relevant configuration,
+environment and dependencies, invocation, input, expected and actual results,
+and outcome.
 
 The resulting SCORE `testcase` should link to the tool requirement via
 `fully_verifies` or `partially_verifies`, as appropriate.
 
-Vendor documentation, release notes, and upstream tests can support the
-argument, but the qualification evidence needs to address the behaviour that
-**our project relies on**.
+Vendor documentation, release notes, and **upstream tests**—tests maintained
+by the vendor or originating project—can support the argument. They remain
+supporting information unless accepted under the recorded conditions and traced
+to the relevant `tool_req`.
 
 ---
 
 ### Self-developed tool qualification
 
-For a self-developed tool, do not automatically create a second qualification
+For a self-developed tool, do not automatically create a separate qualification
 test suite.
 
 If the normal development process already produces testcases that:
@@ -753,10 +781,10 @@ detection mechanism.
 Review the completed TVR against the SCORE Tool Verification Report Review
 Checklist.
 
-The review should cover, where applicable:
+The review shall describe, where applicable:
 
 - unique tool identification,
-- exact tool version,
+- exact tool version and the relevant test-campaign execution conditions,
 - purpose and tool use cases,
 - inputs and outputs,
 - configuration,
@@ -996,7 +1024,8 @@ Typical triggers include:
 - a newly identified potential malfunction,
 - a new, changed, or removed safety measure,
 - a changed surrounding workflow/toolchain,
-- evidence that an assumed detection measure is not sufficient.
+- evidence that a previously sufficient detection measure is no longer
+  sufficient.
 
 Do **not** re-evaluate merely because qualification tests passed.
 
@@ -1022,7 +1051,9 @@ flowchart TD
 Do not invent new normative behaviour in `tool_usecase`.
 
 It is a **usage-context / grouping element** between stakeholder intent and
-concrete tool behaviour.
+concrete tool behaviour. For example, "validate requirement traceability during
+documentation builds" is a use case; "the tool shall report unresolved links"
+is the requirement. The use case adds context, not another requirement level.
 
 ```{mermaid}
 flowchart LR
@@ -1061,6 +1092,11 @@ The generated value differs from the configured source value.
 A test executed during development or release validation is not automatically a
 measure for `detection_sufficient`.
 
+Development and qualification tests provide evidence about a tool version;
+detection sufficiency requires a mechanism that runs during intended use and
+prevents or detects the malfunction before the result is relied upon. Therefore,
+adding a campaign test does not by itself make detection sufficient.
+
 Ask:
 
 > If the malfunction occurs during actual intended tool usage, does this
@@ -1096,6 +1132,10 @@ This is not contradictory.
 ### Duplicating external specifications
 
 Do not copy an external tool's complete specification into `tool_req`.
+
+Do not copy almost the entire external C&Q or qualification specification from
+the Internet either; capture only the behaviour and assumptions our project
+relies on.
 
 Model the behaviour **our project relies on**.
 
