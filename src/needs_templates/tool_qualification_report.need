@@ -33,6 +33,15 @@
 [{% for need_id in ids %}"{{ need_id }}"{% if not loop.last %}, {% endif %}{% endfor %}]
 {%- endmacro %}
 
+{% set usecase_malfunction_scope = namespace(with_malfunctions=[], without_malfunctions=[]) %}
+{% for usecase in usecases %}
+{% if linked_needs(usecase["id"], "parent_needs_back")|list %}
+{% set usecase_malfunction_scope.with_malfunctions = usecase_malfunction_scope.with_malfunctions + [usecase["id"]] %}
+{% else %}
+{% set usecase_malfunction_scope.without_malfunctions = usecase_malfunction_scope.without_malfunctions + [usecase["id"]] %}
+{% endif %}
+{% endfor %}
+
 {% macro need_reference(need) -%}
 {% if need.get("external_url") %}`{{ need["id"] }} <{{ need["external_url"] }}>`_{% else %}:need:`{{ need["id"] }}`{% endif %}
 {%- endmacro %}
@@ -88,7 +97,7 @@
 {%- else -%}—{%- endif -%}
 {%- endmacro %}
 
-{% set summary = namespace(total=0, safety=0, detection_yes=0, detection_no=0, detection_unassessed=0, low=false) %}
+{% set summary = namespace(total=0, safety=0, detection_yes=0, detection_no=0, detection_unassessed=0, low=false, fully_covered=0) %}
 {% for usecase in usecases %}
 {% for malfunction in linked_needs(usecase["id"], "parent_needs_back") %}
 {% set summary.total = summary.total + 1 %}
@@ -99,6 +108,16 @@
 {% elif malfunction.get("detection_sufficient") == "NO" %}
 {% set summary.detection_no = summary.detection_no + 1 %}
 {% set summary.low = true %}
+{% set coverage = namespace(total=0, passed=0) %}
+{% for requirement in linked_needs(malfunction["id"], "violates")|selectattr("type", "equalto", "tool_req")|list %}
+{% set coverage.total = coverage.total + 1 %}
+{% if linked_needs(requirement["id"], "fully_verifies_back")|selectattr("result", "equalto", "passed")|list %}
+{% set coverage.passed = coverage.passed + 1 %}
+{% endif %}
+{% endfor %}
+{% if coverage.total > 0 and coverage.passed == coverage.total %}
+{% set summary.fully_covered = summary.fully_covered + 1 %}
+{% endif %}
 {% else %}
 {% set summary.detection_unassessed = summary.detection_unassessed + 1 %}
 {% endif %}
@@ -116,27 +135,33 @@ The generated conclusion is summarized from the owned
 
 * **Safety:** ``{{ summary.safety }}/{{ summary.total }}`` potential tool
   malfunctions affect safety → ``safety_affected: {{ "YES" if summary.safety else "NO" }}``.
-* **Detection:** ``{{ summary.detection_yes }}/{{ summary.safety }}`` safety-
-  relevant malfunctions have sufficient detection, ``{{ summary.detection_no }}``
-  do not, and ``{{ summary.detection_unassessed }}`` are not assessed.
-* **TCL:** ``{{ summary.detection_no }}`` safety-relevant malfunctions have
-  insufficient detection → ``tcl: {{ "LOW" if summary.detection_no else "HIGH" }}``.
-* **Qualification:** ``{{ qualification_requirement_scope.ids|length }}`` tool
-  requirements are in qualification scope → **qualification is
-  {{ "required" if summary.detection_no else "not required" }}**.
+* **Detection:** ``{{ summary.detection_no }}/{{ summary.safety }}`` safety-
+  relevant malfunctions have insufficient detection → ``tcl: {{ "LOW" if summary.detection_no else "HIGH" }}``.
+* **Qualification:** → qualification of ``{{ qualification_requirement_scope.ids|length }}`` tool
+  requirements is **{{ "required" if summary.detection_no else "not required" }}**.
+* **Testcase coverage:** ``{{ summary.fully_covered }}/{{ summary.detection_no }}``
+  qualification-relevant malfunctions are fully covered by passed,
+  fully-verifying testcases.
 
-Here, ``safety_affected: YES`` means that at least one modeled malfunction
-affects safety. ``tcl: LOW`` means that the relevant tool requirements need
-passed, fully-verifying testcase evidence.
 
 .. grid:: 1 2 2 2
    :gutter: 3
 
    .. grid-item::
 
-      .. needpie:: Safety relevance of malfunctions
+      .. needpie:: Use case malfunction coverage
+         :labels: Has malfunctions, No malfunctions
+         :colors: #4E79A7, #BDBDBD
+         :legend:
+
+         type == "tool_usecase" and id in {{ id_filter_list(usecase_malfunction_scope.with_malfunctions) }}
+         type == "tool_usecase" and id in {{ id_filter_list(usecase_malfunction_scope.without_malfunctions) }}
+
+   .. grid-item::
+
+      .. needpie:: Safety-affected malfunctions
          :labels: Safety affected, Not safety affected
-         :colors: #ca2828, #37a12d
+         :colors: #4E79A7, #BDBDBD
          :legend:
 
          type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES"
@@ -144,9 +169,9 @@ passed, fully-verifying testcase evidence.
 
    .. grid-item::
 
-      .. needpie:: Detection sufficiency
+      .. needpie:: Detection status
          :labels: Sufficient, Insufficient, Not assessed
-         :colors: #37a12d, #f0a500, #ca2828
+         :colors: #4E79A7, #E15759, #BDBDBD
          :legend:
 
          type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and detection_sufficient == "YES"
@@ -155,19 +180,19 @@ passed, fully-verifying testcase evidence.
 
    .. grid-item::
 
-      .. needpie:: SCORE TCL
-         :labels: HIGH, LOW
-         :colors: #37a12d, #f0a500
+      .. needpie:: Qualification scope
+         :labels: tool requirements in scope, tool requirements out of scope
+         :colors: #4E79A7, #BDBDBD
          :legend:
 
-         type == "doc_tool" and id == "{{ id }}" and tcl == "HIGH"
-         type == "doc_tool" and id == "{{ id }}" and tcl == "LOW"
+         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }}
+         type == "tool_req" and not (id in {{ id_filter_list(qualification_requirement_scope.ids) }})
 
    .. grid-item::
 
-      .. needpie:: Qualification requirement verification
+      .. needpie:: Qualification evidence
          :labels: Fully verified, Partially verified, Not verified
-         :colors: #37a12d, #f0a500, #ca2828
+         :colors: #4E79A7, #F28E2B, #E15759
          :legend:
 
          type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and fully_verifies_back
@@ -180,7 +205,7 @@ Tool verification graph
 *Generated from linked report records.*
 
 The box labels show the Need type. Colors distinguish the report, tool
-requirements, testcases, use cases, and potential malfunctions.
+requirements, use cases, and potential malfunctions.
 
 .. mermaid::
 
@@ -192,20 +217,15 @@ requirements, testcases, use cases, and potential malfunctions.
    flowchart LR
    classDef report fill:#D5E8D4,stroke:#82B366,color:#000
    classDef requirement fill:#DAE8FC,stroke:#6C8EBF,color:#000
-   classDef testcase fill:#FFF2CC,stroke:#D6B656,color:#000
    classDef usecase fill:#E1D5E7,stroke:#9673A6,color:#000
    classDef malfunction fill:#F8CECC,stroke:#B85450,color:#000
 
    report["Tool Verification Report (doc_tool)"]
    requirements["Tool requirements (tool_req)"]
-   testcases["Passed fully-verifying testcases (testcase)"]
    class report report
    class requirements requirement
-   class testcases testcase
-   testcases -->|fully verifies| requirements
    click report href "#{{ id }}"
    click requirements href "#tool-qualification-matrix"
-   click testcases href "#qualification-evidence"
 {% for usecase in usecases %}
 {% set usecase_alias = "usecase_" ~ loop.index %}
    {{ usecase_alias }}["{{ mermaid_text(usecase.get("title")) }} (tool_usecase)"]
