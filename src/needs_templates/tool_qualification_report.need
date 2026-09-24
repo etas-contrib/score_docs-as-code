@@ -25,8 +25,8 @@
 {{ (value|default("", true)|replace("\n", " ")|trim) or fallback }}
 {%- endmacro %}
 
-{% macro plantuml_text(value, fallback="—") -%}
-{{ ((value|default("", true)|replace("\n", " ")|trim) or fallback)|replace('"', "'") }}
+{% macro mermaid_text(value, fallback="—") -%}
+{{ ((value|default("", true)|replace("\n", " ")|trim) or fallback)|replace("\\", "\\\\")|replace('"', '\\"') }}
 {%- endmacro %}
 
 {% macro id_filter_list(ids) -%}
@@ -116,35 +116,40 @@ Tool verification graph
 
 *Generated from linked report records.*
 
-.. plantuml::
+.. mermaid::
 
-   @startuml
-   left to right direction
-   skinparam componentStyle rectangle
-
-   rectangle "Tool Verification Report" as report [[#{{ id }}]]
-   rectangle "Tool requirements" as requirements [[#tool-qualification-matrix]]
-   rectangle "Passed fully-verifying testcases" as testcases [[#qualification-evidence]]
-   testcases --> requirements : fully verifies
+   ---
+   config:
+     layout: elk
+     securityLevel: loose
+   ---
+   flowchart LR
+   report["Tool Verification Report"]
+   requirements["Tool requirements"]
+   testcases["Passed fully-verifying testcases"]
+   testcases -->|fully verifies| requirements
+   click report href "#{{ id }}"
+   click requirements href "#tool-qualification-matrix"
+   click testcases href "#qualification-evidence"
 {% for usecase in usecases %}
 {% set usecase_alias = "usecase_" ~ loop.index %}
-   rectangle "{{ plantuml_text(usecase.get("title")) }}" as {{ usecase_alias }} [[#{{ usecase["id"] }}]]
+   {{ usecase_alias }}["{{ mermaid_text(usecase.get("title")) }}"]
    report --> {{ usecase_alias }}
+   click {{ usecase_alias }} href "#{{ usecase["id"] }}"
 {% for malfunction in linked_needs(usecase["id"], "parent_needs_back") %}
 {% set malfunction_alias = usecase_alias ~ "_malfunction_" ~ loop.index %}
-   rectangle "{{ plantuml_text(malfunction.get("title")) }}" as {{ malfunction_alias }} [[#{{ malfunction["id"] }}]]
+   {{ malfunction_alias }}["{{ mermaid_text(malfunction.get("title")) }}"]
    {{ usecase_alias }} --> {{ malfunction_alias }}
+   click {{ malfunction_alias }} href "#{{ malfunction["id"] }}"
 {% if malfunction.get("safety_affected") == "YES" and malfunction.get("detection_sufficient") == "NO" %}
-   {{ malfunction_alias }} --> requirements : violates
+   {{ malfunction_alias }} -->|violates| requirements
 {% endif %}
 {% endfor %}
 {% endfor %}
 {% if not usecases %}
-   rectangle "No tool use cases" as no_usecases
+   no_usecases["No tool use cases"]
    report --> no_usecases
 {% endif %}
-
-   @enduml
 
 Evaluation overview
 ^^^^^^^^^^^^^^^^^^^
