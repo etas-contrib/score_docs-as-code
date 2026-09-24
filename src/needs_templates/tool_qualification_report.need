@@ -104,12 +104,67 @@ Conclusion
 The following values are generated on the ``doc_tool`` from its owned
 ``potential_tool_malfunction`` records:
 
-* ``safety_affected: {{ "YES" if summary.safety else "NO" }}`` means that
-  {{ "at least one owned malfunction is safety affected" if summary.safety else "no owned malfunction is safety affected" }}.
-* ``tcl: {{ "LOW" if summary.low else "HIGH" }}`` means that
-  {{ "at least one safety-relevant malfunction has insufficient detection" if summary.low else "no safety-relevant malfunction has insufficient detection" }}.
+* ``safety_affected: {{ "YES" if summary.safety else "NO" }}`` was determined
+  because {{ "at least one owned malfunction is safety affected" if summary.safety else "no owned malfunction is safety affected" }};
+  it means that {{ "the intended usage contains a safety-relevant malfunction" if summary.safety else "no modeled malfunction affects safety" }}.
+* Detection sufficiency is determined per safety-relevant malfunction.
+  ``detection_sufficient: YES`` was determined because the intended usage
+  contains a measure that prevents or detects the malfunction before its output
+  is relied upon; it means that qualification is not needed for that
+  malfunction. ``NO`` was determined because no such sufficient measure is
+  established; it means that qualification evidence is needed unless the usage
+  concept is changed.
+* ``tcl: {{ "LOW" if summary.low else "HIGH" }}`` was determined because
+  {{ "at least one safety-relevant malfunction has insufficient detection" if summary.low else "no safety-relevant malfunction has insufficient detection" }};
+  it means that qualification is {{ "required" if summary.low else "not required" }}.
 * Qualification is **{{ "required" if summary.low else "not required" }}**
-  because the generated ``tcl`` is ``{{ "LOW" if summary.low else "HIGH" }}``.
+  because the generated ``tcl`` is ``{{ "LOW" if summary.low else "HIGH" }}``;
+  this means that {{ "each relevant tool requirement needs passed, fully-verifying testcase evidence before the report can become qualified or released" if summary.low else "no qualification evidence is required by this workflow" }}.
+
+.. grid:: 1 2 2 2
+   :gutter: 3
+
+   .. grid-item::
+
+      .. needpie:: Safety relevance of malfunctions
+         :labels: Safety affected, Not safety affected
+         :colors: #ca2828, #37a12d
+         :legend:
+
+         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES"
+         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "NO"
+
+   .. grid-item::
+
+      .. needpie:: Detection sufficiency
+         :labels: Sufficient, Insufficient, Not assessed
+         :colors: #37a12d, #f0a500, #ca2828
+         :legend:
+
+         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and detection_sufficient == "YES"
+         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and detection_sufficient == "NO"
+         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and not detection_sufficient
+
+   .. grid-item::
+
+      .. needpie:: SCORE TCL
+         :labels: HIGH, LOW
+         :colors: #37a12d, #f0a500
+         :legend:
+
+         type == "doc_tool" and id == "{{ id }}" and tcl == "HIGH"
+         type == "doc_tool" and id == "{{ id }}" and tcl == "LOW"
+
+   .. grid-item::
+
+      .. needpie:: Qualification requirement verification
+         :labels: Fully verified, Partially verified, Not verified
+         :colors: #37a12d, #f0a500, #ca2828
+         :legend:
+
+         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and fully_verifies_back
+         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and partially_verifies_back and not fully_verifies_back
+         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and not fully_verifies_back and not partially_verifies_back
 
 Tool verification graph
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -184,36 +239,6 @@ Evaluation overview
      - —
      - —
 {% endif %}
-
-Evaluation statistics
-^^^^^^^^^^^^^^^^^^^^^
-
-*Generated from linked report records.*
-
-.. grid:: 1 2 2 2
-   :gutter: 3
-
-   .. grid-item::
-
-      .. needpie:: Detection sufficiency
-         :labels: Sufficient, Insufficient, Not assessed
-         :colors: #37a12d, #f0a500, #ca2828
-         :legend:
-
-         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and detection_sufficient == "YES"
-         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and detection_sufficient == "NO"
-         type == "potential_tool_malfunction" and id in {{ id_filter_list(malfunction_scope.ids) }} and safety_affected == "YES" and not detection_sufficient
-
-   .. grid-item::
-
-      .. needpie:: Qualification requirement verification
-         :labels: Fully verified, Partially verified, Not verified
-         :colors: #37a12d, #f0a500, #ca2828
-         :legend:
-
-         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and fully_verifies_back
-         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and partially_verifies_back and not fully_verifies_back
-         type == "tool_req" and id in {{ id_filter_list(qualification_requirement_scope.ids) }} and not fully_verifies_back and not partially_verifies_back
 
 Tool qualification matrix
 ^^^^^^^^^^^^^^^^^^^^^^^^^
