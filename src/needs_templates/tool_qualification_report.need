@@ -88,11 +88,21 @@
 {%- else -%}—{%- endif -%}
 {%- endmacro %}
 
-{% set summary = namespace(safety=false, low=false) %}
+{% set summary = namespace(total=0, safety=0, detection_yes=0, detection_no=0, detection_unassessed=0, low=false) %}
 {% for usecase in usecases %}
 {% for malfunction in linked_needs(usecase["id"], "parent_needs_back") %}
-{% if malfunction.get("safety_affected") == "YES" %}{% set summary.safety = true %}{% endif %}
-{% if malfunction.get("safety_affected") == "YES" and malfunction.get("detection_sufficient") == "NO" %}{% set summary.low = true %}{% endif %}
+{% set summary.total = summary.total + 1 %}
+{% if malfunction.get("safety_affected") == "YES" %}
+{% set summary.safety = summary.safety + 1 %}
+{% if malfunction.get("detection_sufficient") == "YES" %}
+{% set summary.detection_yes = summary.detection_yes + 1 %}
+{% elif malfunction.get("detection_sufficient") == "NO" %}
+{% set summary.detection_no = summary.detection_no + 1 %}
+{% set summary.low = true %}
+{% else %}
+{% set summary.detection_unassessed = summary.detection_unassessed + 1 %}
+{% endif %}
+{% endif %}
 {% endfor %}
 {% endfor %}
 
@@ -101,25 +111,23 @@ Conclusion
 
 *Generated from linked report records.*
 
-The following values are generated on the ``doc_tool`` from its owned
+The generated conclusion is summarized from the owned
 ``potential_tool_malfunction`` records:
 
-* ``safety_affected: {{ "YES" if summary.safety else "NO" }}`` was determined
-  because {{ "at least one owned malfunction is safety affected" if summary.safety else "no owned malfunction is safety affected" }};
-  it means that {{ "the intended usage contains a safety-relevant malfunction" if summary.safety else "no modeled malfunction affects safety" }}.
-* Detection sufficiency is determined per safety-relevant malfunction.
-  ``detection_sufficient: YES`` was determined because the intended usage
-  contains a measure that prevents or detects the malfunction before its output
-  is relied upon; it means that qualification is not needed for that
-  malfunction. ``NO`` was determined because no such sufficient measure is
-  established; it means that qualification evidence is needed unless the usage
-  concept is changed.
-* ``tcl: {{ "LOW" if summary.low else "HIGH" }}`` was determined because
-  {{ "at least one safety-relevant malfunction has insufficient detection" if summary.low else "no safety-relevant malfunction has insufficient detection" }};
-  it means that qualification is {{ "required" if summary.low else "not required" }}.
-* Qualification is **{{ "required" if summary.low else "not required" }}**
-  because the generated ``tcl`` is ``{{ "LOW" if summary.low else "HIGH" }}``;
-  this means that {{ "each relevant tool requirement needs passed, fully-verifying testcase evidence before the report can become qualified or released" if summary.low else "no qualification evidence is required by this workflow" }}.
+* **Safety:** ``{{ summary.safety }}/{{ summary.total }}`` potential tool
+  malfunctions affect safety → ``safety_affected: {{ "YES" if summary.safety else "NO" }}``.
+* **Detection:** ``{{ summary.detection_yes }}/{{ summary.safety }}`` safety-
+  relevant malfunctions have sufficient detection, ``{{ summary.detection_no }}``
+  do not, and ``{{ summary.detection_unassessed }}`` are not assessed.
+* **TCL:** ``{{ summary.detection_no }}`` safety-relevant malfunctions have
+  insufficient detection → ``tcl: {{ "LOW" if summary.detection_no else "HIGH" }}``.
+* **Qualification:** ``{{ qualification_requirement_scope.ids|length }}`` tool
+  requirements are in qualification scope → **qualification is
+  {{ "required" if summary.detection_no else "not required" }}**.
+
+Here, ``safety_affected: YES`` means that at least one modeled malfunction
+affects safety. ``tcl: LOW`` means that the relevant tool requirements need
+passed, fully-verifying testcase evidence.
 
 .. grid:: 1 2 2 2
    :gutter: 3
