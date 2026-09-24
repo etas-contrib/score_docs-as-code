@@ -171,6 +171,9 @@ Tool verification graph
 
 *Generated from linked report records.*
 
+The box labels show the Need type. Colors distinguish the report, tool
+requirements, testcases, use cases, and potential malfunctions.
+
 .. mermaid::
 
    ---
@@ -179,21 +182,32 @@ Tool verification graph
      securityLevel: loose
    ---
    flowchart LR
-   report["Tool Verification Report"]
-   requirements["Tool requirements"]
-   testcases["Passed fully-verifying testcases"]
+   classDef report fill:#D5E8D4,stroke:#82B366,color:#000
+   classDef requirement fill:#DAE8FC,stroke:#6C8EBF,color:#000
+   classDef testcase fill:#FFF2CC,stroke:#D6B656,color:#000
+   classDef usecase fill:#E1D5E7,stroke:#9673A6,color:#000
+   classDef malfunction fill:#F8CECC,stroke:#B85450,color:#000
+
+   report["Tool Verification Report (doc_tool)"]
+   requirements["Tool requirements (tool_req)"]
+   testcases["Passed fully-verifying testcases (testcase)"]
+   class report report
+   class requirements requirement
+   class testcases testcase
    testcases -->|fully verifies| requirements
    click report href "#{{ id }}"
    click requirements href "#tool-qualification-matrix"
    click testcases href "#qualification-evidence"
 {% for usecase in usecases %}
 {% set usecase_alias = "usecase_" ~ loop.index %}
-   {{ usecase_alias }}["{{ mermaid_text(usecase.get("title")) }}"]
+   {{ usecase_alias }}["{{ mermaid_text(usecase.get("title")) }} (tool_usecase)"]
+   class {{ usecase_alias }} usecase
    report --> {{ usecase_alias }}
    click {{ usecase_alias }} href "#{{ usecase["id"] }}"
 {% for malfunction in linked_needs(usecase["id"], "parent_needs_back") %}
 {% set malfunction_alias = usecase_alias ~ "_malfunction_" ~ loop.index %}
-   {{ malfunction_alias }}["{{ mermaid_text(malfunction.get("title")) }}"]
+   {{ malfunction_alias }}["{{ mermaid_text(malfunction.get("title")) }} (potential_tool_malfunction)"]
+   class {{ malfunction_alias }} malfunction
    {{ usecase_alias }} --> {{ malfunction_alias }}
    click {{ malfunction_alias }} href "#{{ malfunction["id"] }}"
 {% if malfunction.get("safety_affected") == "YES" and malfunction.get("detection_sufficient") == "NO" %}
@@ -202,7 +216,8 @@ Tool verification graph
 {% endfor %}
 {% endfor %}
 {% if not usecases %}
-   no_usecases["No tool use cases"]
+   no_usecases["No tool use cases (tool_usecase)"]
+   class no_usecases usecase
    report --> no_usecases
 {% endif %}
 
