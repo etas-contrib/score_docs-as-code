@@ -17,6 +17,8 @@ needs_types_base_options:
     # req-Id: tool_req__docs_dd_link_source_code_link
     source_code_link: ^https://github.com/.*
     testlink: ^https://github.com/.*
+    bazel_target: ^.*$
+    bazel_type: ^.*$
     # Version will be mandatory global option in future releases
     # For now giving grace periods to consumers
   mandatory_options:
@@ -404,9 +406,8 @@ needs_types:
     mandatory_options:
       # req-Id: tool_req__docs_common_attr_description
       content: ^[\s\S]+$
-    optional_links:
+    mandatory_links:
       # req-Id: tool_req__docs_req_link_satisfies_allowed
-      # TODO: make it mandatory
       satisfies: gd_req, stkh_req, feat_req, comp_req
     optional_options:
       tags: ^.*$

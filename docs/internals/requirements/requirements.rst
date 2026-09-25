@@ -305,7 +305,8 @@ Versioning
 
   * Generic Document (document)
   * Tool Verification Report (doc_tool)
-  * Change Request is also a generic document
+
+  A change request is also a generic document but not a Sphinx-Needs type, so out of scope here.
 
 .. tool_req:: Mandatory attributes of Generic Documents
   :id: tool_req__docs_doc_generic_mandatory
@@ -448,7 +449,7 @@ Versioning
 .. tool_req:: Enables needs linking via satisfies attribute
   :id: tool_req__docs_req_link_satisfies_allowed
   :tags: Requirements
-  :implemented: YES
+  :implemented: PARTIAL
   :version: 1
   :satisfies: gd_req__req_linkage[version==1], gd_req__req_traceability[version==1]
   :parent_covered: YES
@@ -457,6 +458,10 @@ Versioning
   attribute follows defined rules. Having at least one link is mandatory.
 
   Allowed source and target combinations are defined in the following table:
+
+  .. note::
+     The "having at least one link is mandatory" clause is not enforced yet for ``gd_req``.
+     It is blocked by ``gd_req__impl_complexity_analysis`` in ``process_description``, which has no ``satisfies`` link yet.
 
   .. table::
      :widths: auto
