@@ -360,10 +360,12 @@ traceability evidence but does not by itself complete qualification.
 {% for usecase in usecases %}
 {% for malfunction in linked_needs(usecase["id"], "parent_needs_back")|selectattr("safety_affected", "equalto", "YES")|selectattr("detection_sufficient", "equalto", "NO")|list %}
 {% for requirement in linked_needs(malfunction["id"], "violates")|selectattr("type", "equalto", "tool_req")|list %}
+{% if requirement["id"] not in qualification_rows.items %}
 {% set qualification_rows.items = qualification_rows.items + [requirement["id"]] %}
    * - {{ need_reference(requirement) }}
      - {{ qualification_tests(requirement) }}
      - {{ "passed" if linked_needs(requirement["id"], "fully_verifies_back")|selectattr("result", "equalto", "passed")|list else "not fully qualified" }}
+{% endif %}
 {% endfor %}
 {% endfor %}
 {% endfor %}

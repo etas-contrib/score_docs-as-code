@@ -150,7 +150,9 @@ def _successful_full_testcase(
 
     Existing SCORE coverage distinguishes full and partial verification.  A
     qualification claim needs complete evidence for the tool requirement, so
-    partial links alone do not satisfy this workflow check.
+    partial links alone do not satisfy this workflow check. The current model
+    assumes one active TVR per tool; testcases are not yet linked to a specific
+    TVR or tool version, so parallel version-specific TVRs are not supported.
     """
     requirement_id = _base_id(requirement["id"])
     for testcase in all_needs:

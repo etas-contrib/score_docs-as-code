@@ -259,6 +259,35 @@ def test_qualified_low_report_with_passed_full_evidence_is_valid():
     logger.assert_no_warnings()
 
 
+def test_qualified_low_report_requires_evidence_for_each_requirement():
+    """Qualification evidence is required for every LOW tool requirement."""
+    testcase = need(
+        id="testcase__test_report__first_requirement",
+        type="testcase",
+        result="passed",
+        fully_verifies=["tool_req__test_report__requirement"],
+    )
+    second_requirement = need(
+        id="tool_req__test_report__second_requirement",
+        type="tool_req",
+    )
+    second_malfunction = need(
+        id="potential_tool_malfunction__test_report__second_failure",
+        type="potential_tool_malfunction",
+        safety_affected="YES",
+        detection_sufficient="NO",
+        parent_needs=["tool_usecase__test_report__context"],
+        violates=[second_requirement["id"]],
+    )
+    all_needs = _low_report(status="qualified", testcase=testcase)
+    all_needs.values.return_value.extend([second_requirement, second_malfunction])
+    logger = fake_check_logger()
+
+    check_tool_qualification_workflow(MagicMock(), all_needs, logger)
+
+    logger.assert_warning("tool_req__test_report__second_requirement")
+
+
 def test_partial_evidence_alone_does_not_complete_low_qualification():
     """Partial verification is traceability evidence, not complete qualification."""
     testcase = need(

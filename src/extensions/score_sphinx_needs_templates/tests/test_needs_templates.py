@@ -13,9 +13,11 @@
 """Tests for graph traversal helpers used by Sphinx-Needs templates."""
 
 from collections.abc import Iterable
+from pathlib import Path
 
 import pytest
 import score_sphinx_needs_templates as templates
+from sphinx.testing.util import SphinxTestApp
 
 
 class FakeLink:
@@ -169,3 +171,96 @@ def test_any_req_in_report_version_false_if_no_requirement_matches() -> None:
     b["valid_from"] = "v3.0"
 
     assert any_req_in_report_version([a, b], "v1.0") is False
+
+
+def test_qualification_evidence_deduplicates_shared_requirements(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Render one qualification-evidence row for a shared tool requirement.
+
+    A tool requirement is reusable across project use cases. This fixture models
+    two use cases, each with a different LOW-confidence malfunction, while both
+    malfunctions violate the same tool requirement. The qualification evidence
+    table is requirement-scoped, so it must show that requirement once and
+    combine its evidence rather than rendering one row for each malfunction.
+
+    This is an integration test because the duplicate would be introduced by
+    the Jinja post-template's nested use-case/malfunction loops; checking the
+    Need graph alone would not verify the rendered report.
+    """
+    monkeypatch.setenv("BUILD_WORKSPACE_DIRECTORY", str(tmp_path))
+    (tmp_path / "conf.py").write_text(
+        """
+extensions = ["sphinx_needs", "score_sphinx_needs_templates", "score_metamodel"]
+master_doc = "index"
+needs_id_regex = r"^[a-zA-Z0-9_]+$"
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "index.rst").write_text(
+        """
+.. doc_tool:: Shared requirement report
+   :id: doc_tool__shared_requirement_report
+   :status: evaluated
+   :security_affected: NO
+   :tool_version: v1
+   :post_template: tool_qualification_report
+
+.. gd_req:: Shared process requirement
+   :id: gd_req__shared_requirement
+
+   The process shall preserve shared qualification evidence.
+
+.. tool_req:: Shared tool requirement
+   :id: tool_req__shared_requirement
+   :satisfies: gd_req__shared_requirement
+
+   The tool shall satisfy the shared capability.
+
+.. tool_usecase:: First use case
+   :id: tool_usecase__shared_requirement_first
+   :belongs_to: doc_tool__shared_requirement_report
+
+   .. potential_tool_malfunction:: First malfunction
+      :id: potential_tool_malfunction__shared_requirement_first
+      :violates: tool_req__shared_requirement
+      :safety_affected: YES
+      :detection_sufficient: NO
+      :safety_measures: Independent review
+
+.. tool_usecase:: Second use case
+   :id: tool_usecase__shared_requirement_second
+   :belongs_to: doc_tool__shared_requirement_report
+
+   .. potential_tool_malfunction:: Second malfunction
+      :id: potential_tool_malfunction__shared_requirement_second
+      :violates: tool_req__shared_requirement
+      :safety_affected: YES
+      :detection_sufficient: NO
+      :safety_measures: Independent review
+""",
+        encoding="utf-8",
+    )
+
+    app = SphinxTestApp(
+        srcdir=tmp_path,
+        outdir=tmp_path / "_build",
+        buildername="html",
+        freshenv=True,
+    )
+    try:
+        app.build(force_all=True)
+        html = (app.outdir / "index.html").read_text(encoding="utf-8")
+    finally:
+        app.cleanup()
+
+    qualification_section = html.split(
+        '<section id="qualification-evidence">', maxsplit=1
+    )[1].split('<section id="traceability-evidence">', maxsplit=1)[0]
+    assert (
+        qualification_section.count(
+            "Shared tool requirement (tool_req__shared_requirement)"
+        )
+        == 1
+    )

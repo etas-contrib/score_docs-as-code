@@ -159,6 +159,13 @@
    :tcl: MEDIUM
    :expect: doc_tool__attr_bad_tcl.tcl (MEDIUM): does not follow pattern
 
+.. doc_tool:: TVR Without Tool Version During Migration
+   :id: doc_tool__attr_missing_tool_version
+   :version: 1
+   :status: evaluated
+   :security_affected: NO
+   :expect_not: is missing required attribute: `tool_version`
+
 .. doc_tool:: TVR With Missing Mandatory Attributes
    :id: doc_tool__attr_missing
    :version: 1

@@ -197,6 +197,14 @@ identification. For example, a Git commit can identify the evaluated tool when
 the relevant source and build context are clear. The TVR must make clear which
 specific tool version or revision the evaluation applies to.
 
+```{note}
+The current SCORE tool-management model assumes one active TVR per tool. It
+does not currently support maintaining multiple parallel TVRs for different
+versions of the same tool, nor does it scope qualification testcases to a
+particular TVR/version. This limitation must be addressed before that usage
+pattern is introduced.
+```
+
 ---
 
 ## Step 2 — Define how the project uses the tool
