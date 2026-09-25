@@ -270,8 +270,9 @@ needs_types:
   # Tool qualification reports keep use cases top-level for readable rendering.
   # Their malfunctions are nested below them and use parent_needs as their
   # semantic relationship.
-  # Evaluated, qualified, and released tool qualification reports require at
-  # least one tool_usecase as the context anchor for their evaluation.
+  # Structured tool qualification reports use tool_usecase as the context
+  # anchor for their evaluation. Legacy reports without use cases remain
+  # accepted for compatibility and are left unchanged by the workflow check.
   # Tool requirements are linked through malfunctions; upstream requirements
   # are linked from those tool requirements.
   tool_usecase:

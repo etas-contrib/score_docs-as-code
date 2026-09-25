@@ -298,12 +298,9 @@ def check_tool_qualification_workflow(
 
         usecases = _owned_usecases(doc_tool, needs)
         if not usecases:
-            log.warning_for_need(
-                doc_tool,
-                "evaluated, qualified, and released Tool Verification Reports "
-                "must own at least one `tool_usecase` through `belongs_to`.",
-                category="tool-qualification",
-            )
+            # Reports without structured use cases are legacy records. Leave
+            # their manually supplied summary fields unchanged until they are
+            # migrated to the structured workflow.
             continue
 
         malfunctions = _malfunctions_for_report(doc_tool, needs)

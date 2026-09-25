@@ -179,8 +179,8 @@ def test_report_summary_is_derived_when_summary_fields_are_omitted():
     assert report["tcl"] == "LOW"
 
 
-def test_report_requires_owned_usecase():
-    """A non-draft report requires explicit tool-use-case ownership."""
+def test_report_without_usecase_is_left_unchanged():
+    """Legacy reports without use cases remain compatible with the workflow check."""
     report = need(
         id="doc_tool__report_without_usecase",
         type="doc_tool",
@@ -192,7 +192,9 @@ def test_report_requires_owned_usecase():
 
     check_tool_qualification_workflow(MagicMock(), _graph_needs(report), logger)
 
-    logger.assert_warning("must own at least one `tool_usecase`")
+    logger.assert_no_warnings()
+    assert report["safety_affected"] == ""
+    assert report["tcl"] == ""
 
 
 def test_low_malfunction_with_only_upstream_requirement_is_invalid():

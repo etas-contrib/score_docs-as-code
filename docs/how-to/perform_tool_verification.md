@@ -239,11 +239,14 @@ upstream need.
 
 ### How to model `tool_usecase`
 
-Every `evaluated`, `qualified`, or `released` TVR must own at least one
-`tool_usecase`. The use case records the context in which the project relies on
-the tool. The use case itself has no direct requirement links; the relevant
-`tool_req` needs are associated through the nested malfunctions, and upstream
-requirements are linked from those `tool_req` needs.
+In the structured verification workflow, an `evaluated`, `qualified`, or
+`released` TVR owns one or more `tool_usecase` records. A use case records the
+context in which the project relies on the tool. The use case itself has no
+direct requirement links; the relevant `tool_req` needs are associated through
+the nested malfunctions, and upstream requirements are linked from those
+`tool_req` needs. Existing TVRs without structured use cases remain accepted
+for compatibility, but the workflow checker does not derive summary values for
+them.
 
 For example:
 

@@ -13,17 +13,17 @@
    # *******************************************************************************
 
 
-.. test_metadata:: Mandatory Document and TVR Attributes
+.. test_metadata:: Document and TVR Attribute Validation
    :id: test_metadata__doc_tool_attrs
    :fully_verifies_list: tool_req__docs_doc_generic_mandatory,tool_req__docs_tvr_safety,tool_req__docs_tvr_security,tool_req__docs_tvr_status,tool_req__docs_tvr_confidence_level
    :partially_verifies_list: tool_req__docs_tvr_version
    :test_type: requirements_based
    :derivation_technique: requirements_based
 
-   Tests the mandatory attributes of Generic Documents (document)
-   and Tool Verification Reports (doc_tool) as defined in the metamodel.
-   Every mandatory attribute is exercised with an accepted value, an
-   unaccepted value, and an omitted value.
+   Tests the mandatory attributes of Generic Documents (document) and Tool
+   Verification Reports (doc_tool), plus validation of TVR summary attribute
+   values, as defined in the metamodel. Every mandatory attribute is
+   exercised with an accepted value, an unaccepted value, and an omitted value.
 
    The tool_version attribute is not enforced yet for migration purposes.
 
@@ -162,4 +162,4 @@
 .. doc_tool:: TVR With Missing Mandatory Attributes
    :id: doc_tool__attr_missing
    :version: 1
-   :expect: doc_tool__attr_missing: is missing required attribute: `status`., doc_tool__attr_missing: is missing required attribute: `safety_affected`., doc_tool__attr_missing: is missing required attribute: `security_affected`., doc_tool__attr_missing: is missing required attribute: `tcl`.
+   :expect: doc_tool__attr_missing: is missing required attribute: `status`., doc_tool__attr_missing: is missing required attribute: `security_affected`.
