@@ -110,12 +110,6 @@ def fake_check_logger():
 def need(**kwargs: Any) -> NeedItem:
     """Convenience function to create a NeedItem object with some defaults."""
 
-    # Extract links (any list field that's not a core field)
-    link_keys = {
-        "links",
-    }
-    links = {k: kwargs.pop(k, []) for k in list(link_keys) if k in kwargs}
-
     # Set defaults for core fields
     kwargs.setdefault("id", "test_need")
     kwargs.setdefault("type", "requirement")
@@ -156,6 +150,19 @@ def need(**kwargs: Any) -> NeedItem:
         "post_content",
         "post_template",
     }
+
+    # Test fixtures represent link values as lists. Store those values in the
+    # same NeedItem.links field used by Sphinx-Needs; scalar non-core values
+    # remain regular extras. Link names are configured dynamically by
+    # Sphinx-Needs, so keeping a second global list here would be brittle.
+    link_keys = {
+        key
+        for key, value in kwargs.items()
+        if key not in core_keys
+        and key not in source_content_keys
+        and isinstance(value, list)
+    }
+    links = {key: kwargs.pop(key) for key in link_keys}
 
     # Extract extras (any remaining kwargs not in core or source/content)
     extras = {

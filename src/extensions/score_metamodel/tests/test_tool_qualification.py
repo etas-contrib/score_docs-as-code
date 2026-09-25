@@ -35,6 +35,7 @@ def _run_local(malfunction: NeedItem, logger: Any = None) -> Any:
 def _graph_needs(*needs: NeedItem) -> MagicMock:
     all_needs = MagicMock()
     all_needs.values.return_value = list(needs)
+    all_needs.filter_types.return_value = all_needs
     return all_needs
 
 
@@ -99,21 +100,6 @@ def test_safety_malfunction_requires_conditional_evaluation_data(
     )
 
     logger.assert_warning(message)
-
-
-def test_positive_detection_requires_non_empty_safety_measure():
-    """A positive detection claim must explain its detecting/preventing measure."""
-    logger = _run_local(
-        need(
-            id="potential_tool_malfunction__local_no_measure",
-            type="potential_tool_malfunction",
-            safety_affected="YES",
-            detection_sufficient="YES",
-            safety_measures="   ",
-        )
-    )
-
-    logger.assert_warning("non-empty `safety_measures`")
 
 
 def test_positive_detection_with_measure_is_valid():

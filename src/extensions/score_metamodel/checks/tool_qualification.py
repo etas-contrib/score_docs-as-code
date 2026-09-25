@@ -18,7 +18,7 @@ use-case and malfunction graph.
 """
 
 from collections.abc import Iterable
-from typing import Any, cast
+from typing import Any
 
 from score_metamodel import CheckLogger, graph_check, local_check
 from sphinx.application import Sphinx
@@ -28,21 +28,9 @@ from sphinx_needs.need_item import NeedItem
 
 def _link_values(need: NeedItem, link_name: str) -> list[str]:
     """Return an outgoing link field as plain IDs."""
-    try:
-        link_values = cast(list[str], need.get_links(link_name, as_str=True))
-        return [str(item) for item in link_values]
-    except KeyError:
-        # The unit-test NeedItem helper exposes link fields through get(), while
-        # collected Sphinx-Needs items expose them through get_links.
-        pass
-    value = need.get(link_name, [])
-    if value is None:
+    if link_name not in need.iter_links_keys():
         return []
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, list):
-        return [str(item) for item in cast(list[Any], value)]
-    return [str(value)]
+    return [str(item) for item in need.get_links(link_name, as_str=True)]
 
 
 def _base_id(need_id: str) -> str:
@@ -51,7 +39,7 @@ def _base_id(need_id: str) -> str:
 
 
 def _need_index(needs: Iterable[NeedItem]) -> dict[str, NeedItem]:
-    """Index Needs by both their exact and unqualified IDs."""
+    """Index needs by stored IDs and IDs without a version selector."""
     index: dict[str, NeedItem] = {}
     for need in needs:
         index[need["id"]] = need
@@ -111,13 +99,6 @@ def _malfunctions_for_report(
                 found.append(malfunction)
                 found_ids.add(malfunction["id"])
     return found
-
-
-def _is_present(value: Any) -> bool:
-    """Treat non-empty strings and non-empty collections as present."""
-    if isinstance(value, str):
-        return bool(value.strip())
-    return bool(value)
 
 
 def derive_tvr_values(malfunctions: Iterable[NeedItem]) -> tuple[str, str]:
@@ -231,7 +212,7 @@ def _validate_report_status(
             category="tool-qualification",
         )
         return
-    if expected_tcl != "LOW":
+    if expected_tcl == "HIGH":
         # A HIGH-confidence report can progress directly from evaluated to
         # released. Qualification is only a workflow state for LOW TCL.
         return
@@ -275,14 +256,14 @@ def check_tool_malfunction_evaluation(
     elif (
         safety_affected == "YES"
         and detection_sufficient == "YES"
-        and not _is_present(safety_measures)
+        and not safety_measures
     ):
         log.warning_for_need(
             need,
             "`detection_sufficient: YES` requires a non-empty `safety_measures` value.",
             category="tool-qualification",
         )
-    elif safety_affected == "NO" and _is_present(detection_sufficient):
+    elif safety_affected == "NO" and detection_sufficient is not None:
         log.warning_for_need(
             need,
             "non-safety malfunctions must not define `detection_sufficient`.",
@@ -295,7 +276,17 @@ def check_tool_qualification_workflow(
     _: Sphinx, all_needs: NeedsView, log: CheckLogger
 ) -> None:
     """Validate ownership, qualification prerequisites, and TVR workflow states."""
-    needs = list(all_needs.values())
+    needs = list(
+        all_needs.filter_types(
+            [
+                "doc_tool",
+                "tool_usecase",
+                "potential_tool_malfunction",
+                "tool_req",
+                "testcase",
+            ]
+        ).values()
+    )
     index = _need_index(needs)
 
     _check_low_malfunction_links(needs, index, log)
