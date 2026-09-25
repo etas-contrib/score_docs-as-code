@@ -173,21 +173,20 @@ def test_any_req_in_report_version_false_if_no_requirement_matches() -> None:
     assert any_req_in_report_version([a, b], "v1.0") is False
 
 
-def test_qualification_evidence_deduplicates_shared_requirements(
+def test_tool_qualification_matrix_groups_shared_requirements(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Render one qualification-evidence row for a shared tool requirement.
+    """Render shared tool requirements in the qualification matrix.
 
     A tool requirement is reusable across project use cases. This fixture models
     two use cases, each with a different LOW-confidence malfunction, while both
-    malfunctions violate the same tool requirement. The qualification evidence
-    table is requirement-scoped, so it must show that requirement once and
-    combine its evidence rather than rendering one row for each malfunction.
+    malfunctions violate the same tool requirement. The matrix must expose the
+    three verification categories and place the unlinked requirement in the
+    corresponding column for each malfunction.
 
-    This is an integration test because the duplicate would be introduced by
-    the Jinja post-template's nested use-case/malfunction loops; checking the
-    Need graph alone would not verify the rendered report.
+    This is an integration test because the category assignment and table
+    structure are produced by the Jinja post-template.
     """
     monkeypatch.setenv("BUILD_WORKSPACE_DIRECTORY", str(tmp_path))
     (tmp_path / "conf.py").write_text(
@@ -269,12 +268,46 @@ needs_id_regex = r"^[a-zA-Z0-9_]+$"
     assert "First malfunction" not in purpose_section
     assert "safety_affected" not in purpose_section
 
-    qualification_section = html.split(
-        '<section id="qualification-evidence">', maxsplit=1
-    )[1].split('<section id="traceability-evidence">', maxsplit=1)[0]
+    evaluation_section = html.split('<section id="evaluation-overview">', maxsplit=1)[
+        1
+    ].split('<section id="tool-qualification-matrix">', maxsplit=1)[0]
+    assert "Violates" not in evaluation_section
+    assert "Safety affected" in evaluation_section
+    assert "SCORE TCL" in evaluation_section
+    assert "<em>Capability being evaluated.</em>" in evaluation_section
+    assert "table.tool-qualification-report tbody a" in evaluation_section
+    assert "LOW" in evaluation_section
+    assert "First use case (" not in evaluation_section
+    assert "First malfunction (" not in evaluation_section
+    assert '<div class="line">First use case</div>' in evaluation_section
     assert (
-        qualification_section.count(
-            "Shared tool requirement (tool_req__shared_requirement)"
-        )
-        == 1
+        '<div class="line"><a class="reference external" '
+        'href="#tool_usecase__shared_requirement_first">'
+        "tool_usecase__shared_requirement_first</a></div>" in evaluation_section
     )
+    assert 'href="#tool_usecase__shared_requirement_first"' in evaluation_section
+    assert (
+        'href="#potential_tool_malfunction__shared_requirement_first"'
+        in evaluation_section
+    )
+
+    matrix_section = html.split('<section id="tool-qualification-matrix">', maxsplit=1)[
+        1
+    ]
+    assert "Fully verified tool requirements" in matrix_section
+    assert "Partially verified tool requirements" in matrix_section
+    assert "Unverified tool requirements" in matrix_section
+    assert "Tool requirements (with testlinks)" not in matrix_section
+    assert "Tool requirements (without testlinks)" not in matrix_section
+    assert matrix_section.index("First use case") < matrix_section.index(
+        "First malfunction"
+    )
+    assert (
+        matrix_section.count(
+            '<a class="reference external" '
+            'href="#tool_req__shared_requirement">tool_req__shared_requirement</a>'
+        )
+        == 2
+    )
+    assert '<section id="qualification-evidence">' not in html
+    assert '<section id="traceability-evidence">' not in html

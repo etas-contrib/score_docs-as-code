@@ -43,7 +43,7 @@
 {% endfor %}
 
 {% macro need_reference(need) -%}
-{% if need.get("external_url") %}`{{ need["id"] }} <{{ need["external_url"] }}>`_{% else %}:need:`{{ need["id"] }}`{% endif %}
+{% if need.get("external_url") %}`{{ need["id"] }} <{{ need["external_url"] }}>`_{% else %}`{{ need["id"] }} <#{{ need["id"] }}>`_{% endif %}
 {%- endmacro %}
 
 {% macro need_title_reference(need) -%}
@@ -62,47 +62,18 @@
 {%- else -%}—{%- endif -%}
 {%- endmacro %}
 
-{% macro requirements_for(malfunction, with_testlinks) -%}
+{% macro requirements_for(malfunction, verification) -%}
 {%- set matching = namespace(items=[]) -%}
 {%- for requirement in linked_needs(malfunction["id"], "violates")|selectattr("type", "equalto", "tool_req")|list -%}
 {%- set fully_verifying_tests = linked_needs(requirement["id"], "fully_verifies_back")|list -%}
 {%- set partially_verifying_tests = linked_needs(requirement["id"], "partially_verifies_back")|list -%}
-{%- set has_testlinks = fully_verifying_tests or partially_verifying_tests -%}
-{%- if (with_testlinks and has_testlinks) or (not with_testlinks and not has_testlinks) -%}
+{%- if (verification == "fully" and fully_verifying_tests)
+      or (verification == "partially" and partially_verifying_tests and not fully_verifying_tests)
+      or (verification == "unlinked" and not fully_verifying_tests and not partially_verifying_tests) -%}
 {%- set matching.items = matching.items + [requirement] -%}
 {%- endif -%}
 {%- endfor -%}
 {{- need_list(matching.items) -}}
-{%- endmacro %}
-
-{% macro tests_for(malfunction, link_name) -%}
-{%- set matching = namespace(items=[], ids=[]) -%}
-{%- for requirement in linked_needs(malfunction["id"], "violates")|selectattr("type", "equalto", "tool_req")|list -%}
-{%- for testcase in linked_needs(requirement["id"], link_name) -%}
-{%- if testcase["id"] not in matching.ids -%}
-{%- set matching.items = matching.items + [testcase] -%}
-{%- set matching.ids = matching.ids + [testcase["id"]] -%}
-{%- endif -%}
-{%- endfor -%}
-{%- endfor -%}
-{{- need_list(matching.items) -}}
-{%- endmacro %}
-
-{% macro qualification_tests(requirement) -%}
-{%- set matching = namespace(items=[], ids=[]) -%}
-{%- for link_name in ["fully_verifies_back", "partially_verifies_back"] -%}
-{%- for testcase in linked_needs(requirement["id"], link_name) -%}
-{%- if testcase["id"] not in matching.ids -%}
-{%- set matching.items = matching.items + [testcase] -%}
-{%- set matching.ids = matching.ids + [testcase["id"]] -%}
-{%- endif -%}
-{%- endfor -%}
-{%- endfor -%}
-{%- if matching.items -%}
-{%- for testcase in matching.items -%}
-{{ "| " if loop.first else "\n       | " }}{{ need_reference(testcase) }} ({{ text(testcase.get("result")) }}){{ "," if not loop.last else "" }}
-{%- endfor -%}
-{%- else -%}—{%- endif -%}
 {%- endmacro %}
 
 {% set summary = namespace(total=0, safety=0, detection_yes=0, detection_no=0, detection_unassessed=0, low=false, fully_covered=0) %}
@@ -278,24 +249,60 @@ Evaluation overview
 
 *Generated from linked report records.*
 
+.. raw:: html
+
+   <style>
+   table.evaluation-overview thead th {
+       vertical-align: top;
+   }
+   table.evaluation-overview thead p {
+       line-height: 1.2;
+       margin: 0;
+   }
+   table.evaluation-overview thead em {
+       color: var(--pst-color-text-base);
+       display: block;
+       font-size: 0.8em;
+       font-style: italic;
+       font-weight: normal;
+       line-height: 1.25;
+       margin-top: 0.2rem;
+       opacity: 0.75;
+   }
+   table.tool-qualification-report tbody a {
+       font-size: 0.8em;
+       font-style: italic;
+       opacity: 0.75;
+   }
+   </style>
+
 .. list-table:: Evaluation overview
    :header-rows: 1
-   :widths: 20 24 25 12 25 16
+   :class: evaluation-overview tool-qualification-report
+   :widths: 20 25 12 20 13 10
 
-   * - Use case
-     - Potential malfunction
-     - Violates
-     - Safety affected
-     - Safety measures
-     - Detection sufficient
+   * - **Use case**
+       *Capability being evaluated.*
+     - **Potential malfunction**
+       *Failure mode if the capability is wrong.*
+     - **Safety affected**
+       *Can this affect safety?*
+     - **Safety measures**
+       *Measures used during normal operation.*
+     - **Detection sufficient**
+       *Detected before the output is relied on?*
+     - **SCORE TCL**
+       *Per-malfunction classification.*
 {% for usecase in usecases %}
 {% for malfunction in linked_needs(usecase["id"], "parent_needs_back") %}
-   * - {{ usecase["title"] }} ({{ need_reference(usecase) }})
-     - {{ malfunction["title"] }} ({{ need_reference(malfunction) }})
-     - {{ need_list(linked_needs(malfunction["id"], "violates")) }}
+   * - | {{ text(usecase.get("title")) }}
+       | {{ need_reference(usecase) }}
+     - | {{ text(malfunction.get("title")) }}
+       | {{ need_reference(malfunction) }}
      - {{ text(malfunction.get("safety_affected")) }}
      - {{ text(malfunction.get("safety_measures")) }}
      - {{ text(malfunction.get("detection_sufficient")) }}
+     - {{ "LOW" if malfunction.get("safety_affected") == "YES" and malfunction.get("detection_sufficient") == "NO" else "HIGH" }}
 {% endfor %}
 {% endfor %}
 {% if not usecases %}
@@ -314,92 +321,30 @@ Tool qualification matrix
 
 The qualification matrix contains only safety-relevant malfunctions whose
 detection is insufficient. Every such malfunction must violate at least one
-``tool_req``.
+``tool_req``. Requirements are grouped by their strongest available testcase
+link: full verification, partial verification without full verification, or no
+verification link.
 
 .. list-table:: Tool qualification matrix
    :header-rows: 1
-   :widths: 22 18 30 30
+   :class: tool-qualification-report
+   :widths: 20 25 18 18 19
 
-   * - Malfunction
-     - Use case description
-     - Tool requirements (with testlinks)
-     - Tool requirements (without testlinks)
+   * - Use case
+     - Potential malfunction
+     - Fully verified tool requirements
+     - Partially verified tool requirements
+     - Unverified tool requirements
 {% for usecase in usecases %}
 {% set malfunctions = linked_needs(usecase["id"], "parent_needs_back")|selectattr("safety_affected", "equalto", "YES")|selectattr("detection_sufficient", "equalto", "NO")|list %}
 {% for malfunction in malfunctions %}
-   * - {{ malfunction["title"] }} ({{ need_reference(malfunction) }})
-     - {{ text(usecase.get("title")) }}
-     - {{ requirements_for(malfunction, true) }}
-     - {{ requirements_for(malfunction, false) }}
-{% endfor %}
-{% endfor %}
-{% if not summary.low %}
-   * - No qualification-relevant malfunction.
-     - —
-     - —
-     - —
-{% endif %}
-
-Qualification evidence
-^^^^^^^^^^^^^^^^^^^^^^
-
-*Generated from linked report records.*
-
-Qualification is complete only when every relevant ``tool_req`` has a passed
-testcase linked with ``fully_verifies``. A partial verification remains useful
-traceability evidence but does not by itself complete qualification.
-
-.. list-table:: Qualification evidence
-   :header-rows: 1
-   :widths: 38 35 27
-
-   * - Tool requirement requiring qualification
-     - Testcase(s)
-     - Verification status/result
-{% set qualification_rows = namespace(items=[]) %}
-{% for usecase in usecases %}
-{% for malfunction in linked_needs(usecase["id"], "parent_needs_back")|selectattr("safety_affected", "equalto", "YES")|selectattr("detection_sufficient", "equalto", "NO")|list %}
-{% for requirement in linked_needs(malfunction["id"], "violates")|selectattr("type", "equalto", "tool_req")|list %}
-{% if requirement["id"] not in qualification_rows.items %}
-{% set qualification_rows.items = qualification_rows.items + [requirement["id"]] %}
-   * - {{ need_reference(requirement) }}
-     - {{ qualification_tests(requirement) }}
-     - {{ "passed" if linked_needs(requirement["id"], "fully_verifies_back")|selectattr("result", "equalto", "passed")|list else "not fully qualified" }}
-{% endif %}
-{% endfor %}
-{% endfor %}
-{% endfor %}
-{% if not qualification_rows.items %}
-   * - No qualification evidence required.
-     - —
-     - —
-{% endif %}
-
-Traceability evidence
-^^^^^^^^^^^^^^^^^^^^^
-
-*Generated from linked report records.*
-
-The evidence below keeps safety measures and generated testcase links visible
-for the qualification-relevant malfunctions.
-
-.. list-table:: Malfunction traceability
-   :header-rows: 1
-   :widths: 20 25 25 15 15
-
-   * - Malfunction
-     - Violates requirements
-     - Safety measure
-     - Fully verified by
-     - Partially verified by
-{% for usecase in usecases %}
-{% set malfunctions = linked_needs(usecase["id"], "parent_needs_back")|selectattr("safety_affected", "equalto", "YES")|selectattr("detection_sufficient", "equalto", "NO")|list %}
-{% for malfunction in malfunctions %}
-   * - {{ malfunction["title"] }} ({{ need_reference(malfunction) }})
-     - {{ need_list(linked_needs(malfunction["id"], "violates")) }}
-     - {{ text(malfunction.get("safety_measures")) }}
-     - {{ tests_for(malfunction, "fully_verifies_back") }}
-     - {{ tests_for(malfunction, "partially_verifies_back") }}
+   * - | {{ text(usecase.get("title")) }}
+       | {{ need_reference(usecase) }}
+     - | {{ text(malfunction.get("title")) }}
+       | {{ need_reference(malfunction) }}
+     - {{ requirements_for(malfunction, "fully") }}
+     - {{ requirements_for(malfunction, "partially") }}
+     - {{ requirements_for(malfunction, "unlinked") }}
 {% endfor %}
 {% endfor %}
 {% if not summary.low %}

@@ -105,7 +105,7 @@ The safety evaluation uses the following shared facts:
 Each of the following tool capabilities is evaluated as an intended use case
 with its corresponding potential malfunction.
 
-.. tool_usecase:: Document metamodel enforcement
+.. tool_usecase:: Enforce document types and attributes
    :id: tool_usecase__docs_as_code__metamodel
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
@@ -116,7 +116,7 @@ with its corresponding potential malfunction.
    :need:`gd_req__req_attr_safety`, :need:`gd_req__arch_attr_safety`,
    and :need:`gd_req__req_check_mandatory`.
 
-   .. potential_tool_malfunction:: Document metamodel enforcement failure
+   .. potential_tool_malfunction:: Invalid document passes metamodel checks
       :id: potential_tool_malfunction__docs_as_code__m1
       :safety_affected: YES
       :detection_sufficient: NO
@@ -167,7 +167,7 @@ with its corresponding potential malfunction.
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-.. tool_usecase:: Safety-critical linking enforcement
+.. tool_usecase:: Enforce safety-critical links
    :id: tool_usecase__docs_as_code__safety_links
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
@@ -175,7 +175,7 @@ with its corresponding potential malfunction.
    Enforce that links between safety-relevant needs preserve the required
    safety relationships. See :need:`gd_req__req_linkage_safety`.
 
-   .. potential_tool_malfunction:: Safety-critical linking enforcement failure
+   .. potential_tool_malfunction:: Unsafe link passes validation
       :id: potential_tool_malfunction__docs_as_code__m2
       :safety_affected: YES
       :detection_sufficient: NO
@@ -206,7 +206,7 @@ with its corresponding potential malfunction.
 
       Confidence (automatic calculation): low.
 
-.. tool_usecase:: Requirements coverage statistics
+.. tool_usecase:: Calculate requirement coverage
    :id: tool_usecase__docs_as_code__coverage
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
@@ -215,7 +215,7 @@ with its corresponding potential malfunction.
    compute link-coverage percentages. See
    :need:`gd_req__verification_reporting`.
 
-   .. potential_tool_malfunction:: Requirements coverage statistics failure
+   .. potential_tool_malfunction:: Requirement coverage is wrong
       :id: potential_tool_malfunction__docs_as_code__m3
       :safety_affected: YES
       :detection_sufficient: NO
@@ -232,14 +232,14 @@ with its corresponding potential malfunction.
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-.. tool_usecase:: Architecture visualization
+.. tool_usecase:: Generate architecture diagrams
    :id: tool_usecase__docs_as_code__architecture
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
 
    Generate architecture diagrams. See :need:`gd_req__arch_viewpoints`.
 
-   .. potential_tool_malfunction:: Architecture visualization failure
+   .. potential_tool_malfunction:: Architecture diagram is wrong
       :id: potential_tool_malfunction__docs_as_code__m4
       :safety_affected: YES
       :detection_sufficient: YES
@@ -256,7 +256,7 @@ with its corresponding potential malfunction.
       Further additional safety measure required: no.
       Confidence (automatic calculation): high.
 
-.. tool_usecase:: Test linkage
+.. tool_usecase:: Resolve testcase verification links
    :id: tool_usecase__docs_as_code__test_linkage
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
@@ -266,7 +266,7 @@ with its corresponding potential malfunction.
    See :need:`gd_req__req_attr_testlink` and
    :need:`gd_req__verification_reporting`.
 
-   .. potential_tool_malfunction:: Test linkage failure
+   .. potential_tool_malfunction:: Requirement appears tested when it is not
       :id: potential_tool_malfunction__docs_as_code__m5
       :safety_affected: YES
       :detection_sufficient: NO
@@ -288,7 +288,7 @@ with its corresponding potential malfunction.
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-.. tool_usecase:: Test reference check
+.. tool_usecase:: Validate testcase references
    :id: tool_usecase__docs_as_code__test_refs
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
@@ -296,7 +296,7 @@ with its corresponding potential malfunction.
    Check that test references are present and point to the intended
    requirements. See :need:`gd_req__req_attr_testlink`.
 
-   .. potential_tool_malfunction:: Test reference check failure
+   .. potential_tool_malfunction:: Test reference is missing or outdated
       :id: potential_tool_malfunction__docs_as_code__m6
       :safety_affected: YES
       :detection_sufficient: NO
@@ -313,7 +313,7 @@ with its corresponding potential malfunction.
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-.. tool_usecase:: Listing assumptions of use
+.. tool_usecase:: List assumptions of use
    :id: tool_usecase__docs_as_code__assumptions
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
@@ -322,7 +322,7 @@ with its corresponding potential malfunction.
    safety manuals. See :need:`gd_guidl__saf_man` and
    :need:`wp__platform_safety_manual`.
 
-   .. potential_tool_malfunction:: Listing assumptions of use failure
+   .. potential_tool_malfunction:: Assumption of use is missing or wrong
       :id: potential_tool_malfunction__docs_as_code__m7
       :safety_affected: YES
       :detection_sufficient: NO
@@ -341,7 +341,7 @@ with its corresponding potential malfunction.
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-.. tool_usecase:: Backlinks
+.. tool_usecase:: Generate traceability backlinks
    :id: tool_usecase__docs_as_code__backlinks
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
@@ -349,7 +349,7 @@ with its corresponding potential malfunction.
    Generate correct backlinks for links between Needs items to provide
    bi-directional traceability. See :need:`doc_concept__general_traceability`.
 
-   .. potential_tool_malfunction:: Backlinks failure
+   .. potential_tool_malfunction:: Backlink is wrong or missing
       :id: potential_tool_malfunction__docs_as_code__m8
       :safety_affected: YES
       :detection_sufficient: NO
@@ -364,7 +364,7 @@ with its corresponding potential malfunction.
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-.. tool_usecase:: Documentation generation
+.. tool_usecase:: Generate HTML documentation
    :id: tool_usecase__docs_as_code__generation
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
@@ -373,7 +373,7 @@ with its corresponding potential malfunction.
    other use cases. See :need:`gd_req__doc_attributes_manual` and
    :need:`gd_req__doc_attr_status`.
 
-   .. potential_tool_malfunction:: Documentation generation failure
+   .. potential_tool_malfunction:: HTML output is incomplete or wrong
       :id: potential_tool_malfunction__docs_as_code__m9
       :safety_affected: NO
       :violates: tool_req__docs_doc_types
