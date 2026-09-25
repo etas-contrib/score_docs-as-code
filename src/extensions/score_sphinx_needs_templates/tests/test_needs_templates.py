@@ -222,6 +222,8 @@ needs_id_regex = r"^[a-zA-Z0-9_]+$"
    :id: tool_usecase__shared_requirement_first
    :belongs_to: doc_tool__shared_requirement_report
 
+   The tool is used to prepare the first project artifact.
+
    .. potential_tool_malfunction:: First malfunction
       :id: potential_tool_malfunction__shared_requirement_first
       :violates: tool_req__shared_requirement
@@ -232,6 +234,8 @@ needs_id_regex = r"^[a-zA-Z0-9_]+$"
 .. tool_usecase:: Second use case
    :id: tool_usecase__shared_requirement_second
    :belongs_to: doc_tool__shared_requirement_report
+
+   The tool is used to prepare the second project artifact.
 
    .. potential_tool_malfunction:: Second malfunction
       :id: potential_tool_malfunction__shared_requirement_second
@@ -254,6 +258,16 @@ needs_id_regex = r"^[a-zA-Z0-9_]+$"
         html = (app.outdir / "index.html").read_text(encoding="utf-8")
     finally:
         app.cleanup()
+
+    purpose_section = html.split('<section id="purpose-and-intended-use">', maxsplit=1)[
+        1
+    ].split('<section id="conclusion">', maxsplit=1)[0]
+    assert "<table" not in purpose_section
+    assert "First use case" in purpose_section
+    assert "The tool is used to prepare the first project artifact." in purpose_section
+    assert 'href="#tool_usecase__shared_requirement_first"' in purpose_section
+    assert "First malfunction" not in purpose_section
+    assert "safety_affected" not in purpose_section
 
     qualification_section = html.split(
         '<section id="qualification-evidence">', maxsplit=1

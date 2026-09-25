@@ -46,6 +46,14 @@
 {% if need.get("external_url") %}`{{ need["id"] }} <{{ need["external_url"] }}>`_{% else %}:need:`{{ need["id"] }}`{% endif %}
 {%- endmacro %}
 
+{% macro need_title_reference(need) -%}
+{% if need.get("external_url") %}`{{ text(need.get("title")) }} <{{ need["external_url"] }}>`_{% else %}:need:`{{ text(need.get("title")) }} <{{ need["id"] }}>`{% endif %}
+{%- endmacro %}
+
+{% macro need_content(need) -%}
+{{ text(need.get("content", "").split("\n\n.. potential_tool_malfunction::", 1)[0]) }}
+{%- endmacro %}
+
 {% macro need_list(needs) -%}
 {%- if needs -%}
 {%- for need in needs -%}
@@ -131,22 +139,14 @@ Purpose and intended use
 *Generated from linked report records.*
 
 The tool is evaluated for the following intended use cases. The use case title
-is the concise statement of the project context in which the tool is used;
-the detailed evaluation is shown in the sections below.
+is the concise statement of the project context in which the tool is used; the
+detailed evaluation is shown in the sections below.
 
-.. list-table:: Intended use cases
-   :header-rows: 1
-   :widths: 72 28
-
-   * - Intended use
-     - Record
 {% for usecase in usecases %}
-   * - {{ text(usecase.get("title")) }}
-     - {{ need_reference(usecase) }}
+* {{ need_title_reference(usecase) }}: {{ need_content(usecase) }}
 {% endfor %}
 {% if not usecases %}
-   * - No tool use case is documented.
-     - —
+* No tool use case is documented.
 {% endif %}
 
 Conclusion
