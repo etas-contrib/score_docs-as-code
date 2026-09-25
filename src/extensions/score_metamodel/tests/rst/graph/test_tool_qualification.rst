@@ -32,7 +32,6 @@
 .. tool_usecase:: Tool qualification check use case
    :id: tool_usecase__tool_qualification_checks
    :belongs_to: doc_tool__tool_qualification_checks
-   :realized_by: tool_req__tool_qualification_checks
    :version: 1
 
 .. tool_usecase:: Tool usage context without a pre-existing requirement

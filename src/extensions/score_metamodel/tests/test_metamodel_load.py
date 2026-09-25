@@ -240,13 +240,10 @@ def test_tool_qualification_types_model_nested_traceability():
     assert types["tool_usecase"]["mandatory_links_str"] == {
         "belongs_to": "doc_tool",
     }
-    assert types["tool_usecase"]["optional_links_str"] == {
-        "realized_by": "tool_req",
-        "realizes": "stkh_req",
-    }
+    assert types["tool_usecase"]["optional_links_str"] == {}
     assert types["potential_tool_malfunction"]["mandatory_links_str"] == {
         "parent_needs": "tool_usecase",
-        "violates": "stkh_req, tool_req",
+        "violates": "tool_req",
     }
     malfunction_options = types["potential_tool_malfunction"]
     assert malfunction_options["mandatory_options"]["safety_affected"] == "^(YES|NO)$"

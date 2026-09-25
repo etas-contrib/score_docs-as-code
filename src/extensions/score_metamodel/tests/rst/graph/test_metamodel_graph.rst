@@ -90,7 +90,6 @@
 .. tool_usecase:: Nested tool use case
    :id: tool_usecase__blabla__nested
    :belongs_to: doc_tool__nested_qualification
-   :realized_by: tool_req__test__qualification
    :version: 1
 
    A use case contains its tool malfunctions as nested needs.

@@ -270,21 +270,19 @@ needs_types:
   # semantic relationship.
   # Evaluated, qualified, and released tool qualification reports require at
   # least one tool_usecase as the context anchor for their evaluation.
-  # Requirement links remain optional so the context can be recorded before all
-  # requirements exist.
+  # Tool requirements are linked through malfunctions; upstream requirements
+  # are linked from those tool requirements.
   tool_usecase:
     title: Tool Use Case
     description: |
       Defines the usage context in which the tool is evaluated.
       A tool use case does not introduce additional requirements.
-      Where applicable, it groups the stakeholder and tool requirements
-      relevant to a particular way the project relies on the tool.
+      Where applicable, its nested malfunctions provide context for the tool
+      requirements relevant to a particular way the project relies on the tool.
+      Those tool requirements may satisfy upstream requirements.
     color: "#E1D5E7"
     mandatory_links:
       belongs_to: doc_tool
-    optional_links:
-      realized_by: tool_req
-      realizes: stkh_req
     parts: 3
 
   # A malfunction describes a violation of one or more requirements. Safety
@@ -300,7 +298,7 @@ needs_types:
       safety_measures: ^.+$
     mandatory_links:
       parent_needs: tool_usecase
-      violates: stkh_req, tool_req
+      violates: tool_req
     parts: 3
 
   # Requirements

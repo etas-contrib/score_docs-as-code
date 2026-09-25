@@ -17,14 +17,57 @@ Doc-as-Code Tool Verification Report
 
 This page is the authoritative Tool Verification Report for the S-CORE Docs-as-Code tool. It records the classification of intended usage, potential malfunctions, safety impact and detection, together with qualification evidence and lifecycle state.
 
-Tool under evaluation
----------------------
+Introduction
+------------
+
+Scope and purpose
+~~~~~~~~~~~~~~~~~
 
 The S-CORE Docs-as-Code tool (Bazel module ``score_docs_as_code``) builds HTML
-documentation and traceability data from RST/Markdown sources. It evaluates
-those sources with the S-CORE extensions and metamodel, and produces the
-generated documentation, ``needs.json`` and ``metrics.json`` used by the
-downstream process.
+documentation from RST/Markdown sources, including process descriptions,
+requirements, and traceability data. It validates the sources with the S-CORE
+extensions and metamodel.
+
+Inputs and outputs
+~~~~~~~~~~~~~~~~~~
+
+* **Inputs:** RST/Markdown sources, Sphinx configuration, the S-CORE metamodel,
+  Bazel build files, source-code links, and test results.
+* **Outputs:** HTML documentation, traceability data (``needs.json``), and
+  coverage and linkage statistics (``metrics.json``).
+
+.. mermaid::
+
+   flowchart LR
+      sources["RST/Markdown sources"] --> tool["S-CORE Docs-as-Code"]
+      config["Configuration and metamodel"] --> tool
+      links["Source-code links"] --> tool
+      tests["Test results"] --> tool
+      tool --> html["HTML documentation"]
+      tool --> needs["needs.json"]
+      tool --> metrics["metrics.json"]
+
+Available information
+~~~~~~~~~~~~~~~~~~~~~
+
+* Repository: https://github.com/eclipse-score/docs-as-code
+* Documentation: https://eclipse-score.github.io/docs-as-code/v8.1.2/
+* Bazel module: ``score_docs_as_code``
+
+Installation and integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The tool is consumed as a Bazel module and integrated through the repository's
+documentation build targets. The evaluated configuration is the one defined by
+the repository's ``MODULE.bazel``, ``BUILD`` files, Sphinx configuration, and
+S-CORE metamodel. The relevant checks are run through ``//:docs_check`` and
+the associated documentation and traceability targets.
+
+Environment
+~~~~~~~~~~~
+
+The evaluation runs in the repository's supported Bazel environment on Linux,
+using the configured Sphinx, Python, and diagram-generation toolchains.
 
 Report record
 -------------
@@ -38,6 +81,9 @@ Report record
    :realizes: wp__tool_verification_report[version==1]
    :post_template: tool_qualification_report
 
+   Evaluates the S-CORE Docs-as-Code tool for building and checking
+   documentation and traceability data from RST/Markdown sources.
+
 Details
 -------
 
@@ -45,12 +91,6 @@ Details
 .. tool_usecase:: Build/CI behavior
    :id: tool_usecase__docs_as_code__build_ci
    :belongs_to: doc_tool__score_docs_as_code
-   :realized_by:
-      tool_req__docs_doc_types,
-      tool_req__docs_common_attr_safety_link_check,
-      tool_req__docs_test_linkage_metrics,
-      tool_req__docs_test_link_testcase,
-      tool_req__docs_req_link_covers_aou
    :version: 1
 
    Builds run with ``-W``; any warning trips CI. The
@@ -231,7 +271,6 @@ Details
 .. tool_usecase:: PR Review
    :id: tool_usecase__docs_as_code__pr_review
    :belongs_to: doc_tool__score_docs_as_code
-   :realized_by: tool_req__docs_doc_types
    :version: 1
 
    Repository contents are the source of truth
@@ -242,10 +281,6 @@ Details
 .. tool_usecase:: Derived-view
    :id: tool_usecase__docs_as_code__derived_view
    :belongs_to: doc_tool__score_docs_as_code
-   :realized_by:
-      tool_req__docs_arch_views,
-      tool_req__docs_verification_report_need,
-      tool_req__docs_req_link_satisfies_allowed
    :version: 1
 
    The rendered HTML output is a derived view;

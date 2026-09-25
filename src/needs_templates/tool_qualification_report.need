@@ -125,6 +125,30 @@
 {% endfor %}
 {% endfor %}
 
+Purpose and intended use
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+*Generated from linked report records.*
+
+The tool is evaluated for the following intended use cases. The use case title
+is the concise statement of the project context in which the tool is used;
+the detailed evaluation is shown in the sections below.
+
+.. list-table:: Intended use cases
+   :header-rows: 1
+   :widths: 72 28
+
+   * - Intended use
+     - Record
+{% for usecase in usecases %}
+   * - {{ text(usecase.get("title")) }}
+     - {{ need_reference(usecase) }}
+{% endfor %}
+{% if not usecases %}
+   * - No tool use case is documented.
+     - —
+{% endif %}
+
 Conclusion
 ^^^^^^^^^^
 

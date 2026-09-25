@@ -55,7 +55,6 @@ def _low_report(
         id="tool_usecase__test_report__context",
         type="tool_usecase",
         belongs_to=["doc_tool__test_report"],
-        realized_by=["tool_req__test_report__requirement"],
     )
     requirement = need(
         id="tool_req__test_report__requirement",
@@ -210,11 +209,11 @@ def test_report_requires_owned_usecase():
     logger.assert_warning("must own at least one `tool_usecase`")
 
 
-def test_low_malfunction_with_only_stakeholder_requirement_is_invalid():
-    """A stakeholder requirement alone cannot receive tool qualification evidence."""
-    stakeholder = need(id="stkh_req__test_report__requirement", type="stkh_req")
+def test_low_malfunction_with_only_upstream_requirement_is_invalid():
+    """An upstream requirement alone cannot receive tool qualification evidence."""
+    upstream = need(id="stkh_req__test_report__requirement", type="stkh_req")
     all_needs = _low_report(violated=["stkh_req__test_report__requirement"])
-    all_needs.values.return_value.append(stakeholder)
+    all_needs.values.return_value.append(upstream)
     logger = fake_check_logger()
 
     check_tool_qualification_workflow(MagicMock(), all_needs, logger)

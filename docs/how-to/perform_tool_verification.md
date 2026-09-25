@@ -38,7 +38,8 @@ The important distinction is between:
 
 - **Tool Verification Report (TVR, `doc_tool`)** — records the SCORE
   tool-management state and the overall evaluation result.
-- **Tool requirements (`tool_req`)** — what the project relies on the tool to do.
+- **Tool requirements (`tool_req`)** — capabilities or behaviours provided by
+  the tool, independent of whether a particular project use case uses them.
 - **Tool use cases (`tool_usecase`)** — the usage context in which the project
   relies on the tool.
 - **Potential tool malfunctions (`potential_tool_malfunction`)** — ways in which
@@ -53,29 +54,25 @@ flowchart LR
     UC["tool_usecase<br/>Tool Use Case"]
     PM["potential_tool_malfunction<br/>Potential Tool Malfunction"]
 
-    STKH["stkh_req<br/>Stakeholder Requirement"]
+    UP["upstream requirements<br/>(stkh_req, gd_req, feat_req, comp_req)"]
     TR["tool_req<br/>Tool Requirement"]
     TC["testcase<br/>Qualification Evidence"]
 
-    UC -->|"realizes<br/>(optional)"| STKH
-    UC -->|"realized_by<br/>(optional)"| TR
-
     PM -->|"nested under<br/>(parent_needs)"| UC
-    PM -->|"violates"| STKH
     PM -->|"violates"| TR
 
+    TR -->|"satisfies<br/>(optional)"| UP
     TC -->|"fully_verifies /<br/>partially_verifies"| TR
-    TR -->|"realizes<br/>(optional)"| STKH
 
     style UC fill:#E1D5E7
     style PM fill:#F8CECC
-    style STKH fill:#DAE8FC
+    style UP fill:#DAE8FC
     style TR fill:#F5F5F5
 ```
 
-The two analysis views answer different questions:
+Two analysis perspectives answer different questions:
 
-| View | Question |
+| Perspective | Question |
 |---|---|
 | **Evaluation / classification** | How can our intended use of the tool fail, and would the intended usage detect or prevent that failure? |
 | **Qualification** | Do we have sufficient evidence that the specific tool version satisfies the tool requirements we rely on? |
@@ -99,7 +96,7 @@ evidence.
 | Topic | External tool | Self-developed tool |
 |---|---|---|
 | Version | Pin the exact external version and relevant configuration | Identify the exact internal release/version |
-| `tool_req` | Define the behaviour **our project relies on** | Reuse existing tool requirements where suitable |
+| `tool_req` | Select the tool capabilities relevant to the evaluated use cases | Reuse existing tool requirements where suitable |
 | Implementation | Usually treated largely as a black box | Architecture and implementation may be available |
 | Existing tests | Vendor/upstream tests can be supporting information | Existing development tests may already provide qualification evidence |
 | Qualification | Usually validate our `tool_req` against the configured external tool | Reuse suitable requirements-based tests where possible |
@@ -152,6 +149,21 @@ The generated TVR report additionally shows:
 
 The report author does not provide these summary values.
 
+Record the tool's scope and purpose, relevant configuration, environment, constraints,
+inputs, outputs, and available documentation when creating the TVR. Inputs and outputs
+define the usage boundary and are needed to identify potential malfunctions.
+
+The introduction should make the purpose and intended use visible before the
+detailed evaluation. Model each intended use as a `tool_usecase`; the generated
+report places an overview of those use cases before the evaluation result.
+
+```{mermaid}
+flowchart LR
+    P["Tool purpose and scope"] --> U["Intended use cases<br/>(tool_usecase)"]
+    U --> M["Potential malfunctions"]
+    M --> Q["Qualification of relevant<br/>(tool_req) capabilities"]
+```
+
 Example structure:
 
 ````markdown
@@ -161,8 +173,8 @@ Example structure:
 :security_affected: NO
 :tool_version: <exact version>
 
-Describe the tool, its intended use, relevant configuration, environment,
-constraints, inputs, outputs, and available documentation.
+Describe the tool, its purpose and intended use, relevant configuration,
+environment, constraints, inputs, outputs, and available documentation.
 ```
 ````
 
@@ -201,47 +213,49 @@ Represent a `tool_usecase` with the following relationships:
 tool_usecase:
   mandatory_links:
     belongs_to: doc_tool
-  optional_links:
-    realized_by: tool_req
-    realizes: stkh_req
 ```
 
 The normal relationship is therefore:
 
 ```{mermaid}
 flowchart LR
-    STKH["stkh_req"]
+    UP["upstream requirements<br/>(stkh_req, gd_req, comp_req, feat_req)"]
     DT["doc_tool"]
     UC["tool_usecase"]
     TR["tool_req"]
 
     UC -->|"belongs_to<br/>(mandatory)"| DT
-    UC -->|"realizes<br/>(optional)"| STKH
-    UC -->|"realized_by<br/>(optional)"| TR
+    TR -->|"satisfies<br/>(optional)"| UP
 
-    style STKH fill:#DAE8FC
+    style UP fill:#DAE8FC
     style UC fill:#E1D5E7
     style TR fill:#F5F5F5
 ```
+
+Tool requirements may satisfy upstream requirements, including `stkh_req`,
+`gd_req`, `feat_req`, and `comp_req`. The relevant upstream requirements should
+be linked through `tool_req.satisfies` when relating a tool capability to an
+upstream need.
 
 ### How to model `tool_usecase`
 
 Every `evaluated`, `qualified`, or `released` TVR must own at least one
 `tool_usecase`. The use case records the context in which the project relies on
-the tool. Link it to a `tool_req` when a matching requirement exists; the
-`realized_by` link is optional so the context can be documented before that
-requirement has been defined.
+the tool. The use case itself has no direct requirement links; the relevant
+`tool_req` needs are associated through the nested malfunctions, and upstream
+requirements are linked from those `tool_req` needs.
 
 For example:
 
-- stakeholder requirement: the system-development process must provide valid
-  requirements traceability,
+- upstream requirement (e.g. `stkh_req`, `gd_req`, `feat_req`, `comp_req`): the
+  system-development process must provide valid requirements traceability,
 - tool use case: validate requirement traceability during documentation builds,
 - tool requirement: unresolved requirement links must be reported.
 
 If an existing requirement already expresses the usage context exactly, avoid
 inventing additional behaviour in the use case. Keep it as a thin
-grouping/context element, whether or not it links to a `tool_req`.
+grouping/context element. The relevant `tool_req` needs remain linked through
+the nested malfunctions.
 
 ```{important}
 Write each `potential_tool_malfunction` nested inside its `tool_usecase`. The
@@ -257,8 +271,6 @@ for an already well-scoped requirement.
 ```{tool_usecase} Validate requirement traceability during documentation builds
 :id: tool_usecase__docs_as_code__traceability
 :belongs_to: doc_tool__s_core_docs_as_code
-:realized_by: tool_req__docs_as_code__unresolved_links
-:realizes: stkh_req__docs_as_code__traceability
 
 The project relies on the documentation tooling to identify invalid or
 unresolved requirement links before documentation is accepted.
@@ -281,7 +293,7 @@ Validate requirement links during the documentation build.
 
 ### External tool
 
-Define the `tool_req` needs from **our expectations of the tool**, not by
+Define the `tool_req` needs from the tool capability being evaluated, not by
 importing the vendor's complete specification.
 
 Example:
@@ -296,10 +308,10 @@ The tool shall report unresolved requirement links.
 
 ### Self-developed tool
 
-Prefer linking the use case to existing `tool_req` needs.
+Prefer reusing existing `tool_req` needs in the nested malfunctions.
 
 Do not create separate "qualification requirements" when the normal tool
-requirements already describe the behaviour relied upon by the project.
+requirements already describe the capability relevant to the project use case.
 
 ---
 
@@ -320,7 +332,7 @@ potential_tool_malfunction:
   mandatory_links:
     # Established by nesting the malfunction inside its tool use case.
     parent_needs: tool_usecase
-    violates: stkh_req, tool_req
+    violates: tool_req
 ```
 
 The relationship is:
@@ -329,16 +341,16 @@ The relationship is:
 flowchart LR
     UC["tool_usecase"]
     PM["potential_tool_malfunction"]
-    STKH["stkh_req"]
+    UP["upstream requirement"]
     TR["tool_req"]
 
     PM -->|"nested under<br/>(parent_needs)"| UC
-    PM -->|"violates"| STKH
     PM -->|"violates"| TR
+    TR -->|"satisfies"| UP
 
     style UC fill:#E1D5E7
     style PM fill:#F8CECC
-    style STKH fill:#DAE8FC
+    style UP fill:#DAE8FC
     style TR fill:#F5F5F5
 ```
 
@@ -374,11 +386,7 @@ the malfunction.
 
 Typical targets are:
 
-- `stkh_req`
 - `tool_req`
-
-Do not link arbitrary downstream requirements merely because the malfunction
-could eventually contribute to an incorrect engineering decision.
 
 ### Tool model example
 
@@ -386,16 +394,13 @@ could eventually contribute to an incorrect engineering decision.
 ::::{tool_usecase} Validate requirement traceability during documentation builds
 :id: tool_usecase__docs_as_code__traceability
 :belongs_to: doc_tool__s_core_docs_as_code
-:realized_by: tool_req__docs_as_code__unresolved_links
-:realizes: stkh_req__docs_as_code__traceability
 
 The project relies on the documentation tool to detect invalid traceability.
 
 :::{potential_tool_malfunction} Unresolved requirement link is accepted as valid
 :id: potential_tool_malfunction__docs_as_code__unresolved_link_accepted
 :violates:
-  tool_req__docs_as_code__unresolved_links,
-  stkh_req__docs_as_code__traceability
+  tool_req__docs_as_code__unresolved_links
 :safety_affected: YES
 :detection_sufficient: NO
 
@@ -406,15 +411,16 @@ does not report the problem.
 `````
 
 There is no conceptual difference between external and self-developed tools in
-this step. Malfunctions are derived from the intended usage and the requirements
-the project relies on.
+this step. Malfunctions are derived from the intended usage and the tool
+capabilities relevant to that usage.
 
-`detection_sufficient` is conditional. It is required for
-`safety_affected: YES`; it is not required for `safety_affected: NO` and is
-omitted for non-safety malfunctions. A safety-relevant malfunction with
-`detection_sufficient: YES` must also document a non-empty `safety_measures`
-value. The malfunction body remains the place for the human-readable reasoning
-that explains why the measure is sufficient or insufficient.
+`detection_sufficient` is only required in case of `safety_affected: YES`. A
+safety-relevant malfunction with `detection_sufficient: YES` must also document a
+non-empty `safety_measures` value. The malfunction body remains the place for the
+human-readable reasoning that explains why the measure is sufficient or insufficient.
+
+The same `tool_req` may be relevant to multiple use cases;
+evaluate its potential malfunctions separately for each usage context.
 
 ---
 
@@ -848,9 +854,11 @@ See:
 Assume an external documentation tool is used to validate requirement
 traceability.
 
-### Stakeholder requirement
+### Upstream requirement
 
-A real `stkh_req` must provide the required SCORE metadata. For example:
+An upstream requirement is represented by a concrete SCORE requirement type, such
+as `stkh_req`, `gd_req`, `feat_req`, or `comp_req`. This example uses the
+existing `stkh_req` type:
 
 ````markdown
 ```{stkh_req} Provide valid verification traceability
@@ -883,8 +891,6 @@ The tool shall report unresolved requirement links as errors.
 ::::{tool_usecase} Validate requirement traceability during documentation builds
 :id: tool_usecase__docs_as_code__traceability
 :belongs_to: doc_tool__s_core_docs_as_code
-:realized_by: tool_req__docs_as_code__unresolved_links
-:realizes: stkh_req__docs_as_code__traceability
 
 The project relies on the documentation tool to detect invalid traceability
 before generated documentation is accepted.
@@ -892,8 +898,7 @@ before generated documentation is accepted.
 :::{potential_tool_malfunction} Unresolved requirement link is accepted as valid
 :id: potential_tool_malfunction__docs_as_code__unresolved_link_accepted
 :violates:
-  tool_req__docs_as_code__unresolved_links,
-  stkh_req__docs_as_code__traceability
+  tool_req__docs_as_code__unresolved_links
 :safety_affected: YES
 :detection_sufficient: NO
 
@@ -906,18 +911,16 @@ The resulting model is:
 
 ```{mermaid}
 flowchart LR
-    STKH["stkh_req__docs_as_code__traceability"]
+    UP["stkh_req__docs_as_code__traceability"]
     UC["tool_usecase__docs_as_code__traceability"]
     TR["tool_req__docs_as_code__unresolved_links"]
     PM["potential_tool_malfunction__docs_as_code__<br/>unresolved_link_accepted"]
 
-    UC -->|"realizes"| STKH
-    UC -->|"realized_by (optional)"| TR
     PM -->|"nested under<br/>(parent_needs)"| UC
-    PM -->|"violates"| STKH
     PM -->|"violates"| TR
+    TR -->|"satisfies"| UP
 
-    style STKH fill:#DAE8FC
+    style UP fill:#DAE8FC
     style UC fill:#E1D5E7
     style TR fill:#F5F5F5
     style PM fill:#F8CECC
@@ -985,8 +988,6 @@ code.
 ::::{tool_usecase} Generate production source from the approved model
 :id: tool_usecase__generator__generate_source
 :belongs_to: doc_tool__s_core_docs_as_code
-:realized_by: tool_req__generator__state_transitions
-:realizes: stkh_req__generator__approved_model
 
 The project relies on the generator to transform the approved model into
 production source code.
@@ -994,8 +995,7 @@ production source code.
 :::{potential_tool_malfunction} State transition is omitted from generated source
 :id: potential_tool_malfunction__generator__missing_transition
 :violates:
-  tool_req__generator__state_transitions,
-  stkh_req__generator__approved_model
+  tool_req__generator__state_transitions
 :safety_affected: YES
 :detection_sufficient: NO
 
@@ -1029,7 +1029,7 @@ changes.
 Typical triggers include:
 
 - a new or changed tool use case,
-- new or changed stakeholder requirements,
+- new or changed upstream requirements (`stkh_req`, `gd_req`, `feat_req`, or `comp_req`),
 - new or changed tool requirements,
 - a changed tool version,
 - a changed relevant configuration,
@@ -1063,19 +1063,28 @@ flowchart TD
 
 Do not invent new normative behaviour in `tool_usecase`.
 
-It is a **usage-context / grouping element** between stakeholder intent and
-concrete tool behaviour. For example, "validate requirement traceability during
+A `tool_usecase` describes how the project uses the tool. A `tool_req` describes
+a capability or behaviour provided by the tool, regardless of whether the project
+uses it in a particular use case. The use case provides context and grouping
+without introducing an additional normative requirement level.
+
+For example, "validate requirement traceability during
 documentation builds" is a use case; "the tool shall report unresolved links"
-is the requirement. The use case adds context, not another requirement level.
+is the tool requirement.
+
+Another example is the pair of use cases "Produce the platform components binaries"
+and "Create unit test binaries", which both map to the tool requirement
+"the compiler shall create an executable from C++ source code".
+
+The use case adds context, not another requirement level.
 
 ```{mermaid}
 flowchart LR
-    STKH["Stakeholder intent"]
+    UP["Upstream requirement"]
     UC["Usage context"]
     TR["Concrete tool behaviour"]
 
-    UC -->|"realizes"| STKH
-    UC -->|"realized_by (optional)"| TR
+    TR -->|"satisfies"| UP
 ```
 
 ---
@@ -1146,10 +1155,11 @@ This is not contradictory.
 Do not copy an external tool's complete specification into `tool_req`.
 
 Do not copy almost the entire external C&Q or qualification specification from
-the Internet either; capture only the behaviour and assumptions our project
-relies on.
+the Internet either; capture only the capabilities and assumptions relevant to
+the evaluated use cases.
 
-Model the behaviour **our project relies on**.
+Model the tool capability being evaluated; describe the project context in the
+corresponding `tool_usecase`.
 
 ---
 
@@ -1167,7 +1177,7 @@ flowchart TD
     A["1. Identify exact tool version / configuration"]
     B["2. Create doc_tool<br/>status = draft"]
     C["3. Define tool_usecase"]
-    D["4. Link available tool_req<br/>and optionally stkh_req"]
+    D["4. Link available tool_req<br/>to upstream requirements"]
     E["5. Identify potential_tool_malfunction"]
     F["6. Read generated TVR summary"]
     G["7. Document safety_measures<br/>and detection_sufficient"]
