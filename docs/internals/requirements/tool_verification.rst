@@ -87,18 +87,36 @@ Report record
 Details
 -------
 
+The safety evaluation uses the following shared facts:
 
-.. tool_usecase:: Build/CI behavior
-   :id: tool_usecase__docs_as_code__build_ci
+* **Build/CI behavior:** Builds run with ``-W``; any warning trips CI. The
+  safety-relevant danger is the *silent* failure — a missing warning or a wrong
+  output published undetected. A loud CI abort is safe: no wrong output enters
+  the baseline.
+* **PR Review:** Repository contents are the source of truth and every change
+  is reviewed by a committer (:need:`rl__committer`,
+  :need:`doc_concept__wp_inspections`). Still, for silent wrong outputs the
+  gated CI stays green.
+* **Derived-view:** The rendered HTML output is a derived view; the
+  authoritative safety artifacts are mostly the source-controlled work
+  products. There are two exceptions, the architecture views and backlinks.
+  Rendering/preview defects affect reviewer convenience, not safety evidence.
+
+Each of the following tool capabilities is evaluated as an intended use case
+with its corresponding potential malfunction.
+
+.. tool_usecase:: Document metamodel enforcement
+   :id: tool_usecase__docs_as_code__metamodel
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
 
-   Builds run with ``-W``; any warning trips CI. The
-   safety-relevant danger is the *silent* failure — a missing warning
-   or a wrong output published undetected.
-   A loud CI abort is safe: no wrong output enters the baseline.
+   Enforce document types and mandatory attributes such as id, status,
+   security, safety, and realizes. See, for example,
+   :need:`gd_req__doc_attr_status`, :need:`gd_req__req_attr_uid`,
+   :need:`gd_req__req_attr_safety`, :need:`gd_req__arch_attr_safety`,
+   and :need:`gd_req__req_check_mandatory`.
 
-   .. potential_tool_malfunction:: Document metamodel enforcement
+   .. potential_tool_malfunction:: Document metamodel enforcement failure
       :id: potential_tool_malfunction__docs_as_code__m1
       :safety_affected: YES
       :detection_sufficient: NO
@@ -140,11 +158,8 @@ Details
          tool_req__docs_sec_attrs_mandatory
       :version: 1
 
-      **Document metamodel enforcement** — enforce document types, mandatory attributes (id, status, security, safety, realizes), etc.
-      See, for example, :need:`gd_req__doc_attr_status`, :need:`gd_req__req_attr_uid`, :need:`gd_req__req_attr_safety`, :need:`gd_req__arch_attr_safety`, :need:`gd_req__req_check_mandatory`.
-
-      **Silent false-negative**: too-permissive
-      ``metamodel.yaml`` regex accepted with no guard, or a check bug skips a case.
+      **Silent false-negative:** a too-permissive ``metamodel.yaml`` regex is
+      accepted without a guard, or a check bug skips a case.
 
       Impact on safety: yes.
       Impact safety measures available: yes: PR review.
@@ -152,7 +167,15 @@ Details
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-   .. potential_tool_malfunction:: Safety-critical linking enforcement
+.. tool_usecase:: Safety-critical linking enforcement
+   :id: tool_usecase__docs_as_code__safety_links
+   :belongs_to: doc_tool__score_docs_as_code
+   :version: 1
+
+   Enforce that links between safety-relevant needs preserve the required
+   safety relationships. See :need:`gd_req__req_linkage_safety`.
+
+   .. potential_tool_malfunction:: Safety-critical linking enforcement failure
       :id: potential_tool_malfunction__docs_as_code__m2
       :safety_affected: YES
       :detection_sufficient: NO
@@ -169,21 +192,30 @@ Details
          tool_req__docs_arch_link_security
       :version: 1
 
-      **Safety-critical linking enforcement**.
-      See :need:`gd_req__req_linkage_safety`.
-
-      **Silent false-negative**: allow links which cannot be safe derivations.
+      **Silent false-negative:** links are allowed which cannot be safe
+      derivations.
 
       Impact on safety: yes.
       Impact safety measures available: yes: PR review.
       Impact safety detection sufficient: no: Qualify graph checks.
       Further additional safety measure required: yes (qualification).
 
-      The clearest gap is ``satisfied_by`` (and arguably ``covers``), which carry the same "target at least as safe" obligation as the checked ``fulfils``/``implements`` yet are unconstrained.
+      The clearest gap is ``satisfied_by`` (and arguably ``covers``), which
+      carry the same "target at least as safe" obligation as the checked
+      ``fulfils``/``implements`` yet are unconstrained.
 
       Confidence (automatic calculation): low.
 
-   .. potential_tool_malfunction:: Requirements coverage statistics
+.. tool_usecase:: Requirements coverage statistics
+   :id: tool_usecase__docs_as_code__coverage
+   :belongs_to: doc_tool__score_docs_as_code
+   :version: 1
+
+   Count, per requirement type, the requirements carrying a ``testlink`` and
+   compute link-coverage percentages. See
+   :need:`gd_req__verification_reporting`.
+
+   .. potential_tool_malfunction:: Requirements coverage statistics failure
       :id: potential_tool_malfunction__docs_as_code__m3
       :safety_affected: YES
       :detection_sufficient: NO
@@ -192,10 +224,7 @@ Details
          tool_req__docs_verification_report_need
       :version: 1
 
-      **Requirements coverage statistics** — count, per requirement type, the requirements carrying a ``testlink``, compute link-coverage percentages.
-      See :need:`gd_req__verification_reporting`.
-
-      **Silent wrong-output**: a coverage statistic computed wrong.
+      **Silent wrong-output:** a coverage statistic is computed incorrectly.
 
       Impact on safety: yes.
       Impact safety measures available: no.
@@ -203,7 +232,41 @@ Details
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-   .. potential_tool_malfunction:: Test linkage
+.. tool_usecase:: Architecture visualization
+   :id: tool_usecase__docs_as_code__architecture
+   :belongs_to: doc_tool__score_docs_as_code
+   :version: 1
+
+   Generate architecture diagrams. See :need:`gd_req__arch_viewpoints`.
+
+   .. potential_tool_malfunction:: Architecture visualization failure
+      :id: potential_tool_malfunction__docs_as_code__m4
+      :safety_affected: YES
+      :detection_sufficient: YES
+      :safety_measures: PR review includes architecture inspection
+      :violates: tool_req__docs_arch_views
+      :version: 1
+
+      **Silent wrong-output:** a diagram misrepresents the architecture.
+
+      Impact on safety: yes.
+      Impact safety measures available: yes: PR review includes architecture
+      inspection.
+      Impact safety detection sufficient: yes.
+      Further additional safety measure required: no.
+      Confidence (automatic calculation): high.
+
+.. tool_usecase:: Test linkage
+   :id: tool_usecase__docs_as_code__test_linkage
+   :belongs_to: doc_tool__score_docs_as_code
+   :version: 1
+
+   For each ``testcase`` need, resolve its
+   ``partially_verifies``/``fully_verifies`` references against the needs set.
+   See :need:`gd_req__req_attr_testlink` and
+   :need:`gd_req__verification_reporting`.
+
+   .. potential_tool_malfunction:: Test linkage failure
       :id: potential_tool_malfunction__docs_as_code__m5
       :safety_affected: YES
       :detection_sufficient: NO
@@ -216,11 +279,8 @@ Details
          tool_req__docs_test_metadata_link_levels
       :version: 1
 
-      **Test linkage** — for each ``testcase`` need, resolve its ``partially_verifies``/``fully_verifies`` references against the needs set.
-      See :need:`gd_req__req_attr_testlink`, :need:`gd_req__verification_reporting`.
-
-      **Silent wrong-output**:
-      Safety case believes the requirement is tested where it is not.
+      **Silent wrong-output:** the safety case believes the requirement is
+      tested where it is not.
 
       Impact on safety: yes.
       Impact safety measures available: no.
@@ -228,7 +288,15 @@ Details
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-   .. potential_tool_malfunction:: Test reference check
+.. tool_usecase:: Test reference check
+   :id: tool_usecase__docs_as_code__test_refs
+   :belongs_to: doc_tool__score_docs_as_code
+   :version: 1
+
+   Check that test references are present and point to the intended
+   requirements. See :need:`gd_req__req_attr_testlink`.
+
+   .. potential_tool_malfunction:: Test reference check failure
       :id: potential_tool_malfunction__docs_as_code__m6
       :safety_affected: YES
       :detection_sufficient: NO
@@ -236,11 +304,8 @@ Details
       :violates: tool_req__docs_test_link_testcase
       :version: 1
 
-      **Test reference check**.
-      See :need:`gd_req__req_attr_testlink`.
-
-      **Silent wrong-output**:
-      Test references an outdated/missing requirement.
+      **Silent wrong-output:** a test references an outdated or missing
+      requirement.
 
       Impact on safety: yes.
       Impact safety measures available: yes: PR review.
@@ -248,7 +313,16 @@ Details
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-   .. potential_tool_malfunction:: Listing assumptions of use
+.. tool_usecase:: Listing assumptions of use
+   :id: tool_usecase__docs_as_code__assumptions
+   :belongs_to: doc_tool__score_docs_as_code
+   :version: 1
+
+   Use ``needtable`` to communicate safety-critical assumptions of use in
+   safety manuals. See :need:`gd_guidl__saf_man` and
+   :need:`wp__platform_safety_manual`.
+
+   .. potential_tool_malfunction:: Listing assumptions of use failure
       :id: potential_tool_malfunction__docs_as_code__m7
       :safety_affected: YES
       :detection_sufficient: NO
@@ -259,67 +333,30 @@ Details
          tool_req__docs_arch_link_fulfils_aou
       :version: 1
 
-      **Listing assumptions of use** — safety manuals use ``needtable`` to communicate safety-critical assumptions of use to users.
-      See :need:`gd_guidl__saf_man`, :need:`wp__platform_safety_manual`.
-
-      **Silent wrong-output**: ``aou_req`` items might be missing or wrong.
+      **Silent wrong-output:** ``aou_req`` items might be missing or wrong.
 
       Impact on safety: yes.
       Impact safety measures available: yes: PR review.
       Impact safety detection sufficient: no: Qualify ``needtable``.
-      Further additional safety measure required: yes: qualification.
+      Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-.. tool_usecase:: PR Review
-   :id: tool_usecase__docs_as_code__pr_review
+.. tool_usecase:: Backlinks
+   :id: tool_usecase__docs_as_code__backlinks
    :belongs_to: doc_tool__score_docs_as_code
    :version: 1
 
-   Repository contents are the source of truth
-   and every change is reviewed by a committer
-   (:need:`rl__committer`, :need:`doc_concept__wp_inspections`).
-   Still, for silent wrong outputs the gated CI stays green.
+   Generate correct backlinks for links between Needs items to provide
+   bi-directional traceability. See :need:`doc_concept__general_traceability`.
 
-.. tool_usecase:: Derived-view
-   :id: tool_usecase__docs_as_code__derived_view
-   :belongs_to: doc_tool__score_docs_as_code
-   :version: 1
-
-   The rendered HTML output is a derived view;
-   the authoritative safety artifacts are mostly the source-controlled work products.
-   There are two exceptions, the architecture views (see M4) and backlinks (see M8).
-   Rendering/preview defects affect reviewer convenience, not safety evidence.
-
-   .. potential_tool_malfunction:: Architecture visualization
-      :id: potential_tool_malfunction__docs_as_code__m4
-      :safety_affected: YES
-      :detection_sufficient: YES
-      :safety_measures: PR review includes architecture inspection
-      :violates: tool_req__docs_arch_views
-      :version: 1
-
-      **Architecture visualization** — generate architecture diagrams.
-      See :need:`gd_req__arch_viewpoints`.
-
-      **Silent wrong-output**: a diagram misrepresents the architecture.
-
-      Impact on safety: yes.
-      Impact safety measures available: yes: PR review includes architecture inspection.
-      Impact safety detection sufficient: yes.
-      Further additional safety measure required: no.
-      Confidence (automatic calculation): high.
-
-   .. potential_tool_malfunction:: Backlinks
+   .. potential_tool_malfunction:: Backlinks failure
       :id: potential_tool_malfunction__docs_as_code__m8
       :safety_affected: YES
       :detection_sufficient: NO
       :violates: tool_req__docs_req_link_satisfies_allowed
       :version: 1
 
-      **Backlinks** — for bi-directional traceability, generate correct backlinks for links between Needs items.
-      See :need:`doc_concept__general_traceability`.
-
-      **Silent wrong-output**: generated backlinks are wrong or missing.
+      **Silent wrong-output:** generated backlinks are wrong or missing.
 
       Impact on safety: yes.
       Impact safety measures available: no.
@@ -327,21 +364,28 @@ Details
       Further additional safety measure required: yes (qualification).
       Confidence (automatic calculation): low.
 
-   .. potential_tool_malfunction:: Documentation generation
+.. tool_usecase:: Documentation generation
+   :id: tool_usecase__docs_as_code__generation
+   :belongs_to: doc_tool__score_docs_as_code
+   :version: 1
+
+   Generate complete and correct HTML apart from the aspects covered by the
+   other use cases. See :need:`gd_req__doc_attributes_manual` and
+   :need:`gd_req__doc_attr_status`.
+
+   .. potential_tool_malfunction:: Documentation generation failure
       :id: potential_tool_malfunction__docs_as_code__m9
       :safety_affected: NO
       :violates: tool_req__docs_doc_types
       :version: 1
 
-      **Documentation generation** — apart from the aspects **not covered by previous malfunctions**.
-      See :need:`gd_req__doc_attributes_manual`, :need:`gd_req__doc_attr_status`.
-
-      Incomplete, outdated, or mis-rendered HTML.
+      **Wrong output:** incomplete, outdated, or mis-rendered HTML.
 
       Impact on safety: no: rendered-view defects affect reviewer convenience,
       not safety evidence.
       Impact safety measures available: no.
-      Impact safety detection sufficient: not applicable for a non-safety malfunction.
+      Impact safety detection sufficient: not applicable for a non-safety
+      malfunction.
       Further additional safety measure required: no.
       Confidence (automatic calculation): high.
 
