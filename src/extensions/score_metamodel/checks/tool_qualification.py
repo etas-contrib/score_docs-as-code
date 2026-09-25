@@ -263,7 +263,7 @@ def check_tool_malfunction_evaluation(
             "`detection_sufficient: YES` requires a non-empty `safety_measures` value.",
             category="tool-qualification",
         )
-    elif safety_affected == "NO" and detection_sufficient is not None:
+    elif safety_affected == "NO" and detection_sufficient:
         log.warning_for_need(
             need,
             "non-safety malfunctions must not define `detection_sufficient`.",

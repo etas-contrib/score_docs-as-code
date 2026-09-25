@@ -104,7 +104,6 @@ Details
       :detection_sufficient: NO
       :safety_measures: PR review
       :violates:
-         tool_req__docs_doc_types,
          tool_req__docs_doc_generic_mandatory,
          tool_req__docs_common_attr_id,
          tool_req__docs_common_attr_id_scheme,
@@ -134,8 +133,11 @@ Details
          tool_req__docs_saf_attrs_sufficient_check,
          tool_req__docs_saf_attrs_content,
          tool_req__docs_saf_attrs_violates,
+         tool_req__docs_saf_attrs_mandatory,
          tool_req__docs_saf_attr_fmea_fault_id,
-         tool_req__docs_saf_attr_fmea_failure_effect
+         tool_req__docs_saf_attr_fmea_failure_effect,
+         tool_req__docs_sec_attr_stride_threat_id,
+         tool_req__docs_sec_attrs_mandatory
       :version: 1
 
       **Document metamodel enforcement** — enforce document types, mandatory attributes (id, status, security, safety, realizes), etc.
