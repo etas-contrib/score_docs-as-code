@@ -56,9 +56,14 @@ def check_testcase_link_levels(
 
     A Testcase without a declared ``test_level`` is not checked, as there is
     not enough information to determine the expected target level.
+
+    Note that external Testcase needs are intentionally included even though
+    the other checks skip external needs: these come from local test.xml files
+    (see score_source_code_linker) and only lack an in-document node, so they
+    carry no docname/lineno. ``external_url`` is appended instead.
     """
     needs_dict = {need["id"]: need for need in all_needs.values()}
-    for need in all_needs.filter_is_external(False).values():
+    for need in all_needs.values():
         if need["type"] != "testcase":
             continue
         test_level = need.get("test_level")
@@ -76,9 +81,12 @@ def check_testcase_link_levels(
                 if target["type"] in allowed_types:
                     continue
                 allowed = " or ".join(sorted(allowed_types))
+                source = ""
+                if not need.get("docname") and need.get("external_url"):
+                    source = f" (source: {need['external_url']})"
                 log.warning_for_need(
                     need,
                     f"{link_attr} links to `{target_id}` ({target['type']}), "
-                    f"but a `{test_level}` test case may only link to {allowed}.",
+                    f"but a `{test_level}` test case may only link to {allowed}.{source}",
                     category="link",
                 )
