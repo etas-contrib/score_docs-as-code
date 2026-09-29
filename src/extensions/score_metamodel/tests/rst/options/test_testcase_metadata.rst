@@ -46,9 +46,6 @@
    integration and unit test cases.
 
 
-.. Positive: A feature integration test case with all mandatory metadata
-.. and a feature requirement target.
-
 .. testcase:: Feature Integration Test Case (valid)
    :id: testcase__tc_metadata__fit_ok
    :version: 1
@@ -60,8 +57,6 @@
 
    Runs the target feature requirement.
 
-.. Negative: `test_type` is missing.
-
 .. testcase:: Feature Integration Test Case (missing test_type)
    :id: testcase__tc_metadata__fit_no_test_type
    :version: 1
@@ -71,8 +66,6 @@
    :expect: testcase__tc_metadata__fit_no_test_type: is missing required attribute: `test_type`.
 
    Runs the target feature requirement.
-
-.. Negative: `derivation_technique` is missing.
 
 .. testcase:: Feature Integration Test Case (missing derivation_technique)
    :id: testcase__tc_metadata__fit_no_derivation
@@ -84,8 +77,6 @@
 
    Runs the target feature requirement.
 
-.. Negative: the description (`content`) is missing.
-
 .. testcase:: Feature Integration Test Case (missing content)
    :id: testcase__tc_metadata__fit_no_content
    :version: 1
@@ -94,8 +85,6 @@
    :test_level: feature_integration_test
    :fully_verifies: feat_req__tc_metadata__target
    :expect: testcase__tc_metadata__fit_no_content: is missing required attribute: `content`.
-
-.. Negative: a feature integration test must not link to a component requirement.
 
 .. testcase:: Feature Integration Test Case (comp_req target)
    :id: testcase__tc_metadata__fit_cross
@@ -108,8 +97,6 @@
 
    Runs the target component requirement.
 
-.. Positive: A component integration test case with a component requirement target.
-
 .. testcase:: Component Integration Test Case (valid)
    :id: testcase__tc_metadata__cit_ok
    :version: 1
@@ -120,8 +107,6 @@
    :expect_not: is missing required attribute, does not follow pattern, may only link to
 
    Runs the target component requirement.
-
-.. Negative: a component integration test must not link to a feature requirement.
 
 .. testcase:: Component Integration Test Case (feat_req target)
    :id: testcase__tc_metadata__cit_cross
@@ -134,8 +119,6 @@
 
    Runs the target feature requirement.
 
-.. Positive: A unit test case with a component requirement target.
-
 .. testcase:: Unit Test Case (valid)
    :id: testcase__tc_metadata__unit_ok
    :version: 1
@@ -146,8 +129,6 @@
    :expect_not: is missing required attribute, does not follow pattern, may only link to
 
    Runs the target component requirement.
-
-.. Negative: a unit test must not link to a feature requirement.
 
 .. testcase:: Unit Test Case (feat_req target)
    :id: testcase__tc_metadata__unit_cross
@@ -160,8 +141,6 @@
 
    Runs the target feature requirement.
 
-.. Positive: Without a `test_level` no link level is enforced.
-
 .. testcase:: Test Case without test_level
    :id: testcase__tc_metadata__no_level
    :version: 1
@@ -171,8 +150,6 @@
    :expect_not: is missing required attribute, does not follow pattern, may only link to
 
    Runs the target feature requirement.
-
-.. Negative: `test_level` must be one of the allowed values.
 
 .. testcase:: Test Case with invalid test_level
    :id: testcase__tc_metadata__bad_level
