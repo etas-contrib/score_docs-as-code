@@ -371,4 +371,5 @@ def check_arch_links_safety_to_req(
             log.warning_for_need(
                 need,
                 "has no fulfils link to a requirement with the same safety value",
+                is_new_check=True,
             )
