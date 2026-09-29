@@ -322,3 +322,53 @@ def check_valid_only_links_to_valid(
         if invalid_needs:
             msg = f"is valid but links to invalid need(s): {invalid_needs}"
             log.warning_for_need(need, msg, is_new_check=True)
+
+
+# Architecture types from tool_req__docs_arch_types that link to requirements
+# via the `fulfils` attribute.  The other architecture types cannot carry a
+# fulfils link and are therefore not part of this check.
+_ARCH_TYPES_WITH_FULFILS_TO_REQ = {
+    "feat_arc_sta",
+    "logic_arc_int",
+    "comp_arc_sta",
+    "real_arc_int",
+    "comp",
+}
+
+
+# req-Id: tool_req__docs_arch_link_safety_to_req
+@graph_check
+def check_arch_links_safety_to_req(
+    app: Sphinx,
+    all_needs: NeedsView,
+    log: CheckLogger,
+):
+    """
+    Safety relevant architecture elements (safety != QM) must be linked to at
+    least one requirement with the exact same safety value via `fulfils`.
+    """
+    needs_by_id = dict(all_needs.items())
+    local_needs = all_needs.filter_is_external(False).values()
+
+    for need in local_needs:
+        if need["type"] not in _ARCH_TYPES_WITH_FULFILS_TO_REQ:
+            continue
+        required_safety = need.get("safety")
+        if not required_safety or required_safety == "QM":
+            continue
+
+        fulfils = (
+            need.get_links("fulfils", as_str=True)
+            if "fulfils" in need.iter_links_keys()
+            else []
+        )
+        has_same_safety_link = any(
+            (target := needs_by_id.get(parent_id)) is not None
+            and target.get("safety") == required_safety
+            for parent_id in fulfils
+        )
+        if not has_same_safety_link:
+            log.warning_for_need(
+                need,
+                "has no fulfils link to a requirement with the same safety value",
+            )
