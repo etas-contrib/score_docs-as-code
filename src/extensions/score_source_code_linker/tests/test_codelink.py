@@ -23,6 +23,7 @@ from dataclasses import asdict
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
+from unittest.mock import Mock
 
 import pytest
 from sphinx.application import Sphinx
@@ -36,6 +37,8 @@ from sphinx_needs.need_item import (
     NeedsContent,
 )
 
+import src.extensions.score_source_code_linker as source_code_linker
+from score_pytest.attribute_plugin import add_test_properties
 from src.extensions.score_source_code_linker import (
     build_and_save_combined_file,
     find_need,
@@ -85,6 +88,7 @@ def test_need(**kwargs: Any) -> NeedItem:
     kwargs.setdefault("signature", None)
     kwargs.setdefault("has_dead_links", False)
     kwargs.setdefault("has_forbidden_dead_links", False)
+    extras = kwargs.pop("extras", {})
 
     # Create source
     source = NeedItemSourceUnknown(
@@ -104,7 +108,7 @@ def test_need(**kwargs: Any) -> NeedItem:
         source=source,
         content=content,
         core=NeedsInfoType(**kwargs),
-        extras={},
+        extras=extras,
         links={},
     )
 
@@ -295,6 +299,33 @@ def test_find_need_direct_match():
     result = find_need(all_needs, "REQ_001")
     assert result is not None
     assert result["id"] == "REQ_001"
+
+
+@add_test_properties(
+    fully_verifies=["tool_req__docs_common_attr_suspicious"],
+    test_type="requirements-based",
+    derivation_technique="requirements-analysis",
+)
+def test_find_need_warns_only_for_outdated_versioned_links(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Warn for outdated references, but not for current or unversioned links."""
+    logger = Mock()
+    monkeypatch.setattr(source_code_linker, "LOGGER", logger)
+    need = make_needs({"REQ_001": {"id": "REQ_001", "extras": {"version": "3"}}})
+
+    assert find_need(need, "REQ_001[version==2]") is not None
+    logger.warning.assert_called_once()
+    assert (
+        "references version 2, but need 'REQ_001' is version 3"
+        in logger.warning.call_args.args[0]
+    )
+
+    # Current and unversioned links should not warn.
+    logger.warning.reset_mock()
+    assert find_need(need, "REQ_001[version==3]") is not None
+    assert find_need(need, "REQ_001") is not None
+    logger.warning.assert_not_called()
 
 
 def test_find_need_not_found():
