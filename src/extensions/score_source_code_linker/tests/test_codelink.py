@@ -306,18 +306,28 @@ def test_find_need_direct_match():
     test_type="requirements-based",
     derivation_technique="requirements-analysis",
 )
-def test_find_need_warns_only_for_outdated_versioned_links(
+def test_find_need_warns_for_mismatched_versioned_links(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Warn for outdated references, but not for current or unversioned links."""
+    """Warn for any version mismatch, but not for current or unversioned links."""
     logger = Mock()
     monkeypatch.setattr(source_code_linker, "LOGGER", logger)
     need = make_needs({"REQ_001": {"id": "REQ_001", "extras": {"version": "3"}}})
 
+    # Older reference should warn.
     assert find_need(need, "REQ_001[version==2]") is not None
     logger.warning.assert_called_once()
     assert (
         "references version 2, but need 'REQ_001' is version 3"
+        in logger.warning.call_args.args[0]
+    )
+
+    # Newer reference should warn too.
+    logger.warning.reset_mock()
+    assert find_need(need, "REQ_001[version==4]") is not None
+    logger.warning.assert_called_once()
+    assert (
+        "references version 4, but need 'REQ_001' is version 3"
         in logger.warning.call_args.args[0]
     )
 

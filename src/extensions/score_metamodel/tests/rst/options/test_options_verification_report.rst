@@ -108,3 +108,21 @@
    :verification_method: inspection
    :belongs_to: feat__verification_feature
    :expect: belongs_to
+
+
+.. mod_ver_report:: Verification Report Missing Method
+   :id: mod_vrep__verification__missing_method
+   :safety: ASIL_B
+   :security: YES
+   :status: valid
+   :belongs_to: mod__verification_module
+   :expect: mod_vrep__verification__missing_method: is missing required attribute: `verification_method`.
+
+
+.. mod_ver_report:: Verification Report Missing Module Link
+   :id: mod_vrep__verification__missing_module
+   :safety: ASIL_B
+   :security: YES
+   :status: valid
+   :verification_method: inspection
+   :expect: mod_vrep__verification__missing_module: is missing required link: `belongs_to`.
