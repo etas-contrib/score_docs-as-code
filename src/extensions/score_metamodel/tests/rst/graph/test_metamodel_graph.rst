@@ -14,8 +14,8 @@
 
 .. test_metadata::
    :id: test_metadata__metamodel_graph_checks
-   :fully_verifies_list: potential_tool_malfunction__docs_as_code__m2
-   :partially_verifies_list: tool_req__docs_common_attr_safety_link_check
+   :fully_verifies_list: potential_tool_malfunction__docs_as_code__m2,
+      tool_req__docs_common_attr_safety_link_check[version==1]
    :test_type: requirements_based
    :derivation_technique: requirements_based
 
@@ -62,7 +62,7 @@
 
 .. Negative Test: Child requirement QM. Parent requirement is `ASIL_B`. Child cant fulfill the safety level of the parent.
 
-.. comp_req:: Child requirement 3
+.. feat_req:: Child requirement 3
    :id: feat_req__qm_child_with_asil_parent
    :safety: QM
    :derived_from: feat_req__parent__ASIL_B
