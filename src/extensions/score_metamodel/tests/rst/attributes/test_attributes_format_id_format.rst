@@ -15,7 +15,7 @@
 
 .. test_metadata:: Test ID Format
    :id: test_metadata__check_id_format
-   :partially_verifies_list: tool_req__docs_common_attr_id_scheme
+   :fully_verifies_list: tool_req__docs_common_attr_id_scheme
    :test_type: requirements_based
    :derivation_technique: requirements_based
 

@@ -303,8 +303,13 @@ def check_validity_consistency(
     if not valid_from or not valid_until:
         return
 
-    valid_from_version = parse_milestone(valid_from)
-    valid_until_version = parse_milestone(valid_until)
+    try:
+        valid_from_version = parse_milestone(valid_from)
+        valid_until_version = parse_milestone(valid_until)
+    except ValueError:
+        # Pattern validation reports malformed milestones separately.
+        return
+
     if valid_from_version >= valid_until_version:
         msg = (
             "inconsistent validity: "
