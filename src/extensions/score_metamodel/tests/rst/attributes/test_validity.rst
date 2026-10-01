@@ -58,7 +58,9 @@
    :status: valid
    :rationale: invalid milestone format
    :valid_from: v1
+   :valid_until: v0.5
    :expect: valid_from (v1): does not follow pattern
+   :expect_not: inconsistent validity
 
 
 .. stkh_req:: Invalid valid_until format
@@ -110,3 +112,72 @@
    :rationale: no end of validity period
    :valid_from: v1.0
    :expect_not: inconsistent validity
+
+
+.. feat:: Validity target feature
+   :id: feat__validity_target
+   :version: 1
+   :status: valid
+   :safety: QM
+   :security: NO
+
+
+.. feat_req:: Valid feature requirement milestones
+   :id: feat_req__validity__aaaa
+   :version: 1
+   :reqtype: Functional
+   :safety: QM
+   :security: NO
+   :status: valid
+   :satisfied_by: feat__validity_target
+   :valid_from: v1.0
+   :valid_until: v2.0
+   :expect_not: does not follow pattern, inconsistent validity
+
+   This feature requirement is used to check the validity attributes.
+
+
+.. feat_req:: Feature requirement valid_from is after valid_until
+   :id: feat_req__validity__aaab
+   :version: 1
+   :reqtype: Functional
+   :safety: QM
+   :security: NO
+   :status: valid
+   :satisfied_by: feat__validity_target
+   :valid_from: v1.1
+   :valid_until: v1.0
+   :expect: inconsistent validity: valid_from (v1.1) >= valid_until (v1.0)
+
+   This feature requirement is used to check the validity attributes.
+
+
+.. feat_req:: Feature requirement with malformed valid_from
+   :id: feat_req__validity__aaac
+   :version: 1
+   :reqtype: Functional
+   :safety: QM
+   :security: NO
+   :status: valid
+   :satisfied_by: feat__validity_target
+   :valid_from: v01.0
+   :valid_until: v1.0
+   :expect: valid_from (v01.0): does not follow pattern
+   :expect_not: inconsistent validity
+
+   This feature requirement is used to check the validity attributes.
+
+
+.. feat_req:: Feature requirement without valid_until
+   :id: feat_req__validity__aaad
+   :version: 1
+   :reqtype: Functional
+   :safety: QM
+   :security: NO
+   :status: valid
+   :satisfied_by: feat__validity_target
+   :valid_from: v1.0
+   :expect_not: inconsistent validity
+
+   This feature requirement is used to check the validity attributes.
+
