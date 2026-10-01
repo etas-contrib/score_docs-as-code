@@ -62,12 +62,36 @@
 
 .. Negative Test: Child requirement QM. Parent requirement is `ASIL_B`. Child cant fulfill the safety level of the parent.
 
-.. feat_req:: Child requirement 3
-   :id: feat_req__qm_child_with_asil_parent
+.. feat:: Parent feature of the component requirement
+   :id: feat__graph_parent
+   :version: 1
    :safety: QM
-   :derived_from: feat_req__parent__ASIL_B
    :status: valid
+   :security: NO
+
+   This feature is the parent of the component requirement fixture.
+
+.. comp:: Component target of the component requirement
+   :id: comp__qm_child_target
+   :version: 1
+   :safety: QM
+   :status: valid
+   :security: NO
+   :belongs_to: feat__graph_parent
+
+   This component is satisfied by the component requirement fixture.
+
+.. comp_req:: Child requirement 3
+   :id: comp_req__qm_child_with_asil_parent
+   :reqtype: Functional
+   :safety: QM
+   :status: valid
+   :security: NO
+   :satisfied_by: comp__qm_child_target
+   :derived_from: feat_req__parent__ASIL_B
    :expect: QM requirements cannot be derived from ASIL requirements.
+
+   This component requirement cannot fulfill the safety level of its parent requirement.
 
 
 

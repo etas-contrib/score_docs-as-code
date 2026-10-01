@@ -15,7 +15,7 @@
 
 .. test_metadata:: Common description attribute
    :id: test_metadata__common_attr_description
-   :fully_verifies_list: tool_req__docs_common_attr_description
+   :partially_verifies_list: tool_req__docs_common_attr_description
    :test_type: requirements_based
    :derivation_technique: requirements_based
 
@@ -136,4 +136,18 @@
    :id: tool_req__description_missing
    :version: 1
    :satisfies: stkh_req__description__abcd
+   :expect: is missing required attribute: `content`
+
+
+.. gd_req:: Process requirement with a description
+   :id: gd_req__description_with
+   :version: 1
+   :expect_not: is missing required attribute: `content`
+
+   This process requirement has useful content.
+
+
+.. gd_req:: Process requirement without a description
+   :id: gd_req__description_missing
+   :version: 1
    :expect: is missing required attribute: `content`
