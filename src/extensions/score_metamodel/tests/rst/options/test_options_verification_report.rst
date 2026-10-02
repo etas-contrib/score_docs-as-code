@@ -56,6 +56,8 @@
 
 
 .. Supporting artifacts linked by the verification report.
+   While testcase items are usually created externally,
+   we can create them inline as well for testing purposes here.
 
 .. testcase:: Verification Evidence
    :id: testcase__verification_evidence
