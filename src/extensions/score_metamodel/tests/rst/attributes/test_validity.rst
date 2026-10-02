@@ -180,4 +180,3 @@
    :expect_not: inconsistent validity
 
    This feature requirement is used to check the validity attributes.
-
