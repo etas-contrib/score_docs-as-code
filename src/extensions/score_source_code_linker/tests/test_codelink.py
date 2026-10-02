@@ -23,7 +23,6 @@ from dataclasses import asdict
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
-from unittest.mock import Mock
 
 import pytest
 from sphinx.application import Sphinx
@@ -37,7 +36,6 @@ from sphinx_needs.need_item import (
     NeedsContent,
 )
 
-import src.extensions.score_source_code_linker as source_code_linker
 from score_pytest.attribute_plugin import add_test_properties
 from src.extensions.score_source_code_linker import (
     build_and_save_combined_file,
@@ -307,35 +305,24 @@ def test_find_need_direct_match():
     derivation_technique="requirements-analysis",
 )
 def test_find_need_warns_for_mismatched_versioned_links(
-    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Warn for any version mismatch, but not for current or unversioned links."""
-    logger = Mock()
-    monkeypatch.setattr(source_code_linker, "LOGGER", logger)
     need = make_needs({"REQ_001": {"id": "REQ_001", "extras": {"version": "3"}}})
 
     # Older reference should warn.
     assert find_need(need, "REQ_001[version==2]") is not None
-    logger.warning.assert_called_once()
-    assert (
-        "references version 2, but need 'REQ_001' is version 3"
-        in logger.warning.call_args.args[0]
-    )
+    assert "references version 2, but need 'REQ_001' is version 3" in caplog.text
 
     # Newer reference should warn too.
-    logger.warning.reset_mock()
     assert find_need(need, "REQ_001[version==4]") is not None
-    logger.warning.assert_called_once()
-    assert (
-        "references version 4, but need 'REQ_001' is version 3"
-        in logger.warning.call_args.args[0]
-    )
+    assert "references version 4, but need 'REQ_001' is version 3" in caplog.text
 
     # Current and unversioned links should not warn.
-    logger.warning.reset_mock()
+    caplog.clear()
     assert find_need(need, "REQ_001[version==3]") is not None
     assert find_need(need, "REQ_001") is not None
-    logger.warning.assert_not_called()
+    assert "mismatched version" not in caplog.text
 
 
 def test_find_need_not_found():
