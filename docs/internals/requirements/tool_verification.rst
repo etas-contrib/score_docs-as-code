@@ -132,7 +132,6 @@ with its corresponding potential malfunction.
          tool_req__docs_common_attr_security,
          tool_req__docs_common_attr_safety,
          tool_req__docs_common_attr_version,
-         tool_req__docs_common_attr_suspicious,
          tool_req__docs_req_attr_rationale,
          tool_req__docs_req_attr_reqtype,
          tool_req__docs_req_attr_testcov,
