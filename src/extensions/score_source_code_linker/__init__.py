@@ -358,7 +358,8 @@ def _extract_version_from_id(id: str) -> tuple[str, int | None]:
 def find_need(all_needs: NeedsMutable, id: str) -> NeedItem | None:
     """
     Finds a need by ID in the needs collection.
-    Strips version suffixes for lookup and warns if test links to older version.
+    Strips version suffixes for lookup and warns if test links to a mismatched version
+    (either older or newer than the referenced need).
     """
     base_id, test_version = _extract_version_from_id(id)
     need = all_needs.get(base_id)
