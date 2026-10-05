@@ -149,3 +149,30 @@
    :sufficient: no
    :status: valid
    :expect: is missing required link: `violates`
+
+
+.. comp_saf_dfa:: Missing violates link
+   :id: comp_saf_dfa__viol__missing_001
+   :failure_id: df_missing_violates_dfa
+   :failure_effect: missing link
+   :sufficient: no
+   :status: valid
+   :expect: is missing required link: `violates`
+
+
+.. feat_saf_fmea:: Missing violates link
+   :id: feat_saf_fmea__viol__missing_001
+   :fault_id: fault_missing_violates_fmea
+   :failure_effect: missing link
+   :sufficient: yes
+   :status: valid
+   :expect: is missing required link: `violates`
+
+
+.. comp_saf_fmea:: Missing violates link
+   :id: comp_saf_fmea__viol__missing_001
+   :fault_id: fault_missing_violates_fmea
+   :failure_effect: missing link
+   :sufficient: yes
+   :status: valid
+   :expect: is missing required link: `violates`

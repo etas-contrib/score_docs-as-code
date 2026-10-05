@@ -99,3 +99,60 @@
    :included_by: real_arc_int__arch_sec__safety_real_interface
    :implements: logic_arc_int_op__arch_sec__safety_invalid
    :expect: does not fulfill condition
+
+
+.. feat:: Safety feature
+   :id: feat__arch_sec__safety_feature
+   :security: NO
+   :safety: QM
+   :status: valid
+   :version: 1
+
+
+.. logic_arc_int:: QM logical interface
+   :id: logic_arc_int__arch_sec__safety_qm_interface
+   :security: NO
+   :safety: QM
+   :status: valid
+   :version: 1
+
+
+.. logic_arc_int:: Invalid safety logical interface
+   :id: logic_arc_int__arch_sec__safety_invalid_interface
+   :security: NO
+   :safety: ASIL_B
+   :status: invalid
+   :version: 1
+
+
+.. comp:: Safety component implements valid safety logical interface
+   :id: comp__arch_sec__safety_comp_valid
+   :security: NO
+   :safety: ASIL_B
+   :status: valid
+   :version: 1
+   :belongs_to: feat__arch_sec__safety_feature
+   :implements: logic_arc_int__arch_sec__safety_interface
+   :expect_not: does not fulfill condition
+
+
+.. comp:: Safety component implements QM logical interface
+   :id: comp__arch_sec__safety_comp_qm
+   :security: NO
+   :safety: ASIL_B
+   :status: valid
+   :version: 1
+   :belongs_to: feat__arch_sec__safety_feature
+   :implements: logic_arc_int__arch_sec__safety_qm_interface
+   :expect: does not fulfill condition
+
+
+.. comp:: Safety component implements invalid safety logical interface
+   :id: comp__arch_sec__safety_comp_invalid
+   :security: NO
+   :safety: ASIL_B
+   :status: valid
+   :version: 1
+   :belongs_to: feat__arch_sec__safety_feature
+   :implements: logic_arc_int__arch_sec__safety_invalid_interface
+   :expect: does not fulfill condition

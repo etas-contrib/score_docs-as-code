@@ -148,3 +148,42 @@
    :belongs_to: comp__arch_fulfils__component
    :fulfils: feat_req__arch_fulfils__feature__good
    :expect: but it must reference Component Requirement (comp_req)
+
+
+.. feat_arc_dyn:: Feature dynamic view rejects component requirement
+   :id: feat_arc_dyn__arch_fulfils__bad
+   :security: NO
+   :safety: QM
+   :status: valid
+   :belongs_to: feat__arch_fulfils__feature
+   :fulfils: comp_req__arch_fulfils__component__good
+   :expect: but it must reference Feature Requirement (feat_req)
+
+
+.. logic_arc_int:: Logical interface rejects component requirement
+   :id: logic_arc_int__arch_fulfils__bad
+   :security: NO
+   :safety: QM
+   :status: valid
+   :fulfils: comp_req__arch_fulfils__component__good
+   :expect: but it must reference Feature Requirement (feat_req)
+
+
+.. comp_arc_dyn:: Component dynamic view rejects feature requirement
+   :id: comp_arc_dyn__arch_fulfils__bad
+   :security: NO
+   :safety: QM
+   :status: valid
+   :belongs_to: comp__arch_fulfils__component
+   :fulfils: feat_req__arch_fulfils__feature__good
+   :expect: but it must reference Component Requirement (comp_req)
+
+
+.. real_arc_int:: Real interface rejects feature requirement
+   :id: real_arc_int__arch_fulfils__bad
+   :security: NO
+   :safety: QM
+   :status: valid
+   :language: cpp
+   :fulfils: feat_req__arch_fulfils__feature__good
+   :expect: but it must reference Component Requirement (comp_req)

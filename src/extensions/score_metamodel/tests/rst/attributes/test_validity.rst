@@ -168,8 +168,24 @@
    This feature requirement is used to check the validity attributes.
 
 
-.. feat_req:: Feature requirement without valid_until
+.. feat_req:: Feature requirement with malformed valid_until
    :id: feat_req__validity__aaad
+   :version: 1
+   :reqtype: Functional
+   :safety: QM
+   :security: NO
+   :status: valid
+   :satisfied_by: feat__validity_target
+   :valid_from: v1.0
+   :valid_until: v01.0
+   :expect: valid_until (v01.0): does not follow pattern
+   :expect_not: inconsistent validity
+
+   This feature requirement is used to check the validity attributes.
+
+
+.. feat_req:: Feature requirement without valid_until
+   :id: feat_req__validity__aaae
    :version: 1
    :reqtype: Functional
    :safety: QM
