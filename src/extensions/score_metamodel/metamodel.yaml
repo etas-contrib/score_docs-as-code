@@ -1003,8 +1003,8 @@ needs_types:
     title: Testcase Needs parsed from test.xml files
     mandatory_options:
       # req-Id: tool_req__docs_test_metadata_mandatory_1
-      test_type: ^.*$
-      derivation_technique: ^.*$
+      test_type: ^.+$
+      derivation_technique: ^.+$
       # req-Id: tool_req__docs_test_metadata_mandatory_2
       content: ^[\s\S]+$
     optional_options:
