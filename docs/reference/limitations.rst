@@ -34,6 +34,10 @@ until the relevant process concepts and models are available.
    * - :need:`tool_req__arch_consistency_interf`
      - Only INFO, not WARN
      - docs_as_code v9 release?
-   * - :need:`tool_req__docs_req_attr_testcov`
-     - unclear?
-     - Once concept is clarified
+
+We might also use "intentionally-limited" tag to mark them.
+
+.. needtable::
+   :tags: intentionally-limited
+   :filter: status != "invalid"
+   :columns: id;title
