@@ -40,7 +40,9 @@ class DummyNeedsView:
 
 def _run(*needs: NeedItem) -> Any:
     log = fake_check_logger()
-    check_testcase_metadata(MagicMock(), cast(NeedsView, DummyNeedsView(list(needs))), log)
+    check_testcase_metadata(
+        MagicMock(), cast(NeedsView, DummyNeedsView(list(needs))), log
+    )
     log.flush_new_checks()
     return log
 
@@ -69,9 +71,8 @@ def test_required_metadata_must_be_nonempty(attribute: str, value: str | None) -
     """Report missing and blank metadata values."""
     log = _run(_testcase(**{attribute: value}))
     log.assert_info(
-        f"Add a value for `{attribute}` to this test case. "
-        "This field is required.",
-        expect_location=False
+        f"Add a value for `{attribute}` to this test case. This field is required.",
+        expect_location=False,
     )
 
 
@@ -90,7 +91,7 @@ def test_external_testcase_with_wrong_link_level_is_checked() -> None:
 
     log.assert_info(
         "should link to comp_req requirements instead. Update the link.",
-        expect_location=False
+        expect_location=False,
     )
 
 
