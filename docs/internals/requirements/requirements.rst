@@ -414,7 +414,7 @@ Versioning
 
 .. tool_req:: Support requirements test coverage
   :id: tool_req__docs_req_attr_testcov
-  :tags: Requirements, intentionally-limited
+  :tags: Requirements, limited-until-process-fixed
   :implemented: PARTIAL
   :version: 1
   :parent_covered: YES
@@ -467,7 +467,7 @@ Versioning
 
 .. tool_req:: Enables needs linking via satisfies attribute
   :id: tool_req__docs_req_link_satisfies_allowed
-  :tags: Requirements, intentionally-limited
+  :tags: Requirements, limited-until-process-fixed
   :implemented: PARTIAL
   :version: 1
   :satisfies: gd_req__req_linkage[version==1], gd_req__req_traceability[version==1]
@@ -724,7 +724,7 @@ but for ease of traceability this is a separate one.
 
 .. tool_req:: Correlations of the architectural building blocks
   :id: tool_req__arch_linkage_safety
-  :tags: intentionally-limited
+  :tags: limited-for-compatibility
   :implemented: YES
   :version: 2
   :satisfies: gd_req__arch_linkage_safety[version==1], gd_req__arch_build_blocks_corr[version==3]
@@ -752,7 +752,7 @@ but for ease of traceability this is a separate one.
 
 .. tool_req:: Check consistency of interfaces in modules
   :id: tool_req__arch_consistency_interf
-  :tags: Architecture, intentionally-limited
+  :tags: Architecture, limited-until-downstream-compatible
   :implemented: YES
   :version: 1
   :satisfies: gd_req__arch_consistency_interf[version==2]

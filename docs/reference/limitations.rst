@@ -35,9 +35,16 @@ until the relevant process concepts and models are available.
      - Only INFO, not WARN
      - docs_as_code v9 release?
 
-We might also use "intentionally-limited" tag to mark them.
+We might also use tags to mark them.
 
 .. needtable::
-   :tags: intentionally-limited
+   :tags: limited-for-compatibility, limited-until-downstream-compatible, limited-until-process-fixed
    :filter: status != "invalid"
-   :columns: id;title
+   :columns: id;title;tags
+   :colwidths: 2;2;2
+
+Tag explanation:
+
+- `limited-for-compatibility`: We just delay it temporarily to be nice.
+- `limited-until-downstream-compatible`: Change is only allowed once all our downstream compatibility checks are green.
+- `limited-until-process-fixed`: Process description is considered "upstream".
