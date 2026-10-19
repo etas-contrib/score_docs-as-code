@@ -19,6 +19,8 @@ from sphinx_needs.need_item import NeedItem
 
 from src.helper_lib import config_setdefault
 
+from . import report_pie
+
 _build_environment: BuildEnvironment | None = None
 
 # Post-templates containing this marker need a second read after parallel Need
@@ -423,29 +425,37 @@ class _SafetyPieRow:
             f".. rubric:: {safety_label} — {subject}",
             f"   :class: safety-class-heading safety-{safety_css}",
             "",
-            ".. grid:: 1 2 3 3",
-            "   :gutter: 2",
-            "   :class-row: score-pie-row",
         ]
+        if count == 0:
+            lines.extend(
+                [
+                    ".. raw:: html",
+                    "",
+                    f'   <div class="empty-pie">no {safety_label} {subject.lower()}</div>',
+                ]
+            )
+            return "\n".join(lines) + "\n"
+
+        lines.extend(
+            [
+                ".. grid:: 1 2 3 3",
+                "   :gutter: 2",
+                "   :class-row: score-pie-row",
+            ]
+        )
 
         def grid_item(name: str, pie: list[str]) -> None:
-            lines.extend(["", "   .. grid-item::", ""])
-            if count == 0:
-                lines.extend(
-                    [
-                        "      .. raw:: html",
-                        "",
-                        '         <div class="empty-pie">',
-                        f'            <span class="empty-pie-title">{subject} {name} ({safety_label})</span>',
-                        f'            <span class="empty-pie-text">no {safety_label} {subject.lower()}</span>',
-                        "         </div>",
-                    ]
-                )
-            else:
-                lines.append(
-                    f"      .. needpie:: {chart_prefix} {name} ({safety_label})"
-                )
-                lines.extend(f"         {line}".rstrip() for line in pie)
+            # The continuation line keeps the chart title on two narrow lines.
+            lines.extend(
+                [
+                    "",
+                    "   .. grid-item::",
+                    "",
+                    f"      .. score-report-pie:: {chart_prefix}",
+                    f"         {name} ({safety_label})",
+                ]
+            )
+            lines.extend(f"         {line}".rstrip() for line in pie)
 
         def counted_by(func: str) -> list[str]:
             # sphinx-needs splits the call on its last ".", so encode the version.
@@ -460,7 +470,6 @@ class _SafetyPieRow:
             [
                 f":labels: {', '.join(label for label, _ in statuses)}",
                 f":colors: {status_colors}",
-                ":legend:",
                 *(
                     counted_by("get_component_status_metrics")
                     if component
@@ -476,7 +485,6 @@ class _SafetyPieRow:
             [
                 ":labels: fully covered, partially covered, not covered",
                 ":colors: #37a12d, #f0a500, #ca2828",
-                ":legend:",
                 *(
                     counted_by("get_component_coverage_metrics")
                     if component
@@ -495,7 +503,6 @@ class _SafetyPieRow:
                 [
                     ":labels: referenced by lower, not referenced",
                     ":colors: #37a12d, #ca2828",
-                    ":legend:",
                     "",
                     f"id in {_id_filter_list_callable(referenced or [])}",
                     f"id in {_id_filter_list_callable(missing or [])}",
@@ -612,6 +619,7 @@ def setup(app: Sphinx) -> dict[str, object]:
     app.config.needs_render_context.setdefault(
         "safety_pie_row", _safety_pie_row_callable
     )
+    report_pie.setup(app)
     app.connect("builder-inited", _capture_build_environment)
     # Run after the source-code linker has injected generated testcase Needs and
     # their verification backlinks (priority 525), so report templates can

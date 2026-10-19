@@ -240,14 +240,14 @@ def test_safety_pie_row_qm_counts_inspected_as_valid() -> None:
     assert ":class: safety-class-heading safety-asil-b" in asil
 
 
-def test_safety_pie_row_empty_class_renders_placeholders_only() -> None:
+def test_safety_pie_row_empty_class_renders_one_slim_placeholder() -> None:
     safety_pie_row = vars(templates)["_SafetyPieRow"]()
 
     row = safety_pie_row("Comp", "Requirements", "BASE", "QM", "QM", 0, True)
 
-    assert "needpie" not in row
-    assert row.count('<div class="empty-pie">') == 3
-    assert "no QM requirements" in row
+    assert "score-report-pie" not in row
+    assert ".. grid::" not in row
+    assert row.count('<div class="empty-pie">no QM requirements</div>') == 1
 
 
 def test_safety_pie_row_reference_pie_only_on_request() -> None:
@@ -259,12 +259,15 @@ def test_safety_pie_row_reference_pie_only_on_request() -> None:
     )
 
     assert "Reference Coverage" not in without
-    assert without.count(".. needpie::") == 2
-    assert with_ref.count(".. needpie::") == 3
+    assert without.count(".. score-report-pie::") == 2
+    assert with_ref.count(".. score-report-pie::") == 3
     assert 'id in ["a", "b"]' in with_ref
     assert 'id in ["c"]' in with_ref
     # An empty title must not leave a leading blank in the chart title.
-    assert ".. needpie:: Stakeholder Requirements Status (QM)" in with_ref
+    assert (
+        ".. score-report-pie:: Stakeholder Requirements\n         Status (QM)\n"
+        in with_ref
+    )
 
 
 def test_id_filter_list_renders_quoted_literal() -> None:
