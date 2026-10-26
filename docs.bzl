@@ -59,7 +59,6 @@ load(
 )
 load(
     "@score_docs_as_code//:bzl/bundle_rules.bzl",
-    "collect_bundle_code_files",
     "create_bundle",
     "declare_docs_config_target",
     "external_docs_runfiles",
@@ -67,6 +66,7 @@ load(
     "merge_bundle_sourcelinks",
     "sphinx_config_options",
 )
+load("@score_docs_as_code//:bzl/code_files.bzl", "collect_bundle_code_files")
 load(
     "@score_docs_as_code//:bzl/mount_rules.bzl",
     "create_composition_manifest",
