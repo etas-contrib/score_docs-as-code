@@ -31,7 +31,8 @@ py_library(
     deps = ["@score_docs_as_code//src/helper_lib"],
 )
 
-# Coverage rendering operates on Sphinx-Needs nodes and reads the CLI's JSON.
+# Coverage exposes prepared JSON summaries and renders Need metadata. Report
+# charts are owned by the template extension, which consumes this library.
 py_library(
     name = "score_coverage",
     srcs = ["score_coverage.py"],
@@ -43,6 +44,6 @@ py_library(
 score_pytest(
     name = "score_coverage_test",
     srcs = ["score_coverage_test.py"],
-    deps = [":score_coverage"],
     pytest_config = "//:pyproject.toml",
+    deps = [":score_coverage"],
 )

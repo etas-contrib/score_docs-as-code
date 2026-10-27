@@ -10,15 +10,63 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-"""Show compact coverage values in the existing Need metadata area."""
+"""Read prepared coverage summaries and render them in Need metadata."""
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
+from sphinx_needs.nodes import Need
+
+
+def _summary_fingerprint(app: Sphinx) -> str | None:
+    path: str = app.config.score_coverage_summary
+    return (
+        hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        if path and Path(path).is_file()
+        else None
+    )
+
+
+def note_coverage_dependency(app: Sphinx) -> None:
+    """Remember the summary used by this document without adding a source-file dependency."""
+    if app.builder.format == "html":
+        # The summary belongs to the whole documentation build, outside mounted
+        # bundles. Sphinx metadata is purged and merged with its document, so it
+        # also carries this fingerprint correctly through parallel reading.
+        app.env.metadata[app.env.docname]["score_coverage_summary"] = (
+            _summary_fingerprint(app)
+        )
+
+
+def _note_summary_dependency(app: Sphinx, doctree: nodes.document) -> None:
+    if any(doctree.findall(Need)):
+        note_coverage_dependency(app)
+
+
+def _outdated_coverage_docs(
+    app: Sphinx,
+    env: BuildEnvironment,
+    added: set[str],
+    changed: set[str],
+    removed: set[str],
+) -> list[str]:
+    """Re-read coverage consumers when the build-wide summary changes or disappears."""
+    if app.builder.format != "html":
+        return []
+    fingerprint = _summary_fingerprint(app)
+    return [
+        docname
+        for docname, metadata in env.metadata.items()
+        if docname not in removed
+        and "score_coverage_summary" in metadata
+        and metadata["score_coverage_summary"] != fingerprint
+    ]
 
 
 def _metric_text(total: int | None, percent: int | None) -> str:
@@ -56,23 +104,32 @@ def _metadata_area(need: nodes.table) -> nodes.line_block | None:
     return None
 
 
-def render_coverage(app: Sphinx, doctree: nodes.document, docname: str) -> None:
-    """Add a display-only attribute after Sphinx-Needs has rendered its layouts."""
+def read_coverage_summaries(app: Sphinx) -> dict[str, dict[str, Any]]:
+    """Read the prepared summaries indexed by their primary Need IDs."""
     path: str = app.config.score_coverage_summary
+    data: dict[str, Any] = (
+        cast(dict[str, Any], json.loads(Path(path).read_text(encoding="utf-8")))
+        if path and Path(path).is_file()
+        else {"version": 1, "coverage_summaries": []}
+    )
+    if data.get("version") != 1:
+        raise SphinxError("Coverage summaries must have version 1")
+    return {entry["primary_need_id"]: entry for entry in data["coverage_summaries"]}
+
+
+def render_coverage(app: Sphinx, doctree: nodes.document, docname: str) -> None:
+    """Add metadata after Sphinx-Needs has rendered its layouts."""
+    if app.builder.format != "html":
+        return
     # Ordinary RST tables can reuse the CSS class; rendered Needs also have IDs.
     need_nodes = [
         table
         for table in doctree.findall(nodes.table)
         if "need" in table["classes"] and table["ids"]
     ]
-    if not path or not need_nodes:
+    if not need_nodes:
         return
-    data = cast(dict[str, Any], json.loads(Path(path).read_text(encoding="utf-8")))
-    if data.get("version") != 1:
-        raise SphinxError("Coverage summaries must have version 1")
-    summaries = {
-        entry["primary_need_id"]: entry for entry in data["coverage_summaries"]
-    }
+    summaries = read_coverage_summaries(app)
     for need in need_nodes:
         # Collection IDs can include a version qualifier; source ownership uses
         # the primary Need's unqualified ID, matching the bundle declaration.
@@ -96,6 +153,8 @@ def setup(app: Sphinx) -> dict[str, object]:
         str(summary) if summary.is_file() else "",
         rebuild="env",
     )
+    app.connect("doctree-read", _note_summary_dependency)
+    app.connect("env-get-outdated", _outdated_coverage_docs)
     # The default handler (priority 500) creates the metadata area. Reuse its
     # nodes and CSS classes without introducing fields into the Need data model.
     app.connect("doctree-resolved", render_coverage, priority=600)

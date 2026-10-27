@@ -64,11 +64,15 @@ to one documentation project, shared by the cache check and the renderer.
    `<build-output>/coverage_summary.json`; standalone Sphinx builds can override
    that path with `score_coverage_summary`. Without the extension, generated
    summaries have no effect on rendering.
+   The report template extension uses the same summary through
+   `score-coverage-report`, showing line and branch pies with percentage labels
+   and measured/selected file counts. Missing and uninstrumented dimensions
+   receive text instead of a pie. Percentages cover only the measured files;
+   partial measurements are not presented as complete component coverage.
    Need IDs supply the association automatically. Missing measurements display
    as "no data"; uninstrumented dimensions display as "not instrumented".
    A content-only layout has no attribute area and receives no extra output.
-   The Need's content and data fields remain unchanged; templates can later use
-   the summary JSON for richer reports.
+   The Need's content and data fields remain unchanged.
 
 `bazel build :needs_json`, `bazel run :docs_check` and `:docs_link_check` use
 their existing inputs. Report parsing belongs to HTML rendering and live preview.
